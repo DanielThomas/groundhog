@@ -48,7 +48,7 @@ subprojects {
 apply from: 'gradle/idea.gradle'
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '1.9-rc-1'
+  gradleVersion = '1.8'
 }
 
 defaultTasks 'build'
