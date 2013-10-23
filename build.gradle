@@ -31,11 +31,7 @@ subprojects {
   apply plugin: 'project-report'
 
   version = rootProject.version
-  archivesBaseName = 'groundhog'
-
-  jar {
-    appendix project.name
-  }
+  archivesBaseName = "groundhog-$project.name"
 
   dependencies {
     testCompile 'junit:junit-dep:4.11',
