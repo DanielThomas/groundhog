@@ -13,7 +13,7 @@ It provides a recording proxy server, which outputs captured entries in HAR form
 * Proxy supports forward and reverse (gateway) configurations
 * Requests persisted in HAR format, using a high performance streaming writer
 * Lightweight capture for replay or full capture equivalent to browser developer tool HARs
-* Recording control available via simple REST API
+* Recording control via simple REST API
 * Include and exclude URI patterns from recording
 
 ### Replay
