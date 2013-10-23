@@ -38,7 +38,7 @@ public final class RecordServer extends AbstractIdleService {
     int port = 3128;
 
     File recordingFile = new File("out/recording.har");
-    writer = new RequestWriter(recordingFile, true, false);
+    writer = new RequestWriter(recordingFile, true, false, false);
     File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
     RecordFilterSource filtersSource = new RecordFilterSource(writer, uploadLocation);
 

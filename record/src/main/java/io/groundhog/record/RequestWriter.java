@@ -65,18 +65,22 @@ public class RequestWriter extends AbstractExecutionThreadService {
   private final LinkedBlockingQueue<RecordRequest> requestQueue;
   private final boolean lightweight;
   private final boolean includeContent;
+  private final boolean pretty;
   private final DateFormat iso8601Format;
 
   private JsonGenerator generator;
 
-  public RequestWriter(File recordingFile, boolean lightweight, boolean includeContent) throws FileNotFoundException {
-    this(new FileOutputStream(recordingFile), lightweight, includeContent);
+  public RequestWriter(File recordingFile, boolean lightweight, boolean includeContent, boolean pretty)
+      throws FileNotFoundException {
+    this(new FileOutputStream(recordingFile), lightweight, includeContent, pretty);
   }
 
-  public RequestWriter(OutputStream outputStream, boolean lightweight, boolean includeContent) {
+  public RequestWriter(OutputStream outputStream, boolean lightweight, boolean includeContent, boolean pretty) {
     this.outputStream = outputStream;
     this.lightweight = lightweight;
     this.includeContent = includeContent;
+    this.pretty = pretty;
+
     checkArgument(lightweight && !includeContent, "Content cannot be included in lightweight recordings");
 
     requestQueue = new LinkedBlockingQueue<>();
@@ -97,7 +101,9 @@ public class RequestWriter extends AbstractExecutionThreadService {
 
     JsonFactory jsonFactory = new JsonFactory();
     generator = jsonFactory.createGenerator(outputStream, JsonEncoding.UTF8);
-    generator.setPrettyPrinter(new DefaultPrettyPrinter());
+    if (pretty) {
+      generator.setPrettyPrinter(new DefaultPrettyPrinter());
+    }
     writeLogStart();
   }
 
