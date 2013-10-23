@@ -22,9 +22,10 @@ It provides a recording proxy server, which outputs captured entries in HAR form
 * Time dilation, speeding up or slowing down the replay
 * Attempts to reflect connection behaviour, such as keep alives, as accurately as possible
 * Detection of unique user agents via session cookies, which allows:
-** Cookies provided during the session to replace those from the recording
-** Overriding of POST request parameters with those scraped from retrieved documents, supporting nonces and other generated fields
-** Rewriting XHR requests with container session information, to support frameworks such as DWR
+    * Cookies provided during the session to replace those from the recording
+    * Overriding of POST request parameters with those scraped from retrieved documents, supporting nonces and other generated fields
+    * Rewriting XHR requests with container session information, to support frameworks such as DWR
+* Error detection by comparing recorded response codes
 * Output of replay performance results in JMeter compatible format
 
 ## Documentation
