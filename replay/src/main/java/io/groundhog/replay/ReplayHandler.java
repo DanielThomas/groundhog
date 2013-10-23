@@ -103,6 +103,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
       HttpResponseStatus actualStatus = response.getStatus();
 
+      // FIXME this doesn't work if the request doesn't receive a response
       String label = request.headers().get(TRANSACTION_LABEL_HEADER);
       label = null == label ? request.getUri() : label;
       boolean success = expectedStatus.equals(actualStatus);
