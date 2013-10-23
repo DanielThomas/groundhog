@@ -2,8 +2,7 @@
 
 > Don't drive angry...
 
-Groundhog is a simple, but high performance, HTTP traffic recording and replay tool. When looking for a solution for
-replaying production workloads, we found most frameworks focused on recording of tests.
+Groundhog is a simple, but high performance, HTTP traffic recording and replay tool.
 
 For more information, see the [Web Site](http://groundhog.io/)
 
