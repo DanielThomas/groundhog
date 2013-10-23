@@ -28,6 +28,7 @@ allprojects {
 subprojects {
   apply plugin: 'java'
   apply plugin: 'errorprone'
+  apply plugin: 'project-report'
 
   version = rootProject.version
   archivesBaseName = 'groundhog'
@@ -47,7 +48,7 @@ subprojects {
 apply from: 'gradle/idea.gradle'
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '1.8'
+  gradleVersion = '1.9-rc-1'
 }
 
 defaultTasks 'build'
