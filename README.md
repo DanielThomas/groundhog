@@ -2,29 +2,44 @@
 
 > Don't drive angry...
 
-Groundhog is a simple, but high performance, HTTP traffic recording and replay tool.
+Groundhog is a simple, high performance, HTTP traffic record and replay tool. It's designed to be deployed in production environments to allow real world traffic to be repeatedly played against development and staging environments.
 
-For more information, see the [Web Site](http://groundhog.io/)
+It provides a recording proxy server, which outputs captured entries in HAR format and a replay client, which attempts to replay the events exactly as recorded including timings, connection behaviour and request details.
 
 ## Features
 
 ### Record
 
-* HTTP request capture to HAR format, either in JSON or BSON formats
+* Proxy supports forward and reverse (gateway) configurations
+* Requests persisted in HAR format, using a high performance streaming writer
+* Lightweight capture for replay or full capture equivalent to browser developer tool HARs
+* Recording control available via simple REST API
+* Include and exclude URI patterns from recording
 
 ### Replay
 
-Replay attempts to replay the requests exactly as recorded, including timings and keep alives. It supports:
-
-* User agent detection, to allow cookie storage by detected session
-* Override recorded POST request parameters with scraped parameters
-* Time dilation - speed up or slow down the replay
+* Dispatches requests using the time indexes in the HAR data
+* Time dilation, speeding up or slowing down the replay
+* Attempts to reflect connection behaviour, such as keep alives, as accurately as possible
+* Detection of unique user agents via session cookies, which allows:
+** Cookies provided during the session to replace those from the recording
+** Overriding of POST request parameters with those scraped from retrieved documents, supporting nonces and other generated fields
+** Rewriting XHR requests with container session information, to support frameworks such as DWR
 * Output of replay performance results in JMeter compatible format
+
+## Documentation
+
+See the [Wiki](https://github.com/blackboard/groundhog/wiki).
+
+## Performance
+
+The recording proxy shares same performance characteristics of [LittleProxy](https://github.com/adamfisk/LittleProxy).
 
 ## How to build
 
 * Run `gradlew`, the default build action will assemble the application
 * Use the `distZip` target to generate the distribution
+* Replay and record can also be run in place using `:record:run` or `:replay:run`
 
 ## Thanks to
 
