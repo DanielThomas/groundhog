@@ -36,6 +36,10 @@ See the [Wiki](https://github.com/blackboard/groundhog/wiki).
 
 The recording proxy shares same performance characteristics of [LittleProxy](https://github.com/adamfisk/LittleProxy).
 
+## Releases
+
+* 0.1-SNAPSHOT - Initial prototype
+
 ## How to build
 
 * Run `gradlew`, the default build action will assemble the application
