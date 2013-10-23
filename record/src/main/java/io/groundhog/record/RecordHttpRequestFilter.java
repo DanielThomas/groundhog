@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 
@@ -73,6 +75,7 @@ public class RecordHttpRequestFilter implements HttpFilters {
       if (httpObject instanceof HttpRequest) {
         startedDateTime = System.currentTimeMillis();
         request = (HttpRequest) httpObject;
+        rewriteUri(request);
       } else if (httpObject instanceof HttpContent) {
         HttpContent chunk = ((HttpContent) httpObject);
         HttpMethod method = request.getMethod();
@@ -109,6 +112,17 @@ public class RecordHttpRequestFilter implements HttpFilters {
     }
 
     return null;
+  }
+
+  private void rewriteUri(HttpRequest request) {
+    // FIXME quick and dirty hack for reverse proxying, once configuration has been added, proxy loops need to be detected here also
+    try {
+      if (new URI(request.getUri()).getHost() == null) {
+        request.setUri("http://localhost:8080" + request.getUri());
+      }
+    } catch (URISyntaxException e) {
+      throw Throwables.propagate(e);
+    }
   }
 
   @Override
