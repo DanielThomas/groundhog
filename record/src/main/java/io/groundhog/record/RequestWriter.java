@@ -23,7 +23,11 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Sets;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import io.netty.handler.codec.http.*;
@@ -41,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.netty.handler.codec.http.HttpHeaders.Names;
 
 /**
  * @author Danny Thomas
@@ -49,23 +54,31 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RequestWriter extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(RequestWriter.class);
 
-  public static final int DEFAULT_HTTP_PORT = 80;
-  public static final int DEFAULT_HTTPS_PORT = 443;
-  public static final String HTTP_SCHEME = "http";
-  public static final String HTTPS_SCHEME = "https";
+  private static final Set<String> EXCLUDED_HEADERS = Sets.newHashSet(Names.HOST, Names.VIA);
+
+  private static final int DEFAULT_HTTP_PORT = 80;
+  private static final int DEFAULT_HTTPS_PORT = 443;
+  private static final String HTTP_SCHEME = "http";
+  private static final String HTTPS_SCHEME = "https";
 
   private final OutputStream outputStream;
   private final LinkedBlockingQueue<RecordRequest> requestQueue;
+  private final boolean lightweight;
+  private final boolean includeContent;
   private final DateFormat iso8601Format;
 
   private JsonGenerator generator;
 
-  public RequestWriter(File recordingFile) throws FileNotFoundException {
-    this(new FileOutputStream(recordingFile));
+  public RequestWriter(File recordingFile, boolean lightweight, boolean includeContent) throws FileNotFoundException {
+    this(new FileOutputStream(recordingFile), lightweight, includeContent);
   }
 
-  public RequestWriter(OutputStream outputStream) {
+  public RequestWriter(OutputStream outputStream, boolean lightweight, boolean includeContent) {
     this.outputStream = outputStream;
+    this.lightweight = lightweight;
+    this.includeContent = includeContent;
+    checkArgument(lightweight && !includeContent, "Content cannot be included in lightweight recordings");
+
     requestQueue = new LinkedBlockingQueue<>();
 
     TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -114,7 +127,19 @@ public class RequestWriter extends AbstractExecutionThreadService {
     generator.writeStartObject();
     generator.writeObjectFieldStart("log");
     generator.writeStringField("version", "1.2");
+    writeCreator();
     generator.writeArrayFieldStart("entries");
+  }
+
+  private void writeCreator() throws IOException {
+    generator.writeObjectFieldStart("creator");
+    // TODO get these from jar manifest
+    generator.writeStringField("name", "Groundhog Recorder");
+    generator.writeStringField("version", "0.1");
+    if (lightweight) {
+      generator.writeStringField("comment", "lightweight");
+    }
+    generator.writeEndObject();
   }
 
   private void writeLogEnd() throws IOException {
@@ -130,32 +155,32 @@ public class RequestWriter extends AbstractExecutionThreadService {
     generator.writeStartObject();
     String startedDateTime = iso8601Format.format(new Date(recordRequest.getStartedDateTime()));
     generator.writeStringField("startedDateTime", startedDateTime);
-
-    generator.writeObjectFieldStart("request");
     writeRequest(recordRequest);
-    generator.writeEndObject();
-
-    generator.writeObjectFieldStart("response");
     writeResponse(recordRequest);
-    generator.writeEndObject();
-
     generator.writeEndObject();
   }
 
   private void writeRequest(RecordRequest recordRequest) throws IOException {
+    generator.writeObjectFieldStart("request");
     HttpRequest request = recordRequest.getRequest();
-    HttpHeaders headers = request.headers();
 
-    generator.writeStringField("method", request.getMethod().name());
+    if (lightweight && HttpArchive.DEFAULT_METHOD != request.getMethod()) {
+      generator.writeStringField("method", request.getMethod().name());
+    }
     generator.writeStringField("url", getUrl(recordRequest));
-    generator.writeStringField("httpVersion", request.getProtocolVersion().text());
+    if (lightweight && HttpArchive.DEFAULT_HTTP_VERSION != request.getProtocolVersion()) {
+      generator.writeStringField("httpVersion", request.getProtocolVersion().text());
+    }
 
-    writeHeaders(headers);
+    HttpHeaders headers = request.headers();
+    writeHeaders(headers, false);
     writeCookies(headers);
+
     if (recordRequest instanceof RecordPostRequest) {
       RecordPostRequest recordPostRequest = (RecordPostRequest) recordRequest;
       writePostData(recordPostRequest);
     }
+    generator.writeEndObject();
   }
 
   private String getUrl(RecordRequest recordRequest) {
@@ -199,28 +224,46 @@ public class RequestWriter extends AbstractExecutionThreadService {
   }
 
   private void writeResponse(RecordRequest recordRequest) throws IOException {
+    generator.writeObjectFieldStart("response");
     HttpResponse response = recordRequest.getResponse();
     HttpHeaders headers = response.headers();
     generator.writeNumberField("status", response.getStatus().code());
-    writeHeaders(headers);
+    writeHeaders(headers, lightweight);
     writeCookies(headers);
+    generator.writeEndObject();
   }
 
-  private void writeHeaders(HttpHeaders headers) throws IOException {
-    generator.writeArrayFieldStart("headers");
-    for (Map.Entry<String, String> entry : headers.entries()) {
-      generator.writeStartObject();
-      generator.writeStringField("name", entry.getKey());
-      generator.writeStringField("value", entry.getValue());
-      generator.writeEndObject();
+  private void writeHeaders(HttpHeaders headers, final boolean minimumOnly) throws IOException {
+    Predicate<Map.Entry<String, String>> excludeHeader = new Predicate<Map.Entry<String, String>>() {
+      @Override
+      public boolean apply(Map.Entry<String, String> input) {
+        String name = input.getKey();
+        return EXCLUDED_HEADERS.contains(name) || (minimumOnly && !HttpArchive.MINIMUM_RESPONSE_HEADERS.contains(name));
+      }
+    };
+
+    Iterator<Map.Entry<String, String>> it = FluentIterable.from(headers).filter(Predicates.not(excludeHeader)).iterator();
+    if (it.hasNext()) {
+      generator.writeArrayFieldStart("headers");
+      while (it.hasNext()) {
+        Map.Entry<String, String> entry = it.next();
+        generator.writeStartObject();
+        generator.writeStringField("name", entry.getKey());
+        generator.writeStringField("value", entry.getValue());
+        generator.writeEndObject();
+      }
+      generator.writeEndArray();
     }
-    generator.writeEndArray();
   }
 
   private void writeCookies(HttpHeaders headers) throws IOException {
-    if (headers.contains(HttpHeaders.Names.COOKIE)) {
+    if (lightweight) {
+      return;
+    }
+
+    if (headers.contains(Names.COOKIE)) {
       generator.writeArrayFieldStart("cookies");
-      Set<Cookie> cookies = CookieDecoder.decode(headers.get(HttpHeaders.Names.COOKIE));
+      Set<Cookie> cookies = CookieDecoder.decode(headers.get(Names.COOKIE));
       for (Cookie cookie : cookies) {
         generator.writeStartObject();
         generator.writeStringField("name", cookie.getName());
@@ -249,7 +292,7 @@ public class RequestWriter extends AbstractExecutionThreadService {
   private void writePostData(RecordPostRequest recordRequest) throws IOException {
     HttpHeaders headers = recordRequest.getRequest().headers();
     generator.writeObjectFieldStart("postData");
-    generator.writeStringField("mimeType", headers.get(HttpHeaders.Names.CONTENT_TYPE));
+    generator.writeStringField("mimeType", headers.get(Names.CONTENT_TYPE));
 
     if (!recordRequest.getContent().isEmpty()) {
       generator.writeStringField("text", recordRequest.getContent());

@@ -45,6 +45,8 @@ import static com.google.common.base.Preconditions.*;
  * If an object mapping based approach is desired, the browsermob project has some ready made classes:
  * <p/>
  * https://github.com/cburroughs/browsermob-proxy/tree/morestats/src/main/java/org/browsermob/core/har/
+ * <p/>
+ * TODO cut down on the amount of code duplication in this file
  *
  * @author Danny Thomas
  * @since 0.1
@@ -114,6 +116,7 @@ public class RequestReader extends AbstractExecutionThreadService {
     long timeReplayStartedNanos = System.nanoTime();
     long firstRequestTime = 0;
     long lastRequestTime;
+    HttpArchive.Creator creator = null;
 
     checkToken(parser.nextToken(), JsonToken.START_OBJECT);
     checkToken(parser.nextToken(), JsonToken.FIELD_NAME);
@@ -129,7 +132,10 @@ public class RequestReader extends AbstractExecutionThreadService {
           checkArgument("1.2".equals(version), "HAR version 1.2 required. Found %s");
           break;
         }
-        case "creator":
+        case "creator": {
+          creator = parseCreator();
+          break;
+        }
         case "browser": {
           skipObject();
           break;
@@ -141,7 +147,8 @@ public class RequestReader extends AbstractExecutionThreadService {
         case "entries": {
           checkArrayStart(parser.nextToken());
           while (JsonToken.END_ARRAY != parser.nextToken()) {
-            lastRequestTime = parseAndDispatchEntry(timeReplayStartedNanos, firstRequestTime);
+            boolean lightweight = null != creator && creator.getComment().contains("lightweight");
+            lastRequestTime = parseAndDispatchEntry(timeReplayStartedNanos, firstRequestTime, lightweight);
             if (0l == firstRequestTime) {
               firstRequestTime = lastRequestTime;
             }
@@ -159,7 +166,34 @@ public class RequestReader extends AbstractExecutionThreadService {
     }
   }
 
-  private long parseAndDispatchEntry(long timeReplayStartedNanos, long firstRequestTime) throws IOException {
+  private HttpArchive.Creator parseCreator() throws IOException {
+    checkObjectStart(parser.nextToken());
+
+    String name = "";
+    String version = "";
+    String comment = "";
+    while (JsonToken.END_OBJECT != parser.nextToken()) {
+      String fieldName = parser.getCurrentName();
+      switch (fieldName) {
+        case "name": {
+          name = getTextValue();
+          break;
+        }
+        case "version": {
+          version = getTextValue();
+          break;
+        }
+        case "comment": {
+          comment = getTextValue();
+          break;
+        }
+      }
+    }
+
+    return new HttpArchive.Creator(name, version, comment);
+  }
+
+  private long parseAndDispatchEntry(long timeReplayStartedNanos, long firstRequestTime, boolean lightweight) throws IOException {
     checkObjectStart(parser.getCurrentToken());
 
     ReplayRequest replayRequest = null;
@@ -184,7 +218,7 @@ public class RequestReader extends AbstractExecutionThreadService {
         }
         case "request": {
           checkState(0 != startedDateTime, "startedDateTime must come before the request");
-          replayRequest = parseRequest(startedDateTime);
+          replayRequest = parseRequest(startedDateTime, lightweight);
           break;
         }
         case "response": {
@@ -225,11 +259,11 @@ public class RequestReader extends AbstractExecutionThreadService {
     return startedDateTime;
   }
 
-  private ReplayRequest parseRequest(long startedDateTime) throws IOException {
+  private ReplayRequest parseRequest(long startedDateTime, boolean lightweight) throws IOException {
     checkObjectStart(parser.nextToken());
 
-    HttpVersion httpVersion = HttpVersion.HTTP_1_1;
-    HttpMethod method = HttpMethod.GET;
+    HttpVersion httpVersion = lightweight ? HttpArchive.DEFAULT_HTTP_VERSION : null;
+    HttpMethod method = lightweight ? HttpArchive.DEFAULT_METHOD : null;
     HttpHeaders headers = HttpHeaders.EMPTY_HEADERS;
     Set<Cookie> cookies = Collections.emptySet();
 
@@ -279,7 +313,21 @@ public class RequestReader extends AbstractExecutionThreadService {
       }
     }
 
+    if (lightweight) {
+      cookies = decodeCookies(headers, cookies);
+    }
+
     return new ReplayRequest(httpVersion, method, uri, postData, headers, cookies, uploadLocation, startedDateTime);
+  }
+
+  private Set<Cookie> decodeCookies(HttpHeaders headers, Set<Cookie> defaultCookies) {
+    checkState(defaultCookies.isEmpty(), "Cookies should not have been provided by a lightweight data source");
+    String cookie = headers.get(HttpHeaders.Names.COOKIE);
+    if (null != cookie) {
+      return CookieDecoder.decode(cookie);
+    }
+
+    return defaultCookies;
   }
 
   private HttpHeaders parseHeaders() throws IOException {

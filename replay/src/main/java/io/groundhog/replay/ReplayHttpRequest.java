@@ -41,7 +41,9 @@ public class ReplayHttpRequest implements HttpRequest {
     this.expectedStatus = checkNotNull(expectedStatus);
     this.userAgent = checkNotNull(userAgent);
     this.blocking = blocking;
-    checkState(blocking && userAgent.isPresent(), "A user agent must be present for a blocking request");
+    if (blocking) {
+      checkState(userAgent.isPresent(), "A user agent must be present for a blocking request");
+    }
   }
 
   @Override
