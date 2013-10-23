@@ -16,17 +16,11 @@
  */
 
 dependencies {
-  compile 'com.google.guava:guava:15.0',
-          'com.google.code.findbugs:jsr305:2.0.2',
-          'ch.qos.logback:logback-classic:1.0.13',
-          'io.netty:netty-all:4.0.11.Final',
-          'org.javassist:javassist:3.18.1-GA',
-          'com.fasterxml.jackson.core:jackson-core:2.2.3'
+  compile libraries.jsr305
+  compile libraries.inject
+  compile libraries.guava
+  compile libraries.slf4j
+  compile libraries.netty
 
-  compile ('de.undercouch:bson4jackson:2.2.0') {
-    exclude module: 'jackson-annotations'
-    exclude module: 'jackson-databind'
-  }
-
-  runtime 'org.codehaus.groovy:groovy:2.1.7'
+  testCompile libraries.testlibs
 }

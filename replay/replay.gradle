@@ -17,14 +17,17 @@
 
 apply plugin: 'application'
 
-mainClassName = 'io.groundhog.record.Record'
+mainClassName = 'io.groundhog.replay.Replay'
 applicationName = archivesBaseName
 
 dependencies {
   compile project(':core')
 
-  compile('org.littleshoot:littleproxy:1.0.0-beta2') {
-    exclude module: 'log4j'
-    exclude module: 'slf4j-log4j12'
-  }
+  compile libraries.groovy
+  compile libraries.logback
+  compile libraries.netty
+  compile libraries.jackson
+  compile libraries.jsoup
+
+  testCompile libraries.testlibs
 }
