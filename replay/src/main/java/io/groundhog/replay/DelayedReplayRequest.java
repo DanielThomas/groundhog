@@ -33,12 +33,12 @@ public class DelayedReplayRequest implements Delayed {
   // TODO make this configurable. This avoids requests at the very start of replay from piling on top on one another
   private static final int WARMUP_TIME = 250;
 
-  private final ReplayRequest request;
+  private final UserAgentRequest request;
   private final long startedDateTime;
   private final long timeReplayStartedNanos;
   private final long firstRequestTime;
 
-  public DelayedReplayRequest(ReplayRequest request, long startedDateTime, long timeReplayStartedNanos, long firstRequestTime) {
+  public DelayedReplayRequest(UserAgentRequest request, long startedDateTime, long timeReplayStartedNanos, long firstRequestTime) {
     this.request = checkNotNull(request);
     this.startedDateTime = startedDateTime + WARMUP_TIME;
     this.timeReplayStartedNanos = timeReplayStartedNanos;
@@ -73,7 +73,7 @@ public class DelayedReplayRequest implements Delayed {
     return firstRequestTime == 0 ? firstRequestTime : startedDateTime - firstRequestTime;
   }
 
-  public ReplayRequest getRequest() {
+  public UserAgentRequest getRequest() {
     return request;
   }
 

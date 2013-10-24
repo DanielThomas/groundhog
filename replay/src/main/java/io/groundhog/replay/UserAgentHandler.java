@@ -20,9 +20,9 @@ package io.groundhog.replay;
 import io.groundhog.base.HttpArchive;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.hash.HashCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
@@ -40,8 +40,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkState;
-
 /**
  * @author Danny Thomas
  * @since 0.1
@@ -57,6 +55,7 @@ public class UserAgentHandler extends ChannelDuplexHandler {
   private static final Set<String> OVERRIDE_POST_FIELDS = Sets.newHashSet("blackboard.platform.security.NonceUtil.nonce");
 
   private ReplayHttpRequest request;
+  private UserAgent userAgent;
   private HttpResponse response;
   private ByteBuf content;
   private Document document;
@@ -65,13 +64,19 @@ public class UserAgentHandler extends ChannelDuplexHandler {
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
     if (msg instanceof ReplayHttpRequest) {
       request = (ReplayHttpRequest) msg;
-      if (request.isBlocking()) {
-        HashCode userAgent = request.getUserAgent().get();
-        UserAgentStorage.block(userAgent);
-      }
+      userAgent = request.getUserAgent();
+      setRequestCookies();
     }
 
     super.write(ctx, msg, promise);
+  }
+
+  public void setRequestCookies() {
+    Set<Cookie> cookies = userAgent.getCookiesForUri(request.getUri());
+    String encodedCookies = ClientCookieEncoder.encode(cookies);
+    if (!encodedCookies.isEmpty()) {
+      request.headers().add(HttpHeaders.Names.COOKIE, encodedCookies);
+    }
   }
 
   @Override
@@ -90,38 +95,13 @@ public class UserAgentHandler extends ChannelDuplexHandler {
   }
 
   private void parseCookies() {
-    Optional<HashCode> userAgent = request.getUserAgent();
-    if (userAgent.isPresent()) {
-      HttpHeaders headers = response.headers();
-      if (headers.contains(HttpHeaders.Names.SET_COOKIE)) {
-        List<String> setCookieHeaders = response.headers().getAll(HttpHeaders.Names.SET_COOKIE);
-        for (String value : setCookieHeaders) {
-          Set<Cookie> cookies = CookieDecoder.decode(value);
-          checkState(cookies.size() == 1, "Only one cookie should be decoded");
-          Cookie cookie = cookies.iterator().next();
-          UserAgentStorage.setCookie(userAgent.get(), cookie);
-        }
-      }
-    }
-    unblock();
-  }
-
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    // FIXME is this enough to make sure we don't have dangling locks?
-    unblock();
-    super.exceptionCaught(ctx, cause);
-  }
-
-  private void unblock() {
-    if (null != request && request.isBlocking()) {
-      UserAgentStorage.unblock(request.getUserAgent().get());
-    }
+    HttpHeaders headers = response.headers();
+    FluentIterable<Cookie> cookies = FluentIterable.from(headers.getAll(HttpHeaders.Names.SET_COOKIE)).transform(UserAgentRequest.HEADER_TO_COOKIE);
+    userAgent.setCookies(cookies.toList());
   }
 
   private void parseDocument(HttpContent httpContent) {
-    Optional<HashCode> userAgent = request.getUserAgent();
-    if (userAgent.isPresent() && HttpMethod.GET == request.getMethod() && hasHtmlContentType(response)) {
+    if (userAgent.isPersistent() && HttpMethod.GET == request.getMethod() && hasHtmlContentType(response)) {
       ByteBuf byteBuf = httpContent.content().duplicate();
       if (null == content) {
         content = Unpooled.buffer();
@@ -144,16 +124,17 @@ public class UserAgentHandler extends ChannelDuplexHandler {
   }
 
   private void scrapeFormFields() {
-    Optional<HashCode> userAgent = request.getUserAgent();
-    if (userAgent.isPresent() && null != document) {
+    if (userAgent.isPersistent() && null != document) {
       Elements elements = document.select("form input[type=hidden]");
+      List<HttpArchive.Param> params = Lists.newArrayList();
       for (Element element : elements) {
         Attributes attributes = element.attributes();
         if (OVERRIDE_POST_FIELDS.contains(attributes.get("name"))) {
           HttpArchive.Param param = new HttpArchive.Param(attributes.get("name"), attributes.get("value"));
-          UserAgentStorage.setOverridePostValue(userAgent.get(), param);
+          params.add(param);
         }
       }
+      userAgent.setOverridePostValues(params);
     }
   }
 

@@ -18,6 +18,8 @@
 package io.groundhog.replay;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.hash.HashCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
@@ -47,7 +49,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
   private ReplayHttpRequest request;
   private HttpResponse response;
-  private HttpResponseStatus expectedStatus;
+  private HttpResponse expectedResponse;
   private long started;
   private final AtomicInteger bytesRead = new AtomicInteger();
 
@@ -83,7 +85,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
     if (msg instanceof ReplayHttpRequest) {
       started = System.nanoTime();
       request = (ReplayHttpRequest) msg;
-      expectedStatus = request.getExpectedStatus();
+      expectedResponse = request.getExpectedResponse();
     } else if (msg instanceof HttpRequest) {
       throw new IllegalStateException("A request was handled that did not extend ReplayHttpRequest: " + msg.getClass());
     }
@@ -99,13 +101,15 @@ public class ReplayHandler extends ChannelDuplexHandler {
       long elapsed = System.nanoTime() - started;
       long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(elapsed);
       double elapsedSeconds = elapsedMillis / 1000.0;
-      String session = request.getUserAgent().isPresent() ? request.getUserAgent().get().toString() : "-";
+      Optional<HashCode> uaKey = request.getUserAgent().getKey();
+      String session = uaKey.isPresent() ? uaKey.get().toString() : "-";
 
       HttpResponseStatus actualStatus = response.getStatus();
 
-      // FIXME this doesn't work if the request doesn't receive a response
+      // FIXME this doesn't work if the request doesn't receive a response, needs to be handled completely differently
       String label = request.headers().get(TRANSACTION_LABEL_HEADER);
       label = null == label ? request.getUri() : label;
+      HttpResponseStatus expectedStatus = expectedResponse.getStatus();
       boolean success = expectedStatus.equals(actualStatus);
       List<Serializable> resultValues = Arrays.asList(System.currentTimeMillis(), elapsedMillis, label,
           actualStatus.code(), actualStatus.reasonPhrase(), Thread.currentThread().getName(), "text", success,

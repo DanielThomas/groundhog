@@ -196,7 +196,7 @@ public class RequestReader extends AbstractExecutionThreadService {
   private long parseAndDispatchEntry(long timeReplayStartedNanos, long firstRequestTime, boolean lightweight) throws IOException {
     checkObjectStart(parser.getCurrentToken());
 
-    ReplayRequest replayRequest = null;
+    UserAgentRequest userAgentRequest = null;
     HttpResponse expectedResponse = null;
     long startedDateTime = 0;
 
@@ -218,7 +218,7 @@ public class RequestReader extends AbstractExecutionThreadService {
         }
         case "request": {
           checkState(0 != startedDateTime, "startedDateTime must come before the request");
-          replayRequest = parseRequest(startedDateTime, lightweight);
+          userAgentRequest = parseRequest(startedDateTime, lightweight);
           break;
         }
         case "response": {
@@ -243,12 +243,12 @@ public class RequestReader extends AbstractExecutionThreadService {
       }
     }
 
-    checkArgument(null != replayRequest, "A replayRequest was not parsed for the entry. Entry ending %s", parser.getCurrentLocation());
+    checkArgument(null != userAgentRequest, "A userAgentRequest was not parsed for the entry. Entry ending %s", parser.getCurrentLocation());
     checkArgument(null != expectedResponse, "An expected response was not parsed for the entry. Entry ending %s", parser.getCurrentLocation());
     checkArgument(0 != startedDateTime, "A startedDateTime was not parsed for the entry. Entry ending %s", parser.getCurrentLocation());
 
-    replayRequest = new ReplayRequest(replayRequest, expectedResponse);
-    DelayedReplayRequest delayedRequest = new DelayedReplayRequest(replayRequest, startedDateTime, timeReplayStartedNanos,
+    userAgentRequest = new UserAgentRequest(userAgentRequest, expectedResponse);
+    DelayedReplayRequest delayedRequest = new DelayedReplayRequest(userAgentRequest, startedDateTime, timeReplayStartedNanos,
         firstRequestTime);
     try {
       dispatcher.queue(delayedRequest);
@@ -259,7 +259,7 @@ public class RequestReader extends AbstractExecutionThreadService {
     return startedDateTime;
   }
 
-  private ReplayRequest parseRequest(long startedDateTime, boolean lightweight) throws IOException {
+  private UserAgentRequest parseRequest(long startedDateTime, boolean lightweight) throws IOException {
     checkObjectStart(parser.nextToken());
 
     HttpVersion httpVersion = lightweight ? HttpArchive.DEFAULT_HTTP_VERSION : null;
@@ -317,7 +317,7 @@ public class RequestReader extends AbstractExecutionThreadService {
       cookies = decodeCookies(headers, cookies);
     }
 
-    return new ReplayRequest(httpVersion, method, uri, postData, headers, cookies, uploadLocation, startedDateTime);
+    return new UserAgentRequest(httpVersion, method, uri, postData, headers, cookies, uploadLocation, startedDateTime);
   }
 
   private Set<Cookie> decodeCookies(HttpHeaders headers, Set<Cookie> defaultCookies) {

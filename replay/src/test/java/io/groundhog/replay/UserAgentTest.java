@@ -17,9 +17,12 @@
 
 package io.groundhog.replay;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
+import com.google.common.hash.Hashing;
 import io.netty.handler.codec.http.Cookie;
 import io.netty.handler.codec.http.DefaultCookie;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -30,16 +33,24 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
- * Tests for {@link UserAgentStorage}.
+ * Tests for {@link UserAgent}.
  *
  * @author Danny Thomas
  * @since 0.1
  */
-public class UserAgentStorageTest {
+public class UserAgentTest {
+
+  private UserAgent userAgent;
+
+  @Before
+  public void createUA() {
+    userAgent = new UserAgent(Hashing.goodFastHash(32).hashString("test", Charsets.UTF_8));
+  }
 
   @Test
   public void getCookiesForUrl_FilteredAndOrderedCorrectly() {
     Cookie noPath1 = getCookie("cookie1");
+    Cookie noPath1DifferentValue = new DefaultCookie("cookie1", "newvalue");
     Cookie noPath2 = getCookie("cookie2");
     Cookie noPath3 = getCookie("cookie3");
 
@@ -51,11 +62,12 @@ public class UserAgentStorageTest {
     nonmatchingPath.setPath("/anotherpath");
 
 
-    Set<Cookie> cookies = Sets.newLinkedHashSet(Arrays.asList(noPath3, noPath1, rootPath, matchingPath, noPath2, nonmatchingPath));
-    Set<Cookie> cookiesForUri = UserAgentStorage.getCookiesForUri("/test/path", cookies);
+    Set<Cookie> cookies = Sets.newLinkedHashSet(Arrays.asList(noPath3, noPath1, noPath1DifferentValue, rootPath, matchingPath, noPath2, nonmatchingPath));
+    userAgent.setCookies(cookies);
+    Set<Cookie> cookiesForUri = userAgent.getCookiesForUri("/test/path");
 
     assertThat(cookiesForUri.size(), equalTo(5));
-    assertThat(cookiesForUri, contains(matchingPath, rootPath, noPath3, noPath1, noPath2));
+    assertThat(cookiesForUri, contains(matchingPath, rootPath, noPath3, noPath1DifferentValue, noPath2));
   }
 
   private Cookie getCookie(String s) {

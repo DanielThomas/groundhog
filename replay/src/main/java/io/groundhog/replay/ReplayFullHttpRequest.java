@@ -17,8 +17,6 @@
 
 package io.groundhog.replay;
 
-import com.google.common.base.Optional;
-import com.google.common.hash.HashCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 
@@ -28,9 +26,8 @@ import io.netty.handler.codec.http.*;
  */
 public class ReplayFullHttpRequest extends ReplayHttpRequest implements FullHttpRequest {
 
-  public ReplayFullHttpRequest(FullHttpRequest request, HttpResponseStatus expectedStatus, Optional<HashCode> userAgent,
-                               boolean blocking) {
-    super(request, expectedStatus, userAgent, blocking);
+  public ReplayFullHttpRequest(FullHttpRequest request, HttpResponse expectedResponse, UserAgent userAgent, boolean blocking) {
+    super(request, expectedResponse, userAgent, blocking);
   }
 
 

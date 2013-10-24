@@ -31,19 +31,15 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class ReplayHttpRequest implements HttpRequest {
   protected final HttpRequest request;
-  private final HttpResponseStatus expectedStatus;
-  private final Optional<HashCode> userAgent;
+  private final HttpResponse expectedResponse;
+  private final UserAgent userAgent;
   private final boolean blocking;
 
-  public ReplayHttpRequest(HttpRequest request, HttpResponseStatus expectedStatus, Optional<HashCode> userAgent,
-                           boolean blocking) {
+  public ReplayHttpRequest(HttpRequest request, HttpResponse expectedResponse, UserAgent userAgent, boolean blocking) {
     this.request = checkNotNull(request);
-    this.expectedStatus = checkNotNull(expectedStatus);
+    this.expectedResponse = checkNotNull(expectedResponse);
     this.userAgent = checkNotNull(userAgent);
     this.blocking = blocking;
-    if (blocking) {
-      checkState(userAgent.isPresent(), "A user agent must be present for a blocking request");
-    }
   }
 
   @Override
@@ -99,11 +95,11 @@ public class ReplayHttpRequest implements HttpRequest {
     request.setDecoderResult(result);
   }
 
-  public HttpResponseStatus getExpectedStatus() {
-    return expectedStatus;
+  public HttpResponse getExpectedResponse() {
+    return expectedResponse;
   }
 
-  public Optional<HashCode> getUserAgent() {
+  public UserAgent getUserAgent() {
     return userAgent;
   }
 

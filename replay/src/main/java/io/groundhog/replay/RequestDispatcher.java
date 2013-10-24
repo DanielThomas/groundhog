@@ -81,7 +81,7 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
 
         LOG.debug("Adding request to channel {}", delayedRequest);
         ChannelFuture future = bootstrap.connect(hostname, port);
-        ReplayRequest request = delayedRequest.getRequest();
+        UserAgentRequest request = delayedRequest.getRequest();
         future.addListener(request);
         channelGroup.add(future.channel());
       }

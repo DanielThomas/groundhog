@@ -20,6 +20,9 @@ package io.groundhog.replay;
 import io.groundhog.base.HttpArchive;
 
 import com.google.common.base.*;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.FluentIterable;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
@@ -44,11 +47,10 @@ import static com.google.common.base.Preconditions.*;
  * @author Danny Thomas
  * @since 0.1
  */
-public class ReplayRequest implements ChannelFutureListener {
-  private static final Logger LOG = LoggerFactory.getLogger(ReplayRequest.class);
+public class UserAgentRequest implements ChannelFutureListener {
+  private static final Logger LOG = LoggerFactory.getLogger(UserAgentRequest.class);
 
   private static final String CONTAINER_SESSION_COOKIE_NAME = "JSESSIONID";
-
   private static final String APPLICATION_SESSION_COOKIE_NAME = "session_id";
 
   private static final Predicate<Cookie> IS_APPLICATION_SESSION_COOKIE = new Predicate<Cookie>() {
@@ -65,7 +67,7 @@ public class ReplayRequest implements ChannelFutureListener {
     }
   };
 
-  private static final Function<String, Cookie> HEADER_TO_COOKIE = new Function<String, Cookie>() {
+  public static final Function<String, Cookie> HEADER_TO_COOKIE = new Function<String, Cookie>() {
     @Override
     public Cookie apply(String header) {
       Iterator<Cookie> iterator = CookieDecoder.decode(header).iterator();
@@ -74,6 +76,18 @@ public class ReplayRequest implements ChannelFutureListener {
       return cookie;
     }
   };
+
+  private static final LoadingCache<HashCode, UserAgent> UA;
+
+  static {
+    CacheLoader<HashCode, UserAgent> loader = new CacheLoader<HashCode, UserAgent>() {
+      @Override
+      public UserAgent load(HashCode key) throws Exception {
+        return new UserAgent(key);
+      }
+    };
+    UA = CacheBuilder.newBuilder().build(loader);
+  }
 
   private final HttpVersion httpVersion;
   private final HttpMethod method;
@@ -85,8 +99,8 @@ public class ReplayRequest implements ChannelFutureListener {
   private final long startedDateTime;
   private final Optional<HttpResponse> expectedResponse;
 
-  public ReplayRequest(HttpVersion httpVersion, HttpMethod method, String uri, HttpArchive.PostData postData, HttpHeaders headers,
-                       Set<Cookie> cookies, File uploadLocation, long startedDateTime) {
+  public UserAgentRequest(HttpVersion httpVersion, HttpMethod method, String uri, HttpArchive.PostData postData, HttpHeaders headers,
+                          Set<Cookie> cookies, File uploadLocation, long startedDateTime) {
     this.httpVersion = checkNotNull(httpVersion);
     this.method = checkNotNull(method);
     this.uri = checkNotNull(uri);
@@ -98,7 +112,7 @@ public class ReplayRequest implements ChannelFutureListener {
     this.expectedResponse = Optional.absent();
   }
 
-  public ReplayRequest(ReplayRequest request, HttpResponse expectedResponse) {
+  public UserAgentRequest(UserAgentRequest request, HttpResponse expectedResponse) {
     this.httpVersion = request.httpVersion;
     this.method = request.method;
     this.uri = request.uri;
@@ -122,9 +136,7 @@ public class ReplayRequest implements ChannelFutureListener {
     HttpRequest request = createRequest(httpVersion, method, uri);
     setHeaders(request);
 
-    Optional<HashCode> userAgent = getUserAgent();
-    setCookies(request, userAgent);
-
+    UserAgent userAgent = getUserAgent();
     HttpPostRequestEncoder encoder = null;
     if (null != postData) {
       String mimeType = postData.getMimeType();
@@ -136,12 +148,12 @@ public class ReplayRequest implements ChannelFutureListener {
       }
     }
 
-    boolean blocking = shouldRequestBlock();
-    HttpResponseStatus expectedStatus = expectedResponse.get().getStatus();
+    HttpResponse expectedResponse = this.expectedResponse.get();
+    boolean blocking = getSetSessionCookie(expectedResponse).isPresent();
     if (request instanceof FullHttpRequest) {
-      request = new ReplayFullHttpRequest((FullHttpRequest) request, expectedStatus, userAgent, blocking);
+      request = new ReplayFullHttpRequest((FullHttpRequest) request, expectedResponse, userAgent, blocking);
     } else {
-      request = new ReplayHttpRequest(request, expectedStatus, userAgent, blocking);
+      request = new ReplayHttpRequest(request, expectedResponse, userAgent, blocking);
     }
 
     Channel channel = future.channel();
@@ -153,16 +165,7 @@ public class ReplayRequest implements ChannelFutureListener {
     }
   }
 
-  /**
-   * Indicates if a request should block others from the same user agent. Deals with timing issues caused by Set-Cookie
-   * responses being processed just after new requests are dispatched. That shouldn't be a problem for normal workloads,
-   * it's only been observed in JMeter recordings.
-   */
-  private boolean shouldRequestBlock() {
-    return getSetSessionCookie(expectedResponse.get()).isPresent();
-  }
-
-  private HttpRequest preparePostRequest(HttpRequest request, Optional<HashCode> userAgent, HttpPostRequestEncoder encoder) throws HttpPostRequestEncoder.ErrorDataEncoderException {
+  private HttpRequest preparePostRequest(HttpRequest request, UserAgent userAgent, HttpPostRequestEncoder encoder) throws HttpPostRequestEncoder.ErrorDataEncoderException {
     List<HttpArchive.Param> params = getPostParamsWithOverrides(postData.getParams(), userAgent);
     for (HttpArchive.Param param : params) {
       if (param.getFileName().isEmpty()) {
@@ -175,7 +178,7 @@ public class ReplayRequest implements ChannelFutureListener {
     return params.isEmpty() ? request : encoder.finalizeRequest();
   }
 
-  private HttpRequest createTextPlainRequest(HttpRequest request, Optional<HashCode> userAgent) {
+  private HttpRequest createTextPlainRequest(HttpRequest request, UserAgent userAgent) {
     checkArgument(!postData.getText().isEmpty(), "Text data expected for text/plain");
     String text = updateDwrSession(request, postData.getText(), userAgent);
     request = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri(),
@@ -184,31 +187,31 @@ public class ReplayRequest implements ChannelFutureListener {
     return request;
   }
 
-  // TODO make the user agent a concrete class, rather than just using a hash of the session cookie
-  private Optional<HashCode> getUserAgent() {
+  private UserAgent getUserAgent() {
     Optional<Cookie> sessionCookie = getSessionCookie();
     Optional<Cookie> setSessionCookie = getSetSessionCookie(expectedResponse.get());
 
-    Optional<HashCode> userAgent = Optional.absent();
+    Optional<HashCode> cacheKey = Optional.absent();
     if (sessionCookie.isPresent()) {
       HashCode currentHash = getCookieValueHash(sessionCookie.get());
       if (setSessionCookie.isPresent()) {
         HashCode newHash = getCookieValueHash(setSessionCookie.get());
         if (!currentHash.equals(newHash)) {
           LOG.debug("Detected user agent cookie hash change in replay data: {} -> {}", currentHash, newHash);
-          UserAgentStorage.addSynonym(currentHash, newHash);
+          UA.put(newHash, UA.getUnchecked(currentHash));
+          UA.invalidate(currentHash);
           currentHash = newHash;
         }
       }
-      userAgent = Optional.of(currentHash);
+      cacheKey = Optional.of(currentHash);
     } else if (setSessionCookie.isPresent()) {
       HashCode newUserAgent = getCookieValueHash(setSessionCookie.get());
       LOG.debug("Detected new user agent {}", newUserAgent);
-      userAgent = Optional.of(newUserAgent);
+      cacheKey = Optional.of(newUserAgent);
     }
 
-    LOG.debug("Generated {} for session {}, set session {}", userAgent, sessionCookie, setSessionCookie);
-    return userAgent;
+    LOG.debug("Generated {} for session {}, set session {}", cacheKey, sessionCookie, setSessionCookie);
+    return cacheKey.isPresent() ? UA.getUnchecked(cacheKey.get()) : new UserAgent();
   }
 
   private Optional<Cookie> getSessionCookie() {
@@ -231,28 +234,16 @@ public class ReplayRequest implements ChannelFutureListener {
     return new DefaultHttpRequest(httpVersion, method, uri);
   }
 
-  public void setCookies(HttpRequest request, Optional<HashCode> userAgent) {
-    if (userAgent.isPresent()) {
-      Set<Cookie> cookies = UserAgentStorage.getCookiesForUri(userAgent.get(), request.getUri());
-      String encodedCookies = ClientCookieEncoder.encode(cookies);
-      if (!encodedCookies.isEmpty()) {
-        request.headers().add(HttpHeaders.Names.COOKIE, encodedCookies);
-      }
-    }
-  }
-
-  private List<HttpArchive.Param> getPostParamsWithOverrides(List<HttpArchive.Param> params, Optional<HashCode> userAgent) {
-    if (userAgent.isPresent()) {
-      ListIterator<HttpArchive.Param> it = params.listIterator();
-      while (it.hasNext()) {
-        HttpArchive.Param param = it.next();
-        String name = param.getName();
-        Optional<HttpArchive.Param> override = UserAgentStorage.getOverrideParam(userAgent.get(), name);
-        if (override.isPresent()) {
-          HttpArchive.Param overrideParam = override.get();
-          LOG.info("Overriding {} with {}", param, overrideParam);
-          it.set(overrideParam);
-        }
+  private List<HttpArchive.Param> getPostParamsWithOverrides(List<HttpArchive.Param> params, UserAgent userAgent) {
+    ListIterator<HttpArchive.Param> it = params.listIterator();
+    while (it.hasNext()) {
+      HttpArchive.Param param = it.next();
+      String name = param.getName();
+      Optional<HttpArchive.Param> override = userAgent.getOverrideParam(name);
+      if (override.isPresent()) {
+        HttpArchive.Param overrideParam = override.get();
+        LOG.info("Overriding {} with {}", param, overrideParam);
+        it.set(overrideParam);
       }
     }
 
@@ -277,18 +268,18 @@ public class ReplayRequest implements ChannelFutureListener {
    * However, dynamic sessions would need to be handled in UserAgentHandler, scraping the js resources per-session for the
    * origScriptSessionId and sessionCookieName.
    */
-  private String updateDwrSession(HttpRequest request, String text, Optional<HashCode> userAgent) {
+  private String updateDwrSession(HttpRequest request, String text, UserAgent userAgent) {
     if (request.getUri().endsWith(".dwr")) {
-      if (userAgent.isPresent()) {
-        Set<Cookie> cookies = UserAgentStorage.getCookiesForUri(userAgent.get(), request.getUri());
+      if (userAgent.isPersistent()) {
+        Set<Cookie> cookies = userAgent.getCookiesForUri(request.getUri());
         Optional<Cookie> cookie = FluentIterable.from(cookies).filter(IS_CONTAINER_SESSION_COOKIE).first();
         if (cookie.isPresent()) {
           return text.replaceFirst("httpSessionId=.*", "httpSessionId=" + cookie.get().getValue());
         } else {
-          LOG.warn("Could not update DWR request content. No container session cookie found for session {}", userAgent.get());
+          LOG.warn("Could not update DWR request content. No container session cookie found for session {}", userAgent);
         }
       } else {
-        LOG.info("Unable to update DWR request content for an anonymous session");
+        LOG.info("Unable to update DWR request content for an non-persistent user agent");
       }
     }
 
