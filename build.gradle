@@ -30,6 +30,7 @@ allprojects {
 
 subprojects {
   apply plugin: 'java'
+  apply plugin: 'groovy'
   apply plugin: 'errorprone'
   apply plugin: 'project-report'
 

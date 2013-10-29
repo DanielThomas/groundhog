@@ -15,10 +15,6 @@
  *
  */
 
-
-
-
-
 allprojects {
   apply plugin: 'idea'
 }
@@ -28,8 +24,6 @@ idea {
     def javaTarget = '1.7'
     jdkName = javaTarget
     languageLevel = javaTarget
-
-    wildcards = ['!?*.java']
 
     ipr {
       withXml { provider ->

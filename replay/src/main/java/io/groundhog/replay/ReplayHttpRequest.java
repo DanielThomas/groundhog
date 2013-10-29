@@ -17,13 +17,10 @@
 
 package io.groundhog.replay;
 
-import com.google.common.base.Optional;
-import com.google.common.hash.HashCode;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @author Danny Thomas

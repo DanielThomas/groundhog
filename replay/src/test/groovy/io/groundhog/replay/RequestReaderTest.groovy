@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   whttp://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,15 +15,14 @@
  *
  */
 
-package io.groundhog.base;
+package io.groundhog.replay
 
-import com.google.common.testing.AbstractPackageSanityTests;
-
+import spock.lang.Specification
 /**
- * Package sanity tests for {@link io.groundhog.base}.
+ * Tests for {@link RequestReader}.
  *
  * @author Danny Thomas
  * @since 0.1
  */
-public class PackageSanityTest extends AbstractPackageSanityTests {
+class RequestReaderTest extends Specification {
 }

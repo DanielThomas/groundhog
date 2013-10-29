@@ -19,6 +19,7 @@ dependencies {
   compile libraries.jsr305
   compile libraries.inject
   compile libraries.guava
+  compile libraries.groovy
   compile libraries.slf4j
   compile libraries.netty
 

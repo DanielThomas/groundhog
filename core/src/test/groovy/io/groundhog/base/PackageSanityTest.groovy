@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   whttp://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,33 +15,15 @@
  *
  */
 
-package io.groundhog.replay;
+package io.groundhog.base;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.File;
-
-import static org.mockito.Mockito.mock;
+import com.google.common.testing.AbstractPackageSanityTests;
 
 /**
- * Tests for {@link io.groundhog.replay.RequestReader}.
+ * Package sanity tests for {@link io.groundhog.base}.
  *
  * @author Danny Thomas
  * @since 0.1
  */
-public class RequestReaderTest {
-  private RequestReader reader;
-  private RequestDispatcher dispatcher;
-
-  @Before
-  public void createReader() {
-    dispatcher = mock(RequestDispatcher.class);
-    reader = new RequestReader(getClass().getResourceAsStream("/github.com.har"), dispatcher, new File(""));
-  }
-
-  @Test
-  public void read() throws InterruptedException {
-  }
-
+class PackageSanityTest extends AbstractPackageSanityTests {
 }
