@@ -242,7 +242,7 @@ public class UserAgentRequest implements ChannelFutureListener {
       Optional<HttpArchive.Param> override = userAgent.getOverrideParam(name);
       if (override.isPresent()) {
         HttpArchive.Param overrideParam = override.get();
-        LOG.info("Overriding {} with {}", param, overrideParam);
+        LOG.debug("Overriding {} with {}", param, overrideParam);
         it.set(overrideParam);
       }
     }
@@ -279,7 +279,7 @@ public class UserAgentRequest implements ChannelFutureListener {
           LOG.warn("Could not update DWR request content. No container session cookie found for session {}", userAgent);
         }
       } else {
-        LOG.info("Unable to update DWR request content for an non-persistent user agent");
+        LOG.debug("Unable to update DWR request content for an non-persistent user agent");
       }
     }
 
