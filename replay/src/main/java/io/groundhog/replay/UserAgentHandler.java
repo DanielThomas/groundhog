@@ -83,7 +83,9 @@ public class UserAgentHandler extends ChannelDuplexHandler {
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     if (msg instanceof HttpResponse) {
       response = (HttpResponse) msg;
-      parseCookies();
+      if (userAgent.isPersistent()) {
+        parseCookies();
+      }
     } else if (msg instanceof HttpContent) {
       parseDocument((HttpContent) msg);
       if (msg instanceof LastHttpContent) {
