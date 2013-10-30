@@ -25,6 +25,8 @@ idea {
     jdkName = javaTarget
     languageLevel = javaTarget
 
+    wildcards += 'logback.groovy'
+
     ipr {
       withXml { provider ->
         def node = provider.asNode()
