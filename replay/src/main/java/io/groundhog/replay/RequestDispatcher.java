@@ -60,6 +60,7 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
   }
 
   public void queue(DelayedReplayRequest request) throws InterruptedException {
+    checkNotNull(request);
     checkState(isRunning(), "The dispatcher is not running");
     queue.put(request);
   }

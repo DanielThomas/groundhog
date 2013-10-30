@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author Danny Thomas
  * @since 0.1
@@ -54,8 +56,8 @@ public class ReplayHandler extends ChannelDuplexHandler {
   private final AtomicInteger bytesRead = new AtomicInteger();
 
   public ReplayHandler(ChannelPipeline pipeline, Writer resultsWriter) throws Exception {
-    initPipeline(pipeline, false);
-    this.resultsWriter = resultsWriter;
+    initPipeline(checkNotNull(pipeline), false);
+    this.resultsWriter = checkNotNull(resultsWriter);
   }
 
   private void initPipeline(ChannelPipeline p, boolean ssl) throws Exception {
@@ -82,6 +84,9 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    checkNotNull(ctx);
+    checkNotNull(msg);
+    checkNotNull(promise);
     if (msg instanceof ReplayHttpRequest) {
       started = System.nanoTime();
       request = (ReplayHttpRequest) msg;
@@ -95,6 +100,8 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    checkNotNull(ctx);
+    checkNotNull(msg);
     if (msg instanceof HttpResponse) {
       response = (HttpResponse) msg;
     } else if (msg instanceof LastHttpContent) {
@@ -134,6 +141,8 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    checkNotNull(ctx);
+    checkNotNull(cause);
     LOG.error("Caught exception in handler", cause);
     ctx.close();
   }

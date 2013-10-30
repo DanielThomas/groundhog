@@ -71,6 +71,7 @@ public class RecordHttpRequestFilter implements HttpFilters {
 
   @Override
   public HttpResponse requestPre(HttpObject httpObject) {
+    checkNotNull(httpObject);
     try {
       if (httpObject instanceof HttpRequest) {
         startedDateTime = System.currentTimeMillis();
@@ -127,11 +128,13 @@ public class RecordHttpRequestFilter implements HttpFilters {
 
   @Override
   public HttpResponse requestPost(HttpObject httpObject) {
+    checkNotNull(httpObject);
     return null;
   }
 
   @Override
   public void responsePre(HttpObject httpObject) {
+    checkNotNull(httpObject);
     if (httpObject instanceof HttpResponse) {
       HttpResponse response = (HttpResponse) httpObject;
       HostAndPort hostAndPort = HttpRequests.identifyHostAndPort(request);
@@ -151,6 +154,7 @@ public class RecordHttpRequestFilter implements HttpFilters {
 
   @Override
   public void responsePost(HttpObject httpObject) {
+    checkNotNull(httpObject);
   }
 
   private void readAvailableData() {

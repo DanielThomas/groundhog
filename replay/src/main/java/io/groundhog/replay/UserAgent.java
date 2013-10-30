@@ -38,8 +38,9 @@ public class UserAgent {
   }
 
   public void setCookies(Collection<Cookie> cookies) {
+    checkNotNull(cookies);
     checkPersistent();
-    synchronized (cookies) {
+    synchronized (this.cookies) {
       for (Cookie cookie : cookies) {
         this.cookies.remove(cookie);
         this.cookies.add(cookie);
@@ -48,6 +49,7 @@ public class UserAgent {
   }
 
   public Set<Cookie> getCookiesForUri(String uri) {
+    checkNotNull(uri);
     synchronized (cookies) {
       CookiePathPredicate predicate = new CookiePathPredicate(uri);
       // Temporary list because FluentIterable.toSortedSet considers compare == 0 to be duplicates
@@ -70,6 +72,7 @@ public class UserAgent {
   };
 
   public void setOverridePostValues(Collection<HttpArchive.Param> params) {
+    checkNotNull(params);
     checkPersistent();
     synchronized (postParamOverrides) {
       for (HttpArchive.Param param : params) {
@@ -79,6 +82,7 @@ public class UserAgent {
   }
 
   public Optional<HttpArchive.Param> getOverrideParam(String name) {
+    checkNotNull(name);
     synchronized (postParamOverrides) {
       return Optional.fromNullable(postParamOverrides.get(name));
     }

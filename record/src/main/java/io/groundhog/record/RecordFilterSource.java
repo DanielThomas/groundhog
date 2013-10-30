@@ -40,6 +40,7 @@ public class RecordFilterSource implements HttpFiltersSource {
 
   @Override
   public HttpFilters filterRequest(HttpRequest originalRequest) {
+    checkNotNull(originalRequest);
     return new RecordHttpRequestFilter(requestWriter, uploadLocation);
   }
 

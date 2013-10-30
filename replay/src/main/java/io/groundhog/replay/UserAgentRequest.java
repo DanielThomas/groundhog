@@ -104,7 +104,7 @@ public class UserAgentRequest implements ChannelFutureListener {
     this.httpVersion = checkNotNull(httpVersion);
     this.method = checkNotNull(method);
     this.uri = checkNotNull(uri);
-    this.postData = postData;
+    this.postData = checkNotNull(postData);
     this.headers = checkNotNull(headers);
     this.cookies = checkNotNull(cookies);
     this.uploadLocation = checkNotNull(uploadLocation);
@@ -133,6 +133,7 @@ public class UserAgentRequest implements ChannelFutureListener {
 
   @Override
   public void operationComplete(ChannelFuture future) throws Exception {
+    checkNotNull(future);
     HttpRequest request = createRequest(httpVersion, method, uri);
     setHeaders(request);
 

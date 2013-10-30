@@ -31,7 +31,10 @@ import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -59,18 +62,14 @@ public class RequestReader extends AbstractExecutionThreadService {
   private static final Set<String> SKIPPED_REQUEST_FIELDS = ImmutableSortedSet.of("headersSize", "bodySize", "comment");
 
   private final RequestDispatcher dispatcher;
-  private final InputStream inputStream;
+  private final File recordingFile;
   private final SimpleDateFormat iso8601Format;
   private final File uploadLocation;
 
   private JsonParser parser;
 
   public RequestReader(File recordingFile, RequestDispatcher dispatcher, File uploadLocation) throws FileNotFoundException {
-    this(new FileInputStream(recordingFile), dispatcher, uploadLocation);
-  }
-
-  public RequestReader(InputStream inputStream, RequestDispatcher dispatcher, File uploadLocation) {
-    this.inputStream = checkNotNull(inputStream);
+    this.recordingFile = checkNotNull(recordingFile);
     this.dispatcher = checkNotNull(dispatcher);
     this.uploadLocation = checkNotNull(uploadLocation);
 
@@ -89,7 +88,7 @@ public class RequestReader extends AbstractExecutionThreadService {
     LOG.info("Reader starting up");
 
     JsonFactory jsonFactory = new JsonFactory();
-    parser = jsonFactory.createParser(inputStream);
+    parser = jsonFactory.createParser(new FileInputStream(recordingFile));
 
     dispatcher.startAsync();
     dispatcher.awaitRunning();

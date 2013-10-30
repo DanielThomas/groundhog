@@ -34,7 +34,9 @@ import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -61,7 +63,7 @@ public class RequestWriter extends AbstractExecutionThreadService {
   private static final String HTTP_SCHEME = "http";
   private static final String HTTPS_SCHEME = "https";
 
-  private final OutputStream outputStream;
+  private final File recordingFile;
   private final LinkedBlockingQueue<RecordRequest> requestQueue;
   private final boolean lightweight;
   private final boolean includeContent;
@@ -70,18 +72,15 @@ public class RequestWriter extends AbstractExecutionThreadService {
 
   private JsonGenerator generator;
 
-  public RequestWriter(File recordingFile, boolean lightweight, boolean includeContent, boolean pretty)
-      throws FileNotFoundException {
-    this(new FileOutputStream(recordingFile), lightweight, includeContent, pretty);
-  }
-
-  public RequestWriter(OutputStream outputStream, boolean lightweight, boolean includeContent, boolean pretty) {
-    this.outputStream = outputStream;
+  public RequestWriter(File recordingFile, boolean lightweight, boolean includeContent, boolean pretty) {
+    this.recordingFile = checkNotNull(recordingFile);
     this.lightweight = lightweight;
     this.includeContent = includeContent;
     this.pretty = pretty;
 
-    checkArgument(lightweight && !includeContent, "Content cannot be included in lightweight recordings");
+    if (lightweight) {
+      checkArgument(!includeContent, "Content cannot be included in lightweight recordings");
+    }
 
     requestQueue = new LinkedBlockingQueue<>();
 
@@ -100,7 +99,7 @@ public class RequestWriter extends AbstractExecutionThreadService {
     LOG.info("Writer starting up");
 
     JsonFactory jsonFactory = new JsonFactory();
-    generator = jsonFactory.createGenerator(outputStream, JsonEncoding.UTF8);
+    generator = jsonFactory.createGenerator(new FileOutputStream(recordingFile), JsonEncoding.UTF8);
     if (pretty) {
       generator.setPrettyPrinter(new DefaultPrettyPrinter());
     }
