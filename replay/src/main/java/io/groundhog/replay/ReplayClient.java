@@ -39,7 +39,6 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(ReplayClient.class);
 
   private final EventLoopGroup group;
-  private final EventLoopGroup blockingGroup;
   private final RequestDispatcher dispatcher;
   private final RequestReader reader;
 
@@ -48,7 +47,6 @@ public final class ReplayClient extends AbstractExecutionThreadService {
     checkNotNull(resultListener);
 
     group = new NioEventLoopGroup();
-    blockingGroup = new NioEventLoopGroup();
 
     File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
 
@@ -56,7 +54,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
     bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        new ReplayHandler(ch.pipeline(), blockingGroup, resultListener);
+        new ReplayHandler(ch.pipeline(), resultListener);
       }
     });
 
@@ -100,7 +98,6 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   @Override
   protected void shutDown() throws Exception {
     group.shutdownGracefully();
-    blockingGroup.shutdownGracefully();
   }
 
 }

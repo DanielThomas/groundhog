@@ -43,7 +43,6 @@ public class ReplayHandler extends ChannelDuplexHandler {
   public static final String TRANSACTION_LABEL_HEADER = "X-Transaction-Label";
 
   private final ResultListener resultListener;
-  private final EventExecutorGroup blockingGroup;
 
   private ReplayHttpRequest request;
   private HttpResponse response;
@@ -51,9 +50,8 @@ public class ReplayHandler extends ChannelDuplexHandler {
   private long started;
   private final AtomicInteger bytesRead = new AtomicInteger();
 
-  public ReplayHandler(ChannelPipeline pipeline, EventExecutorGroup blockingGroup, ResultListener resultListener) throws Exception {
+  public ReplayHandler(ChannelPipeline pipeline, ResultListener resultListener) throws Exception {
     checkNotNull(pipeline);
-    this.blockingGroup = checkNotNull(blockingGroup);
     this.resultListener = checkNotNull(resultListener);
     initPipeline(pipeline, false);
   }
