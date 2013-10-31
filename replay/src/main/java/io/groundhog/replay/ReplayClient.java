@@ -82,10 +82,8 @@ public final class ReplayClient extends AbstractExecutionThreadService {
       reader.awaitTerminated();
     }
 
-    if (dispatcher.isRunning()) {
-      LOG.info("Clearing dispatcher queue");
-      dispatcher.clearQueue();
-    }
+    LOG.info("Clearing dispatcher queue");
+    dispatcher.clearQueue();
   }
 
   @Override
