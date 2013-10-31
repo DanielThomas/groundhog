@@ -75,7 +75,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
     p.addLast("chunkedWriter", new ChunkedWriteHandler());
 
-    p.addLast(blockingGroup, "ua", new UserAgentHandler());
+    p.addLast("ua", new UserAgentHandler());
 
     p.addLast("replay", this);
   }
