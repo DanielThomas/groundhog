@@ -40,6 +40,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class RequestDispatcher extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(RequestDispatcher.class);
 
+  private static final int QUEUE_TIMEOUT = 1000;
   private static final int QUEUE_LENGTH = 1000;
   private static final int SKEW_THRESHOLD = 100;
   private static final int CHANNEL_WAIT_DURATION = 5000;
@@ -62,7 +63,13 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
   public void queue(DelayedReplayRequest request) throws InterruptedException {
     checkNotNull(request);
     checkState(isRunning(), "The dispatcher is not running");
-    queue.put(request);
+    boolean queued = false;
+    while (!queued) {
+      queued = queue.put(request, QUEUE_TIMEOUT);
+      if (!isRunning()) {
+        break;
+      }
+    }
   }
 
   @Override
@@ -75,7 +82,7 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
     long startTime = System.nanoTime();
     LOG.info("Running request replay");
     while (isRunning() || !queue.isEmpty()) {
-      DelayedReplayRequest delayedRequest = queue.poll(1000);
+      DelayedReplayRequest delayedRequest = queue.poll(QUEUE_TIMEOUT);
       if (null != delayedRequest) {
         long actualTime = System.nanoTime() - startTime;
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
@@ -120,9 +127,13 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
       available = new Semaphore(capacity, true);
     }
 
-    public void put(DelayedReplayRequest e) throws InterruptedException {
-      available.acquire();
-      queue.put(e);
+    public boolean put(DelayedReplayRequest e, long timeout) throws InterruptedException {
+      if (available.tryAcquire(timeout, TimeUnit.MILLISECONDS)) {
+        queue.put(e);
+        return true;
+      } else {
+        return false;
+      }
     }
 
     public DelayedReplayRequest poll(long timeout) throws InterruptedException {

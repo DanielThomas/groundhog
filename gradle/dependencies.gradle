@@ -17,6 +17,7 @@
 
 ext {
   libraries = [:]
+  versions = [:]
 }
 
 libraries.groovy = 'org.codehaus.groovy:groovy-all:2.1.7'
@@ -32,8 +33,11 @@ libraries.netty = dependencies.module('io.netty:netty-all:4.0.11.Final') {
   dependency 'org.javassist:javassist:3.18.1-GA'
   dependency libraries.zlib
 }
+
 libraries.jackson = 'com.fasterxml.jackson.core:jackson-core:2.2.3'
 libraries.jsoup = 'org.jsoup:jsoup:1.7.2'
+
+libraries.jmeter = 'org.apache.jmeter:ApacheJMeter_components:2.10'
 
 libraries.testlibs = [
   'org.spockframework:spock-core:0.7-groovy-2.0',

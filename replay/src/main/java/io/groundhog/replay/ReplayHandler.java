@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.Serializable;
-import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +46,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
   private static final Logger LOG = LoggerFactory.getLogger(ReplayHandler.class);
   public static final String TRANSACTION_LABEL_HEADER = "X-Transaction-Label";
 
-  private final Writer resultsWriter;
+  private final ResultListener resultListener;
 
   private ReplayHttpRequest request;
   private HttpResponse response;
@@ -55,9 +54,9 @@ public class ReplayHandler extends ChannelDuplexHandler {
   private long started;
   private final AtomicInteger bytesRead = new AtomicInteger();
 
-  public ReplayHandler(ChannelPipeline pipeline, Writer resultsWriter) throws Exception {
+  public ReplayHandler(ChannelPipeline pipeline, ResultListener resultListener) throws Exception {
     initPipeline(checkNotNull(pipeline), false);
-    this.resultsWriter = checkNotNull(resultsWriter);
+    this.resultListener = resultListener;
   }
 
   private void initPipeline(ChannelPipeline p, boolean ssl) throws Exception {
@@ -113,29 +112,13 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
       HttpResponseStatus actualStatus = response.getStatus();
 
-      // FIXME this doesn't work if the request doesn't receive a response, needs to be handled completely differently
       String label = request.headers().get(TRANSACTION_LABEL_HEADER);
       label = null == label ? request.getUri() : label;
       HttpResponseStatus expectedStatus = expectedResponse.getStatus();
       boolean success = expectedStatus.equals(actualStatus);
-      List<Serializable> resultValues = Arrays.asList(System.currentTimeMillis(), elapsedMillis, label,
-          actualStatus.code(), actualStatus.reasonPhrase(), Thread.currentThread().getName(), "text", success,
-          bytesRead, 0, 0, request.getUri(), 0, "localhost");
-      resultsWriter.write(Joiner.on(',').join(resultValues));
-      resultsWriter.write('\n');
 
-      LOG.info("{}: \"{} {} {}\" {}/{} {} \"{}\" {} {} {}",
-          success ? "SUCCESS" : "FAILURE",
-          request.getMethod(),
-          request.getUri(),
-          request.getProtocolVersion(),
-          actualStatus.code(),
-          expectedStatus.code(),
-          bytesRead.get(),
-          request.headers().get(HttpHeaders.Names.USER_AGENT),
-          session,
-          elapsedSeconds,
-          elapsedMillis);
+      // FIXME this doesn't work if the request doesn't receive a response, need to find a way of handling that
+      resultListener.result(success, label, elapsedMillis, actualStatus.code(), actualStatus.reasonPhrase(), bytesRead.get());
     }
   }
 

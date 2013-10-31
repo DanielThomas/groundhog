@@ -22,6 +22,7 @@ import io.groundhog.base.HttpArchive;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Lists;
@@ -33,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
@@ -68,7 +68,7 @@ public class RequestReader extends AbstractExecutionThreadService {
 
   private JsonParser parser;
 
-  public RequestReader(File recordingFile, RequestDispatcher dispatcher, File uploadLocation) throws FileNotFoundException {
+  public RequestReader(File recordingFile, RequestDispatcher dispatcher, File uploadLocation) {
     this.recordingFile = checkNotNull(recordingFile);
     this.dispatcher = checkNotNull(dispatcher);
     this.uploadLocation = checkNotNull(uploadLocation);
@@ -106,8 +106,6 @@ public class RequestReader extends AbstractExecutionThreadService {
   @Override
   protected void run() throws Exception {
     parseLog();
-
-    LOG.info("Reached end of log. Shutting down reader");
     stopAsync();
   }
 
@@ -123,7 +121,7 @@ public class RequestReader extends AbstractExecutionThreadService {
         parser.getCurrentName());
 
     checkObjectStart(parser.nextToken());
-    while (JsonToken.END_OBJECT != parser.nextToken()) {
+    while (isRunning() && JsonToken.END_OBJECT != parser.nextToken()) {
       String fieldName = parser.getCurrentName();
       switch (fieldName) {
         case "version": {
@@ -316,7 +314,7 @@ public class RequestReader extends AbstractExecutionThreadService {
       cookies = decodeCookies(headers, cookies);
     }
 
-    return new UserAgentRequest(httpVersion, method, uri, postData, headers, cookies, uploadLocation, startedDateTime);
+    return new UserAgentRequest(httpVersion, method, uri, Optional.fromNullable(postData), headers, cookies, uploadLocation, startedDateTime);
   }
 
   private Set<Cookie> decodeCookies(HttpHeaders headers, Set<Cookie> defaultCookies) {

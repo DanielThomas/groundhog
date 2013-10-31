@@ -15,15 +15,13 @@
  *
  */
 
-rootProject.name = 'groundhog'
+apply plugin: 'fatjar'
 
-include 'core'
-include 'record'
-include 'replay'
-include 'jmeter'
-
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
+dependencies {
+  compile project(':replay')
+  compile libraries.jmeter, {
+    ext {
+      fatJarExclude = true
+    }
+  }
 }

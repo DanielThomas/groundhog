@@ -17,6 +17,8 @@
 
 package io.groundhog.replay;
 
+import java.io.File;
+
 /**
  * @author Danny Thomas
  * @since 0.1
@@ -24,7 +26,9 @@ package io.groundhog.replay;
 public class Replay {
 
   public static void main(String[] args) throws Exception {
-    new ReplayClient().run();
+    ReplayClient client = new ReplayClient(new File("out/recording.har"), new LoggingResultListener());
+    client.startAsync();
+    client.awaitTerminated();
   }
 
 }

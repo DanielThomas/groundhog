@@ -17,7 +17,7 @@
 
 package io.groundhog.replay;
 
-import com.google.common.io.Files;
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -28,44 +28,52 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.Writer;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Danny Thomas
  * @since 0.1
  */
-public final class ReplayClient {
+public final class ReplayClient extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(ReplayClient.class);
 
-  public void run() throws Exception {
-    File recordingFile = new File("out/recording.har");
-    String resultsFilename = String.format("%s-results-%s.csv", Files.getNameWithoutExtension(recordingFile.getName()),
-        System.currentTimeMillis());
-    File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
-    File resultsFile = new File(recordingFile.getParentFile(), resultsFilename);
-    final Writer resultsWriter = new FileWriter(resultsFile);
-    resultsWriter.write("timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,URL,Latency,Hostname");
+  private final EventLoopGroup group;
+  private final RequestReader reader;
 
-    EventLoopGroup group = new NioEventLoopGroup();
+  public ReplayClient(File recordingFile, final ResultListener resultListener) {
+    checkNotNull(recordingFile);
+    checkNotNull(resultListener);
+
+    group = new NioEventLoopGroup();
+
+    File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
+
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        new ReplayHandler(ch.pipeline(), resultsWriter);
+        new ReplayHandler(ch.pipeline(), resultListener);
       }
     });
 
     RequestDispatcher dispatcher = new RequestDispatcher(bootstrap, "localhost", 8080);
-    RequestReader reader = new RequestReader(recordingFile, dispatcher, uploadLocation);
-    try {
-      reader.startAsync();
-      reader.awaitTerminated();
-      LOG.info("Replay completed!");
-    } finally {
-      resultsWriter.close();
-      group.shutdownGracefully();
+    reader = new RequestReader(recordingFile, dispatcher, uploadLocation);
+  }
+
+  @Override
+  public void run() throws Exception {
+    LOG.info("Starting reader");
+    reader.startAsync();
+    reader.awaitTerminated();
+  }
+
+  @Override
+  protected void shutDown() throws Exception {
+    if (reader.isRunning()) {
+      reader.stopAsync();
     }
+    group.shutdownGracefully();
   }
 
 }

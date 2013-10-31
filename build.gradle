@@ -49,5 +49,6 @@ buildscript {
 
   dependencies {
     classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.1'
+    classpath 'eu.appsatori:gradle-fatjar-plugin:0.2-rc1'
   }
 }

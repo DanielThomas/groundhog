@@ -92,14 +92,14 @@ public class UserAgentRequest implements ChannelFutureListener {
   private final HttpVersion httpVersion;
   private final HttpMethod method;
   private final String uri;
-  private final HttpArchive.PostData postData;
+  private final Optional<HttpArchive.PostData> postData;
   private final HttpHeaders headers;
   private final Set<Cookie> cookies;
   private final File uploadLocation;
   private final long startedDateTime;
   private final Optional<HttpResponse> expectedResponse;
 
-  public UserAgentRequest(HttpVersion httpVersion, HttpMethod method, String uri, HttpArchive.PostData postData, HttpHeaders headers,
+  public UserAgentRequest(HttpVersion httpVersion, HttpMethod method, String uri, Optional<HttpArchive.PostData> postData, HttpHeaders headers,
                           Set<Cookie> cookies, File uploadLocation, long startedDateTime) {
     this.httpVersion = checkNotNull(httpVersion);
     this.method = checkNotNull(method);
@@ -139,8 +139,8 @@ public class UserAgentRequest implements ChannelFutureListener {
 
     UserAgent userAgent = getUserAgent();
     HttpPostRequestEncoder encoder = null;
-    if (null != postData) {
-      String mimeType = postData.getMimeType();
+    if (postData.isPresent()) {
+      String mimeType = postData.get().getMimeType();
       if (mimeType.startsWith("text/plain")) {
         request = createTextPlainRequest(request, userAgent);
       } else {
@@ -167,7 +167,7 @@ public class UserAgentRequest implements ChannelFutureListener {
   }
 
   private HttpRequest preparePostRequest(HttpRequest request, UserAgent userAgent, HttpPostRequestEncoder encoder) throws HttpPostRequestEncoder.ErrorDataEncoderException {
-    List<HttpArchive.Param> params = getPostParamsWithOverrides(postData.getParams(), userAgent);
+    List<HttpArchive.Param> params = getPostParamsWithOverrides(postData.get().getParams(), userAgent);
     for (HttpArchive.Param param : params) {
       if (param.getFileName().isEmpty()) {
         encoder.addBodyAttribute(param.getName(), param.getValue());
@@ -180,6 +180,7 @@ public class UserAgentRequest implements ChannelFutureListener {
   }
 
   private HttpRequest createTextPlainRequest(HttpRequest request, UserAgent userAgent) {
+    HttpArchive.PostData postData = this.postData.get();
     checkArgument(!postData.getText().isEmpty(), "Text data expected for text/plain");
     String text = updateDwrSession(request, postData.getText(), userAgent);
     request = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri(),
