@@ -52,9 +52,10 @@ public class ReplayHandler extends ChannelDuplexHandler {
   private final AtomicInteger bytesRead = new AtomicInteger();
 
   public ReplayHandler(ChannelPipeline pipeline, EventExecutorGroup blockingGroup, ResultListener resultListener) throws Exception {
-    initPipeline(checkNotNull(pipeline), false);
+    checkNotNull(pipeline);
     this.blockingGroup = checkNotNull(blockingGroup);
     this.resultListener = checkNotNull(resultListener);
+    initPipeline(pipeline, false);
   }
 
   private void initPipeline(ChannelPipeline p, boolean ssl) throws Exception {

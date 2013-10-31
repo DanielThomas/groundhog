@@ -15,15 +15,15 @@
  *
  */
 
-apply plugin: 'fatjar'
+package io.groundhog.jmeter;
 
-dependencies {
-  compile project(':replay')
-  compile libraries.jmeter, {
-    ext {
-      fatJarExclude = true
-    }
-  }
+import com.google.common.testing.AbstractPackageSanityTests;
 
-  testCompile libraries.testlibs
+/**
+ * Package sanity tests for {@link io.groundhog.jmeter}.
+ *
+ * @author Danny Thomas
+ * @since 0.1
+ */
+class PackageSanityTest extends AbstractPackageSanityTests {
 }

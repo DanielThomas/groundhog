@@ -15,15 +15,9 @@
  *
  */
 
-apply plugin: 'fatjar'
+/**
+ * JMeter plugins utilising Groundhog capabilities.
+ */
+@ParametersAreNonnullByDefault package io.groundhog.jmeter;
 
-dependencies {
-  compile project(':replay')
-  compile libraries.jmeter, {
-    ext {
-      fatJarExclude = true
-    }
-  }
-
-  testCompile libraries.testlibs
-}
+import javax.annotation.ParametersAreNonnullByDefault;

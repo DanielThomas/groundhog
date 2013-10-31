@@ -15,6 +15,10 @@ public class LoggingResultListener implements ResultListener {
   @Override
   public void result(boolean successful, String label, long elapsed, String method, String location, String httpVersion,
                      String requestHeaders, int code, String reasonPhrase, String responseHeaders, int bytesRead) {
+    checkNotNull(httpVersion);
+    checkNotNull(requestHeaders);
+    checkNotNull(reasonPhrase);
+    checkNotNull(responseHeaders);
     LOG.debug("{}: {}: \"{} {} {}\" {} {} {}",
         successful ? "SUCCESS" : "FAILURE",
         checkNotNull(label),

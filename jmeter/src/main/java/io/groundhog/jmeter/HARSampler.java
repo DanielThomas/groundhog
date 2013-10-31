@@ -20,6 +20,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author Danny Thomas
  * @since 0.1
@@ -66,7 +68,7 @@ public class HARSampler extends AbstractSampler implements TestBean, ThreadListe
   }
 
   public void setFilename(String filename) {
-    this.filename = filename;
+    this.filename = checkNotNull(filename);
   }
 
   @Override
@@ -86,17 +88,19 @@ public class HARSampler extends AbstractSampler implements TestBean, ThreadListe
                      String requestHeaders, int code, String reasonPhrase, String responseHeaders, int bytesRead) {
     SampleResult result = SampleResult.createTestSample(elapsed);
     result.setSuccessful(successful);
-    result.setSampleLabel(label);
+    result.setSampleLabel(checkNotNull(label));
+    checkNotNull(method);
     // FIXME get the host and scheme into the listener
     try {
-      result.setURL(new URL("http://somehost/" + location));
+      result.setURL(new URL("http://somehost/" + checkNotNull(location)));
     } catch (MalformedURLException e) {
       throw Throwables.propagate(e);
     }
-    result.setRequestHeaders(requestHeaders);
+    checkNotNull(httpVersion);
+    result.setRequestHeaders(checkNotNull(requestHeaders));
     result.setResponseCode(String.valueOf(code));
-    result.setResponseMessage(reasonPhrase);
-    result.setResponseHeaders(responseHeaders);
+    result.setResponseMessage(checkNotNull(reasonPhrase));
+    result.setResponseHeaders(checkNotNull(responseHeaders));
     result.setBytes(bytesRead);
     resultQueue.add(result);
   }

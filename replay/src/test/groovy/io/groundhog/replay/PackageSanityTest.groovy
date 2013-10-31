@@ -15,10 +15,9 @@
  *
  */
 
-
-
 package io.groundhog.replay
 
+import com.google.common.base.Optional
 import com.google.common.base.Predicate
 import com.google.common.testing.AbstractPackageSanityTests
 import io.groundhog.base.HttpArchive
@@ -46,7 +45,7 @@ class PackageSanityTest extends AbstractPackageSanityTests {
 
     def postData = new HttpArchive.PostData("name", "value")
     setDefault(UserAgentRequest.class, new UserAgentRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/",
-        postData, HttpHeaders.EMPTY_HEADERS, Collections.<Cookie> emptySet(), new File(""), 0l))
+        Optional.of(postData), HttpHeaders.EMPTY_HEADERS, Collections.<Cookie> emptySet(), new File(""), 0l))
     setDefault(RequestDispatcher, new RequestDispatcher(new Bootstrap(), "localhost", 80))
     setDefault(HttpMethod, HttpMethod.GET)
     setDefault(HttpHeaders, HttpHeaders.EMPTY_HEADERS)
