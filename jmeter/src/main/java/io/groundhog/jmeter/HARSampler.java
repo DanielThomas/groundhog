@@ -49,7 +49,7 @@ public class HARSampler extends AbstractSampler implements TestBean, ThreadListe
             return result;
           }
         } catch (InterruptedException e) {
-          throw Throwables.propagate(e);
+          break;
         }
       } else {
         LOG.info("Replay client has stopped. Stopping current thread");
