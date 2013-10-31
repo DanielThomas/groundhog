@@ -39,6 +39,8 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(ReplayClient.class);
 
   private final EventLoopGroup group;
+  private final EventLoopGroup blockingGroup;
+  private final RequestDispatcher dispatcher;
   private final RequestReader reader;
 
   public ReplayClient(File recordingFile, final ResultListener resultListener) {
@@ -46,6 +48,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
     checkNotNull(resultListener);
 
     group = new NioEventLoopGroup();
+    blockingGroup = new NioEventLoopGroup();
 
     File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
 
@@ -53,27 +56,53 @@ public final class ReplayClient extends AbstractExecutionThreadService {
     bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        new ReplayHandler(ch.pipeline(), resultListener);
+        new ReplayHandler(ch.pipeline(), blockingGroup, resultListener);
       }
     });
 
-    RequestDispatcher dispatcher = new RequestDispatcher(bootstrap, "localhost", 8080);
+    dispatcher = new RequestDispatcher(bootstrap, "localhost", 8080);
     reader = new RequestReader(recordingFile, dispatcher, uploadLocation);
   }
 
   @Override
-  public void run() throws Exception {
+  protected void startUp() throws Exception {
+    LOG.info("Starting dispatcher");
+    dispatcher.startAsync();
+    dispatcher.awaitRunning();
+
     LOG.info("Starting reader");
     reader.startAsync();
+  }
+
+  @Override
+  protected void triggerShutdown() {
+    if (reader.isRunning()) {
+      LOG.info("Shutting down reader");
+      reader.stopAsync();
+      reader.awaitTerminated();
+    }
+
+    if (dispatcher.isRunning()) {
+      LOG.info("Clearing dispatcher queue");
+      dispatcher.clearQueue();
+    }
+  }
+
+  @Override
+  protected void run() throws Exception {
     reader.awaitTerminated();
+    if (dispatcher.isRunning()) {
+      LOG.info("Shutting down dispatcher");
+      dispatcher.stopAsync();
+      dispatcher.awaitTerminated();
+    }
+    stopAsync();
   }
 
   @Override
   protected void shutDown() throws Exception {
-    if (reader.isRunning()) {
-      reader.stopAsync();
-    }
     group.shutdownGracefully();
+    blockingGroup.shutdownGracefully();
   }
 
 }

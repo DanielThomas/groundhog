@@ -46,16 +46,6 @@ public final class RecordServer extends AbstractIdleService {
 
     LOG.info("Starting recording server on port " + port);
     DefaultHttpProxyServer.bootstrap().withPort(port).withFiltersSource(filtersSource).start();
-
-    Thread shutdownThread = (new Thread(new Runnable() {
-      public void run() {
-        if (isRunning()) {
-          stopAsync();
-        }
-      }
-    }));
-    shutdownThread.setName(getClass().getSimpleName() + "-shutdown");
-    Runtime.getRuntime().addShutdownHook(shutdownThread);
   }
 
   @Override

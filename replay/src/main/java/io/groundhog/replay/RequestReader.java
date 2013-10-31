@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.util.concurrent.Service;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,18 +90,6 @@ public class RequestReader extends AbstractExecutionThreadService {
 
     JsonFactory jsonFactory = new JsonFactory();
     parser = jsonFactory.createParser(new FileInputStream(recordingFile));
-
-    dispatcher.startAsync();
-    dispatcher.awaitRunning();
-  }
-
-  @Override
-  protected void shutDown() throws Exception {
-    LOG.info("Reader shutting down");
-    dispatcher.stopAsync();
-
-    LOG.info("Reader waiting for paired dispatcher to shut down");
-    dispatcher.awaitTerminated();
   }
 
   @Override
@@ -143,7 +132,7 @@ public class RequestReader extends AbstractExecutionThreadService {
         }
         case "entries": {
           checkArrayStart(parser.nextToken());
-          while (JsonToken.END_ARRAY != parser.nextToken()) {
+          while (isRunning() && JsonToken.END_ARRAY != parser.nextToken()) {
             boolean lightweight = null != creator && creator.getComment().contains("lightweight");
             lastRequestTime = parseAndDispatchEntry(timeReplayStartedNanos, firstRequestTime, lightweight);
             if (0l == firstRequestTime) {

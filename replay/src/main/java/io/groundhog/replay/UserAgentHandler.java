@@ -65,6 +65,9 @@ public class UserAgentHandler extends ChannelDuplexHandler {
     if (msg instanceof ReplayHttpRequest) {
       request = (ReplayHttpRequest) msg;
       userAgent = request.getUserAgent();
+      if (userAgent.isPersistent() && request.isBlocking()) {
+        userAgent.tryBlock(250);
+      }
       setRequestCookies();
     }
 
@@ -85,6 +88,9 @@ public class UserAgentHandler extends ChannelDuplexHandler {
       response = (HttpResponse) msg;
       if (userAgent.isPersistent()) {
         parseCookies();
+        if (request.isBlocking()) {
+          userAgent.releaseBlock();
+        }
       }
     } else if (msg instanceof HttpContent) {
       parseDocument((HttpContent) msg);

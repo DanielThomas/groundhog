@@ -13,13 +13,16 @@ public class LoggingResultListener implements ResultListener {
   private static final Logger LOG = LoggerFactory.getLogger(LoggingResultListener.class);
 
   @Override
-  public void result(boolean successful, String label, long elapsed, int code, String reasonPhrase, int bytesRead) {
-    LOG.info("{}: success: {}, elapsed: {}, code: {}, reasonPhrase: {}, bytesRead: {}",
+  public void result(boolean successful, String label, long elapsed, String method, String location, String httpVersion,
+                     String requestHeaders, int code, String reasonPhrase, String responseHeaders, int bytesRead) {
+    LOG.debug("{}: {}: \"{} {} {}\" {} {} {}",
         successful ? "SUCCESS" : "FAILURE",
         checkNotNull(label),
-        elapsed,
+        checkNotNull(method),
+        checkNotNull(location),
+        checkNotNull(httpVersion),
         code,
-        checkNotNull(reasonPhrase),
+        elapsed,
         bytesRead);
   }
 

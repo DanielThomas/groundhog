@@ -17,6 +17,9 @@
 
 package io.groundhog.replay;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 
 /**
@@ -24,9 +27,24 @@ import java.io.File;
  * @since 0.1
  */
 public class Replay {
+  private static final Logger LOG = LoggerFactory.getLogger(Replay.class);
 
   public static void main(String[] args) throws Exception {
-    ReplayClient client = new ReplayClient(new File("out/recording.har"), new LoggingResultListener());
+    final ReplayClient client = new ReplayClient(new File("out/recording.har"), new LoggingResultListener());
+
+    // TODO move this logic to a core class
+    Thread shutdownThread = (new Thread(new Runnable() {
+      public void run() {
+        if (client.isRunning()) {
+          LOG.info("Forced shutdown requested");
+          client.stopAsync();
+          client.awaitTerminated();
+        }
+      }
+    }));
+    shutdownThread.setName(Replay.class.getSimpleName() + "-shutdown");
+    Runtime.getRuntime().addShutdownHook(shutdownThread);
+
     client.startAsync();
     client.awaitTerminated();
   }

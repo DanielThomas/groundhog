@@ -27,6 +27,18 @@ public final class Record {
 
   public static void main(String[] args) throws FileNotFoundException {
     final RecordServer server = new RecordServer();
+
+    Thread shutdownThread = (new Thread(new Runnable() {
+      public void run() {
+        if (server.isRunning()) {
+          server.stopAsync();
+          server.awaitTerminated();
+        }
+      }
+    }));
+    shutdownThread.setName(Record.class.getSimpleName() + "-shutdown");
+    Runtime.getRuntime().addShutdownHook(shutdownThread);
+
     server.startAsync();
     server.awaitTerminated();
   }

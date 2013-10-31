@@ -18,21 +18,17 @@
 package io.groundhog.replay;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.hash.HashCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.concurrent.EventExecutorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -47,6 +43,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
   public static final String TRANSACTION_LABEL_HEADER = "X-Transaction-Label";
 
   private final ResultListener resultListener;
+  private final EventExecutorGroup blockingGroup;
 
   private ReplayHttpRequest request;
   private HttpResponse response;
@@ -54,9 +51,10 @@ public class ReplayHandler extends ChannelDuplexHandler {
   private long started;
   private final AtomicInteger bytesRead = new AtomicInteger();
 
-  public ReplayHandler(ChannelPipeline pipeline, ResultListener resultListener) throws Exception {
+  public ReplayHandler(ChannelPipeline pipeline, EventExecutorGroup blockingGroup, ResultListener resultListener) throws Exception {
     initPipeline(checkNotNull(pipeline), false);
-    this.resultListener = resultListener;
+    this.blockingGroup = checkNotNull(blockingGroup);
+    this.resultListener = checkNotNull(resultListener);
   }
 
   private void initPipeline(ChannelPipeline p, boolean ssl) throws Exception {
@@ -76,7 +74,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
     p.addLast("chunkedWriter", new ChunkedWriteHandler());
 
-    p.addLast("ua", new UserAgentHandler());
+    p.addLast(blockingGroup, "ua", new UserAgentHandler());
 
     p.addLast("replay", this);
   }
@@ -106,9 +104,6 @@ public class ReplayHandler extends ChannelDuplexHandler {
     } else if (msg instanceof LastHttpContent) {
       long elapsed = System.nanoTime() - started;
       long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(elapsed);
-      double elapsedSeconds = elapsedMillis / 1000.0;
-      Optional<HashCode> uaKey = request.getUserAgent().getKey();
-      String session = uaKey.isPresent() ? uaKey.get().toString() : "-";
 
       HttpResponseStatus actualStatus = response.getStatus();
 
@@ -117,8 +112,14 @@ public class ReplayHandler extends ChannelDuplexHandler {
       HttpResponseStatus expectedStatus = expectedResponse.getStatus();
       boolean success = expectedStatus.equals(actualStatus);
 
+      Joiner.MapJoiner joiner = Joiner.on('\n').withKeyValueSeparator(": ");
+      String requestHeaders = joiner.join(request.headers());
+      String responseHeaders = joiner.join(response.headers());
+
       // FIXME this doesn't work if the request doesn't receive a response, need to find a way of handling that
-      resultListener.result(success, label, elapsedMillis, actualStatus.code(), actualStatus.reasonPhrase(), bytesRead.get());
+      resultListener.result(success, label, elapsedMillis, request.getMethod().name(), request.getUri(),
+          request.getProtocolVersion().text(), requestHeaders, actualStatus.code(),
+          actualStatus.reasonPhrase(), responseHeaders, bytesRead.get());
     }
   }
 

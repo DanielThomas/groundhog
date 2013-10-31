@@ -2,17 +2,24 @@ package io.groundhog.replay;
 
 import io.groundhog.base.HttpArchive;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
 import io.netty.handler.codec.http.Cookie;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Objects.ToStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -23,18 +30,56 @@ import static com.google.common.base.Preconditions.checkState;
  * @since 0.1
  */
 public class UserAgent {
+  private static final Logger LOG = LoggerFactory.getLogger(UserAgent.class);
 
-  private final Set<Cookie> cookies = Sets.newLinkedHashSet();
-  private final Map<String, HttpArchive.Param> postParamOverrides = Maps.newHashMap();
+  private final Set<Cookie> cookies;
+  private final Map<String, HttpArchive.Param> postParamOverrides;
+  private final Semaphore block;
 
   private final Optional<HashCode> key;
 
   public UserAgent() {
-    this.key = Optional.absent();
+    this(Optional.<HashCode>absent());
   }
 
   public UserAgent(HashCode key) {
-    this.key = Optional.of(key);
+    this(Optional.of(key));
+  }
+
+  private UserAgent(Optional<HashCode> key) {
+    this.key = key;
+    cookies = Sets.newLinkedHashSet();
+    postParamOverrides = Maps.newHashMap();
+    block = new Semaphore(1);
+  }
+
+  @Override
+  public String toString() {
+    ToStringHelper helper = Objects.toStringHelper(this);
+    helper.add("persistent", isPersistent());
+    helper.add("key", key);
+    return helper.toString();
+  }
+
+  public void tryBlock(long timeout) {
+    checkPersistent();
+    try {
+      LOG.debug("Attempting to acquire block for {}", this);
+      if (block.tryAcquire(timeout, TimeUnit.MILLISECONDS)) {
+        LOG.debug("Blocking operations for {}", this);
+      } else {
+        LOG.warn("Timeout during block acquire for {}, queue length {}", this, block.getQueueLength());
+        block.release();
+      }
+    } catch (InterruptedException e) {
+      throw Throwables.propagate(e);
+    }
+  }
+
+  public void releaseBlock() {
+    checkPersistent();
+    block.release();
+    LOG.debug("Released block for {}", this);
   }
 
   public void setCookies(Collection<Cookie> cookies) {

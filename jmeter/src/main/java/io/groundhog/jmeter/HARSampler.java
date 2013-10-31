@@ -14,6 +14,8 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -80,12 +82,21 @@ public class HARSampler extends AbstractSampler implements TestBean, ThreadListe
   }
 
   @Override
-  public void result(boolean successful, String label, long elapsed, int code, String reasonPhrase, int bytesRead) {
+  public void result(boolean successful, String label, long elapsed, String method, String location, String httpVersion,
+                     String requestHeaders, int code, String reasonPhrase, String responseHeaders, int bytesRead) {
     SampleResult result = SampleResult.createTestSample(elapsed);
     result.setSuccessful(successful);
     result.setSampleLabel(label);
+    // FIXME get the host and scheme into the listener
+    try {
+      result.setURL(new URL("http://somehost/" + location));
+    } catch (MalformedURLException e) {
+      throw Throwables.propagate(e);
+    }
+    result.setRequestHeaders(requestHeaders);
     result.setResponseCode(String.valueOf(code));
     result.setResponseMessage(reasonPhrase);
+    result.setResponseHeaders(responseHeaders);
     result.setBytes(bytesRead);
     resultQueue.add(result);
   }

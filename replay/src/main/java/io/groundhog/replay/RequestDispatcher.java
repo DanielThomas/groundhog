@@ -18,6 +18,7 @@
 package io.groundhog.replay;
 
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.util.concurrent.Service;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.group.ChannelGroup;
@@ -60,11 +61,17 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
     queue = new DelayedRequestQueue(QUEUE_LENGTH);
   }
 
+  public Service clearQueue() {
+    queue.clear();
+    return stopAsync();
+  }
+
   public void queue(DelayedReplayRequest request) throws InterruptedException {
     checkNotNull(request);
     checkState(isRunning(), "The dispatcher is not running");
     boolean queued = false;
     while (!queued) {
+      LOG.debug("Queuing {}", request);
       queued = queue.put(request, QUEUE_TIMEOUT);
       if (!isRunning()) {
         break;
@@ -83,7 +90,9 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
     LOG.info("Running request replay");
     while (isRunning() || !queue.isEmpty()) {
       DelayedReplayRequest delayedRequest = queue.poll(QUEUE_TIMEOUT);
-      if (null != delayedRequest) {
+      if (null == delayedRequest) {
+        LOG.debug("Request queue poll timeout, next request: {}", queue.peek());
+      } else {
         long actualTime = System.nanoTime() - startTime;
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
 
@@ -142,8 +151,16 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
       return request;
     }
 
+    public DelayedReplayRequest peek() {
+      return queue.peek();
+    }
+
     public boolean isEmpty() {
       return queue.isEmpty();
+    }
+
+    public void clear() {
+      queue.clear();
     }
   }
 
