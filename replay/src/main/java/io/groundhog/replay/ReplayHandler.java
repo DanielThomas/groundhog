@@ -86,7 +86,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
     checkNotNull(msg);
     checkNotNull(promise);
     if (msg instanceof ReplayHttpRequest) {
-      started = System.nanoTime();
+      started = System.currentTimeMillis();
       request = (ReplayHttpRequest) msg;
       expectedResponse = request.getExpectedResponse();
     } else if (msg instanceof HttpRequest) {
@@ -103,8 +103,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
     if (msg instanceof HttpResponse) {
       response = (HttpResponse) msg;
     } else if (msg instanceof LastHttpContent) {
-      long elapsed = System.nanoTime() - started;
-      long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(elapsed);
+      long ended = System.currentTimeMillis();
 
       HttpResponseStatus actualStatus = response.getStatus();
 
@@ -118,7 +117,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
       String responseHeaders = joiner.join(response.headers());
 
       // FIXME this doesn't work if the request doesn't receive a response, need to find a way of handling that
-      resultListener.result(success, label, elapsedMillis, request.getMethod().name(), request.getUri(),
+      resultListener.result(success, label, started, ended, request.getMethod().name(), request.getUri(),
           request.getProtocolVersion().text(), requestHeaders, actualStatus.code(),
           actualStatus.reasonPhrase(), responseHeaders, bytesRead.get());
     }

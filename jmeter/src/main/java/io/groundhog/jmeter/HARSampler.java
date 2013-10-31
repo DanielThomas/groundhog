@@ -84,9 +84,9 @@ public class HARSampler extends AbstractSampler implements TestBean, ThreadListe
   }
 
   @Override
-  public void result(boolean successful, String label, long elapsed, String method, String location, String httpVersion,
+  public void result(boolean successful, String label, long start, long end, String method, String location, String httpVersion,
                      String requestHeaders, int code, String reasonPhrase, String responseHeaders, int bytesRead) {
-    SampleResult result = SampleResult.createTestSample(elapsed);
+    SampleResult result = SampleResult.createTestSample(start, end);
     result.setSuccessful(successful);
     result.setSampleLabel(checkNotNull(label));
     checkNotNull(method);

@@ -13,7 +13,7 @@ public class LoggingResultListener implements ResultListener {
   private static final Logger LOG = LoggerFactory.getLogger(LoggingResultListener.class);
 
   @Override
-  public void result(boolean successful, String label, long elapsed, String method, String location, String httpVersion,
+  public void result(boolean successful, String label, long start, long end, String method, String location, String httpVersion,
                      String requestHeaders, int code, String reasonPhrase, String responseHeaders, int bytesRead) {
     checkNotNull(httpVersion);
     checkNotNull(requestHeaders);
@@ -26,7 +26,7 @@ public class LoggingResultListener implements ResultListener {
         checkNotNull(location),
         checkNotNull(httpVersion),
         code,
-        elapsed,
+        end - start,
         bytesRead);
   }
 

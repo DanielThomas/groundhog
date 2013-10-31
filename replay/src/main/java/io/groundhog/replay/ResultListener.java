@@ -8,7 +8,7 @@ import java.net.URL;
  */
 public interface ResultListener {
 
-  void result(boolean successful, String label, long elapsed, String method, String location, String httpVersion,
-              String requestHeaders, int code, String reasonPhrase, String responseHeaders, int bytesRead);
+  void result(boolean successful, String label, long start, long end, String method, String location, String httpVersion,
+                     String requestHeaders, int code, String reasonPhrase, String responseHeaders, int bytesRead);
 
 }
