@@ -29,7 +29,6 @@ import javax.annotation.Nullable
  * @since 0.1
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
-
   PackageSanityTest() {
     ignoreClasses(new Predicate<Class<?>>() {
       @Override
@@ -41,5 +40,4 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     setDefault(RequestWriter.class, new RequestWriter(new File(""), false, false, false))
     setDefault(HostAndPort.class, HostAndPort.fromParts("host", 80))
   }
-
 }

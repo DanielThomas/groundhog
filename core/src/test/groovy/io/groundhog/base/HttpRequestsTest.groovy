@@ -4,13 +4,12 @@ import io.netty.handler.codec.http.*
 import spock.lang.Specification
 
 /**
- * Tests for {@link io.groundhog.base.HttpRequests}.
+ * Tests for {@link HttpRequests}.
  *
  * @author Danny Thomas
  * @since 0.1
  */
 class HttpRequestsTest extends Specification {
-
   def 'returns host with port'() {
     when:
     HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, 'http://localhost:80/uri')
@@ -53,5 +52,4 @@ class HttpRequestsTest extends Specification {
     then:
     thrown(IllegalArgumentException)
   }
-
 }

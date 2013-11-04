@@ -34,7 +34,6 @@ import io.netty.handler.codec.http.HttpVersion
  * @since 0.1
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
-
   PackageSanityTest() {
     ignoreClasses(new Predicate<Class<?>>() {
       @Override
@@ -52,5 +51,4 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     setDefault(HttpVersion, HttpVersion.HTTP_1_1)
     setDefault(HttpArchive.PostData, postData)
   }
-
 }

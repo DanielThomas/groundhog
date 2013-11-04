@@ -30,7 +30,6 @@ import spock.lang.Specification
  * @since 0.1
  */
 class UserAgentTest extends Specification {
-
   def 'returns cookies, ordered and filtered correctly'() {
     UserAgent userAgent = new UserAgent(Hashing.goodFastHash(32).hashString("test", Charsets.UTF_8))
     Cookie noPath1 = getCookie("cookie1")
@@ -57,5 +56,4 @@ class UserAgentTest extends Specification {
   def getCookie(name) {
     new DefaultCookie(name, "value")
   }
-
 }

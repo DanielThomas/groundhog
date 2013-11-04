@@ -1,26 +1,21 @@
 package io.groundhog.record
 
-import io.netty.handler.codec.http.DefaultHttpRequest
-import io.netty.handler.codec.http.HttpHeaders
-import io.netty.handler.codec.http.HttpMethod
-import io.netty.handler.codec.http.HttpVersion
-import spock.lang.Shared
+import io.netty.handler.codec.http.*
 import spock.lang.Specification
 
 /**
- * Created by dthomas on 31/10/2013.
+ * Tests for {@link RecordHttpRequestFilter}.
  */
 class RecordHttpRequestFilterTest extends Specification {
-
-  @Shared def file = Mock(File, constructorArgs: [""])
-  @Shared def filter = new RecordHttpRequestFilter(Mock(RequestWriter, constructorArgs: [file, false, false, false]), file)
+  def file = Mock(File, constructorArgs: [""])
+  def writer = Mock(RequestWriter, constructorArgs: [file, false, false, false])
+  def filter = new RecordHttpRequestFilter(writer, file)
 
   def 'uri rewriting handles pipes in paths'() {
-    when:
     def uri = 'http://ad.crwdcntrl.net/4/pe=y|c=244|var=CN.ad.lotame.tags|out=json'
-    def file = Mock(File, constructorArgs: [""])
-    def filter = new RecordHttpRequestFilter(Mock(RequestWriter, constructorArgs: [file, false, false, false]), file)
     def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
+
+    when:
     filter.rewriteUri(request)
 
     then:
@@ -28,14 +23,28 @@ class RecordHttpRequestFilterTest extends Specification {
   }
 
   def 'uri writing substitutes hostname from header'() {
-    when:
-    def uri = '/path'
-    def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
+    def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, '/path')
     request.headers().add(HttpHeaders.Names.HOST, "localhost")
+
+    when:
     filter.rewriteUri(request)
 
     then:
     request.uri == 'http://localhost:8080/path'
   }
 
+  def 'defensive copy of request is made, preventing proxy from modifying recorded request'() {
+    def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, 'http://localhost/')
+    def header = HttpHeaders.Names.CONNECTION
+    request.headers().add(header, HttpHeaders.Values.KEEP_ALIVE)
+    def response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+
+    when:
+    filter.requestPre(request)
+    request.headers().remove(header)
+    filter.responsePre(response)
+
+    then:
+    1 * writer.queue({ it.request != request && it.request.headers().contains(header) } as RecordRequest)
+  }
 }

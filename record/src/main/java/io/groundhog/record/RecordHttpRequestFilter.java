@@ -73,8 +73,10 @@ public class RecordHttpRequestFilter implements HttpFilters {
     try {
       if (httpObject instanceof HttpRequest) {
         startedDateTime = System.currentTimeMillis();
-        request = (HttpRequest) httpObject;
-        rewriteUri(request);
+        HttpRequest proxyRequest = (HttpRequest) httpObject;
+        request = new DefaultHttpRequest(proxyRequest.getProtocolVersion(), proxyRequest.getMethod(), proxyRequest.getUri());
+        request.headers().set(proxyRequest.headers());
+        rewriteUri(proxyRequest);
       } else if (httpObject instanceof HttpContent) {
         HttpContent chunk = ((HttpContent) httpObject);
         HttpMethod method = request.getMethod();
