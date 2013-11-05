@@ -46,6 +46,6 @@ libraries.spock = dependencies.module('org.spockframework:spock-core:0.7-groovy-
 libraries.guavatest = 'com.google.guava:guava-testlib:15.0'
 
 libraries.testlibs = [
-  libraries.spock,
-  libraries.guavatest
+    libraries.spock,
+    libraries.guavatest
 ]
