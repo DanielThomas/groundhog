@@ -112,7 +112,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
       String requestHeaders = joiner.join(request.headers());
       String responseHeaders = joiner.join(response.headers());
 
-      String label = getLabel(request, response, (ReplayLastHttpContent) msg);
+      String label = getLabel(request, expectedResponse, (ReplayLastHttpContent) msg);
 
       // FIXME this doesn't work if the request doesn't receive a response, need to find a way of handling that
       resultListener.result(success, label, started, ended, request.getMethod().name(), request.getUri(),
@@ -121,7 +121,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
     }
   }
 
-  private static String getLabel(ReplayHttpRequest request, HttpResponse response, ReplayLastHttpContent content) {
+  private static String getLabel(ReplayHttpRequest request, HttpResponse expectedResponse, ReplayLastHttpContent content) {
     StringBuilder label = new StringBuilder();
     String headerLabel = request.headers().get(TRANSACTION_LABEL_HEADER);
     if (null == headerLabel) {
@@ -135,7 +135,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
       label.append(request.getMethod().name());
       label.append(" ");
       label.append(request.getUri());
-      HttpResponseStatus status = response.getStatus();
+      HttpResponseStatus status = expectedResponse.getStatus();
       if (HttpResponseStatus.OK != status) {
         label.append(" : ");
         label.append(status);
