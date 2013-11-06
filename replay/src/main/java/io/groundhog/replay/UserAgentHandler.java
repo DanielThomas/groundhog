@@ -20,6 +20,7 @@ package io.groundhog.replay;
 import io.groundhog.base.HttpArchive;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -95,7 +96,11 @@ public class UserAgentHandler extends ChannelDuplexHandler {
     } else if (msg instanceof HttpContent) {
       parseDocument((HttpContent) msg);
       if (msg instanceof LastHttpContent) {
-        scrapeFormFields();
+        if (userAgent.isPersistent() && null != document) {
+          scrapeFormFields();
+        }
+        super.channelRead(ctx, new ReplayLastHttpContent((LastHttpContent) msg, Optional.fromNullable(document)));
+        return;
       }
     }
 
@@ -132,18 +137,15 @@ public class UserAgentHandler extends ChannelDuplexHandler {
   }
 
   private void scrapeFormFields() {
-    if (userAgent.isPersistent() && null != document) {
-      Elements elements = document.select("form input[type=hidden]");
-      List<HttpArchive.Param> params = Lists.newArrayList();
-      for (Element element : elements) {
-        Attributes attributes = element.attributes();
-        if (OVERRIDE_POST_FIELDS.contains(attributes.get("name"))) {
-          HttpArchive.Param param = new HttpArchive.Param(attributes.get("name"), attributes.get("value"));
-          params.add(param);
-        }
+    Elements elements = document.select("form input[type=hidden]");
+    List<HttpArchive.Param> params = Lists.newArrayList();
+    for (Element element : elements) {
+      Attributes attributes = element.attributes();
+      if (OVERRIDE_POST_FIELDS.contains(attributes.get("name"))) {
+        HttpArchive.Param param = new HttpArchive.Param(attributes.get("name"), attributes.get("value"));
+        params.add(param);
       }
-      userAgent.setOverridePostValues(params);
     }
+    userAgent.setOverridePostValues(params);
   }
-
 }

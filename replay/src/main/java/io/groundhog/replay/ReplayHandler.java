@@ -23,6 +23,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ReplayHandler extends ChannelDuplexHandler {
   private static final Logger LOG = LoggerFactory.getLogger(ReplayHandler.class);
   public static final String TRANSACTION_LABEL_HEADER = "X-Transaction-Label";
+  public static final String UNTITLED_PAGE_LABEL = "Untitled Page";
 
   private final ResultListener resultListener;
 
@@ -103,8 +105,6 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
       HttpResponseStatus actualStatus = response.getStatus();
 
-      String label = request.headers().get(TRANSACTION_LABEL_HEADER);
-      label = null == label ? request.getUri() : label;
       HttpResponseStatus expectedStatus = expectedResponse.getStatus();
       boolean success = expectedStatus.equals(actualStatus);
 
@@ -112,11 +112,39 @@ public class ReplayHandler extends ChannelDuplexHandler {
       String requestHeaders = joiner.join(request.headers());
       String responseHeaders = joiner.join(response.headers());
 
+      String label = getLabel(request, response, (ReplayLastHttpContent) msg);
+
       // FIXME this doesn't work if the request doesn't receive a response, need to find a way of handling that
       resultListener.result(success, label, started, ended, request.getMethod().name(), request.getUri(),
           request.getProtocolVersion().text(), requestHeaders, actualStatus.code(),
           actualStatus.reasonPhrase(), responseHeaders, bytesRead.get());
     }
+  }
+
+  private static String getLabel(ReplayHttpRequest request, HttpResponse response, ReplayLastHttpContent content) {
+    StringBuilder label = new StringBuilder();
+    String headerLabel = request.headers().get(TRANSACTION_LABEL_HEADER);
+    if (null == headerLabel) {
+      boolean hasDocument = content.getDocument().isPresent();
+      if (hasDocument) {
+        Document document = content.getDocument().get();
+        String title = document.title();
+        label.append(title.isEmpty() ? UNTITLED_PAGE_LABEL : title);
+        label.append(" : ");
+      }
+      label.append(request.getMethod().name());
+      label.append(" ");
+      label.append(request.getUri());
+      HttpResponseStatus status = response.getStatus();
+      if (HttpResponseStatus.OK != status) {
+        label.append(" : ");
+        label.append(status);
+      }
+    } else {
+      label.append(headerLabel);
+    }
+
+    return label.toString();
   }
 
   @Override
@@ -139,5 +167,4 @@ public class ReplayHandler extends ChannelDuplexHandler {
       }
     }
   }
-
 }
