@@ -18,6 +18,8 @@
 package io.groundhog.replay;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
+import com.google.common.net.MediaType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
@@ -112,7 +114,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
       String requestHeaders = joiner.join(request.headers());
       String responseHeaders = joiner.join(response.headers());
 
-      String label = getLabel(request, expectedResponse, (ReplayLastHttpContent) msg);
+      String label = getLabel(request, expectedResponse, response, (ReplayLastHttpContent) msg);
 
       // FIXME this doesn't work if the request doesn't receive a response, need to find a way of handling that
       resultListener.result(success, label, started, ended, request.getMethod().name(), request.getUri(),
@@ -121,19 +123,25 @@ public class ReplayHandler extends ChannelDuplexHandler {
     }
   }
 
-  private static String getLabel(ReplayHttpRequest request, HttpResponse expectedResponse, ReplayLastHttpContent content) {
+  static String getLabel(ReplayHttpRequest request, HttpResponse expectedResponse, HttpResponse response,
+                                 ReplayLastHttpContent content) {
     StringBuilder label = new StringBuilder();
     String headerLabel = request.headers().get(TRANSACTION_LABEL_HEADER);
     if (null == headerLabel) {
+      label.append(getResourceType(response));
+      label.append(": ");
       boolean hasDocument = content.getDocument().isPresent();
       if (hasDocument) {
         Document document = content.getDocument().get();
         String title = document.title();
         label.append(title.isEmpty() ? UNTITLED_PAGE_LABEL : title);
-        label.append(" : ");
+        label.append(" - ");
       }
-      label.append(request.getMethod().name());
-      label.append(" ");
+      HttpMethod method = request.getMethod();
+      if (HttpMethod.GET != method) {
+        label.append(method.name());
+        label.append(" ");
+      }
       label.append(request.getUri());
       HttpResponseStatus status = expectedResponse.getStatus();
       if (HttpResponseStatus.OK != status) {
@@ -143,8 +151,30 @@ public class ReplayHandler extends ChannelDuplexHandler {
     } else {
       label.append(headerLabel);
     }
-
     return label.toString();
+  }
+
+  static String getResourceType(HttpResponse response) {
+    String contentType = Strings.nullToEmpty(response.headers().get(HttpHeaders.Names.CONTENT_TYPE));
+    if (!contentType.isEmpty()) {
+      MediaType type = MediaType.parse(contentType);
+      if (type.is(MediaType.HTML_UTF_8)) {
+        return "Page";
+      } else if (type.is(MediaType.ANY_AUDIO_TYPE)) {
+        return "Audio";
+      } else if (type.is(MediaType.ANY_IMAGE_TYPE)) {
+        return "Image";
+      } else if (type.is(MediaType.ANY_VIDEO_TYPE)) {
+        return "Video";
+      } else if (type.is(MediaType.JAVASCRIPT_UTF_8) || type.is(MediaType.TEXT_JAVASCRIPT_UTF_8)) {
+        return "Script";
+      } else if (type.is(MediaType.CSS_UTF_8)) {
+        return "Stylesheet";
+      } else if (type.is(MediaType.create("application", "application/x-font-woff"))) {
+        return "Font";
+      }
+    }
+    return "Other";
   }
 
   @Override
