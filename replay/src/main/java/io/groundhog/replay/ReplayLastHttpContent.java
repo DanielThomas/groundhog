@@ -38,7 +38,7 @@ public class ReplayLastHttpContent implements LastHttpContent {
   private final Optional<Document> document;
 
   public ReplayLastHttpContent(LastHttpContent content, Optional<Document> document) {
-    this.content = content;
+    this.content = checkNotNull(content);
     this.document = checkNotNull(document);
   }
 

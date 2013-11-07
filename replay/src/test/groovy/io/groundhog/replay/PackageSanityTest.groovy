@@ -22,11 +22,7 @@ import com.google.common.base.Predicate
 import com.google.common.testing.AbstractPackageSanityTests
 import io.groundhog.base.HttpArchive
 import io.netty.bootstrap.Bootstrap
-import io.netty.handler.codec.http.Cookie
-import io.netty.handler.codec.http.HttpHeaders
-import io.netty.handler.codec.http.HttpMethod
-import io.netty.handler.codec.http.HttpVersion
-
+import io.netty.handler.codec.http.*
 /**
  * Package sanity tests for {@link io.groundhog.replay}.
  *
@@ -50,5 +46,8 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     setDefault(HttpHeaders, HttpHeaders.EMPTY_HEADERS)
     setDefault(HttpVersion, HttpVersion.HTTP_1_1)
     setDefault(HttpArchive.PostData, postData)
+    setDefault(ReplayHttpRequest, new ReplayHttpRequest(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/"),
+        new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK), new UserAgent(), false))
+    setDefault(ReplayLastHttpContent, new ReplayLastHttpContent(new DefaultLastHttpContent(), Optional.absent()))
   }
 }
