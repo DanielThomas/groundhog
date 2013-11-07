@@ -10,7 +10,6 @@ import java.beans.PropertyDescriptor;
  * @since 0.1
  */
 public class HARSamplerBeanInfo extends BeanInfoSupport {
-
   public HARSamplerBeanInfo() {
     super(HARSampler.class);
     createPropertyGroup("configuration", new String[]{"filename"});
@@ -19,5 +18,4 @@ public class HARSamplerBeanInfo extends BeanInfoSupport {
     p.setValue(DEFAULT, "");
     p.setPropertyEditorClass(FileEditor.class);
   }
-
 }

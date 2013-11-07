@@ -53,5 +53,4 @@ public final class RecordServer extends AbstractIdleService {
     writer.stopAsync();
     writer.awaitTerminated();
   }
-
 }

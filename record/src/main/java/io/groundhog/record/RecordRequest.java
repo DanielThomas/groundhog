@@ -55,5 +55,4 @@ public class RecordRequest {
   public HttpResponse getResponse() {
     return response;
   }
-
 }

@@ -163,5 +163,4 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
       queue.clear();
     }
   }
-
 }

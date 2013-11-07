@@ -25,11 +25,9 @@ import io.netty.handler.codec.http.*;
  * @since 0.1
  */
 public class ReplayFullHttpRequest extends ReplayHttpRequest implements FullHttpRequest {
-
   public ReplayFullHttpRequest(FullHttpRequest request, HttpResponse expectedResponse, UserAgent userAgent, boolean blocking) {
     super(request, expectedResponse, userAgent, blocking);
   }
-
 
   @Override
   public FullHttpRequest setProtocolVersion(HttpVersion version) {
@@ -99,5 +97,4 @@ public class ReplayFullHttpRequest extends ReplayHttpRequest implements FullHttp
   private FullHttpRequest fullRequest() {
     return (FullHttpRequest) request;
   }
-
 }

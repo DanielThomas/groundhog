@@ -191,5 +191,4 @@ public class RecordHttpRequestFilter implements HttpFilters {
       LOG.debug("Reached end of chunk");
     }
   }
-
 }

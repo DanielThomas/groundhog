@@ -35,7 +35,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 0.1
  */
 public class HttpRequests {
-
   private HttpRequests() {
   }
 
@@ -55,5 +54,4 @@ public class HttpRequests {
       throw Throwables.propagate(e);
     }
   }
-
 }

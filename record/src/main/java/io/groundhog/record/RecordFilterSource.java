@@ -53,5 +53,4 @@ public class RecordFilterSource implements HttpFiltersSource {
   public int getMaximumResponseBufferSizeInBytes() {
     return 0;
   }
-
 }

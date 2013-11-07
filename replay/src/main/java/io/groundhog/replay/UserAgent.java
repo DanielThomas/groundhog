@@ -158,5 +158,4 @@ public class UserAgent {
   public Optional<HashCode> getKey() {
     return key;
   }
-
 }

@@ -287,5 +287,4 @@ public class UserAgentRequest implements ChannelFutureListener {
 
     return text;
   }
-
 }

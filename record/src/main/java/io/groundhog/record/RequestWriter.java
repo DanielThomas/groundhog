@@ -57,7 +57,6 @@ public class RequestWriter extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(RequestWriter.class);
 
   private static final Set<String> EXCLUDED_HEADERS = Sets.newHashSet(Names.HOST, Names.VIA);
-
   private static final int DEFAULT_HTTP_PORT = 80;
   private static final int DEFAULT_HTTPS_PORT = 443;
   private static final String HTTP_SCHEME = "http";
@@ -332,5 +331,4 @@ public class RequestWriter extends AbstractExecutionThreadService {
       generator.writeStringField(fieldName, value);
     }
   }
-
 }

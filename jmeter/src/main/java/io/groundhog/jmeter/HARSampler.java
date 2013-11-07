@@ -104,5 +104,4 @@ public class HARSampler extends AbstractSampler implements TestBean, ThreadListe
     result.setBytes(bytesRead);
     resultQueue.add(result);
   }
-
 }

@@ -24,7 +24,6 @@ import java.io.FileNotFoundException;
  * @since 0.1
  */
 public final class Record {
-
   public static void main(String[] args) throws FileNotFoundException {
     final RecordServer server = new RecordServer();
 
@@ -42,5 +41,4 @@ public final class Record {
     server.startAsync();
     server.awaitTerminated();
   }
-
 }

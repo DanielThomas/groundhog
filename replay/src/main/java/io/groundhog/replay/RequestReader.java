@@ -611,5 +611,4 @@ public class RequestReader extends AbstractExecutionThreadService {
     checkArgument(expectedSet.contains(actual), "Unexpected token. Actual %s, expected %s. Location %s",
         actual, expectedSet, parser.getCurrentName(), parser.getCurrentLocation());
   }
-
 }

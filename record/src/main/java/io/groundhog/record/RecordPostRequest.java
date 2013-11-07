@@ -57,5 +57,4 @@ public class RecordPostRequest extends RecordRequest {
   public String getContent() {
     return content;
   }
-
 }

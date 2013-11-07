@@ -34,7 +34,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 0.1
  */
 public class HttpArchive {
-
   public static final HttpVersion DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_1;
   public static final HttpMethod DEFAULT_METHOD = HttpMethod.GET;
   public static final Set<String> MINIMUM_RESPONSE_HEADERS = Sets.newHashSet(HttpHeaders.Names.SET_COOKIE);
@@ -149,5 +148,4 @@ public class HttpArchive {
       return helper.toString();
     }
   }
-
 }

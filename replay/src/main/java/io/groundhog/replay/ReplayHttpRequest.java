@@ -103,5 +103,4 @@ public class ReplayHttpRequest implements HttpRequest {
   public boolean isBlocking() {
     return blocking;
   }
-
 }
