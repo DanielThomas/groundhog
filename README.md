@@ -8,8 +8,6 @@ It provides a recording proxy server, which outputs captured entries in HAR form
 
 ## Features
 
-* Powerful Groovy DSL configuration
-
 ### Record
 
 * Proxy supports forward and reverse (gateway) configurations
