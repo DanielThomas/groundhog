@@ -33,12 +33,13 @@ subprojects {
   apply plugin: 'groovy'
   apply plugin: 'errorprone'
   apply plugin: 'project-report'
+  apply plugin: 'versions'
 
   version = rootProject.version
   archivesBaseName = "groundhog-$project.name"
 }
 
-task wrapper(type: Wrapper) { gradleVersion = '1.9-rc-2' }
+task wrapper(type: Wrapper) { gradleVersion = '1.9-rc-3' }
 
 defaultTasks 'build'
 
@@ -50,5 +51,6 @@ buildscript {
   dependencies {
     classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.1'
     classpath 'eu.appsatori:gradle-fatjar-plugin:0.2-rc1'
+    classpath 'com.github.ben-manes:gradle-versions-plugin:0.4'
   }
 }
