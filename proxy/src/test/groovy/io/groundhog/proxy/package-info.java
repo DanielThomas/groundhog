@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   whttp://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,23 +15,9 @@
  *
  */
 
-apply plugin: 'application'
+/**
+ * Proxy implementation for Groundhog.
+ */
+@ParametersAreNonnullByDefault package io.groundhog.proxy;
 
-mainClassName = 'io.groundhog.record.Record'
-applicationName = archivesBaseName
-
-dependencies {
-  compile project(':core')
-
-  compile libraries.groovy
-  compile libraries.logback
-  compile libraries.netty
-  compile libraries.jackson
-
-  compile('org.littleshoot:littleproxy:1.0.0-beta2') {
-    exclude module: 'log4j'
-    exclude module: 'slf4j-log4j12'
-  }
-
-  testCompile libraries.testlibs
-}
+import javax.annotation.ParametersAreNonnullByDefault;

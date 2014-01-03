@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.record;
+package io.groundhog.proxy;
 
 import java.io.FileNotFoundException;
 
@@ -23,9 +23,9 @@ import java.io.FileNotFoundException;
  * @author Danny Thomas
  * @since 0.1
  */
-public final class Record {
+public final class Proxy {
   public static void main(String[] args) throws FileNotFoundException {
-    final RecordServer server = new RecordServer();
+    final ProxyServer server = new ProxyServer();
 
     Thread shutdownThread = (new Thread(new Runnable() {
       public void run() {
@@ -35,7 +35,7 @@ public final class Record {
         }
       }
     }));
-    shutdownThread.setName(Record.class.getSimpleName() + "-shutdown");
+    shutdownThread.setName(Proxy.class.getSimpleName() + "-shutdown");
     Runtime.getRuntime().addShutdownHook(shutdownThread);
 
     server.startAsync();

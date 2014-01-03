@@ -18,7 +18,7 @@
 rootProject.name = 'groundhog'
 
 include 'core'
-include 'record'
+include 'proxy'
 include 'replay'
 include 'jmeter'
 

@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.record;
+package io.groundhog.proxy;
 
 import io.groundhog.base.HttpArchive;
 import io.groundhog.base.HttpRequests;
@@ -46,8 +46,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 0.1
  */
-public class RecordHttpRequestFilter implements HttpFilters {
-  private static final Logger LOG = LoggerFactory.getLogger(RecordHttpRequestFilter.class);
+public class ProxyHttpRequestFilter implements HttpFilters {
+  private static final Logger LOG = LoggerFactory.getLogger(ProxyHttpRequestFilter.class);
 
   private static final Set<HttpMethod> POST_DECODE_METHODS = Sets.newHashSet(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH);
   private static final String TEXT_PLAIN = "text/plain";
@@ -62,7 +62,7 @@ public class RecordHttpRequestFilter implements HttpFilters {
   private List<HttpArchive.Param> params;
   private StringBuilder content;
 
-  public RecordHttpRequestFilter(RequestWriter requestWriter, File uploadLocation) {
+  public ProxyHttpRequestFilter(RequestWriter requestWriter, File uploadLocation) {
     this.requestWriter = checkNotNull(requestWriter);
     this.uploadLocation = checkNotNull(uploadLocation);
   }
@@ -109,7 +109,7 @@ public class RecordHttpRequestFilter implements HttpFilters {
         throw t;
       }
 
-      LOG.error("Failed to record request", t);
+      LOG.error("Failed to proxy request", t);
     }
 
     return null;
@@ -134,17 +134,17 @@ public class RecordHttpRequestFilter implements HttpFilters {
     if (httpObject instanceof HttpResponse) {
       HttpResponse response = (HttpResponse) httpObject;
       HostAndPort hostAndPort = HttpRequests.identifyHostAndPort(request);
-      RecordRequest recordRequest;
+      ProxyRequest proxyRequest;
       if (isPost) {
         if (null == decoder) {
-          recordRequest = new RecordPostRequest(startedDateTime, hostAndPort, request, response, content.toString());
+          proxyRequest = new ProxyPostRequest(startedDateTime, hostAndPort, request, response, content.toString());
         } else {
-          recordRequest = new RecordPostRequest(startedDateTime, hostAndPort, request, response, params);
+          proxyRequest = new ProxyPostRequest(startedDateTime, hostAndPort, request, response, params);
         }
       } else {
-        recordRequest = new RecordRequest(startedDateTime, hostAndPort, request, response);
+        proxyRequest = new ProxyRequest(startedDateTime, hostAndPort, request, response);
       }
-      requestWriter.queue(recordRequest);
+      requestWriter.queue(proxyRequest);
     }
   }
 

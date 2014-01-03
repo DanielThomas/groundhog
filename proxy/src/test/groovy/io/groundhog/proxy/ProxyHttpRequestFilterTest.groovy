@@ -1,15 +1,15 @@
-package io.groundhog.record
+package io.groundhog.proxy
 
 import io.netty.handler.codec.http.*
 import spock.lang.Specification
 
 /**
- * Tests for {@link RecordHttpRequestFilter}.
+ * Tests for {@link ProxyHttpRequestFilter}.
  */
-class RecordHttpRequestFilterTest extends Specification {
+class ProxyHttpRequestFilterTest extends Specification {
   def file = Mock(File, constructorArgs: [""])
   def writer = Mock(RequestWriter, constructorArgs: [file, false, false, false])
-  def filter = new RecordHttpRequestFilter(writer, file)
+  def filter = new ProxyHttpRequestFilter(writer, file)
 
   def 'uri rewriting handles pipes in paths'() {
     def uri = 'http://ad.crwdcntrl.net/4/pe=y|c=244|var=CN.ad.lotame.tags|out=json'
@@ -45,6 +45,6 @@ class RecordHttpRequestFilterTest extends Specification {
     filter.responsePre(response)
 
     then:
-    1 * writer.queue({ it.request != request && it.request.headers().contains(header) } as RecordRequest)
+    1 * writer.queue({ it.request != request && it.request.headers().contains(header) } as ProxyRequest)
   }
 }

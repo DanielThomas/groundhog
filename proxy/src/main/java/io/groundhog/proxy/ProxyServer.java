@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.record;
+package io.groundhog.proxy;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -28,8 +28,8 @@ import java.io.File;
  * @author Danny Thomas
  * @since 0.1
  */
-public final class RecordServer extends AbstractIdleService {
-  private static final Logger LOG = LoggerFactory.getLogger(RecordServer.class);
+public final class ProxyServer extends AbstractIdleService {
+  private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
 
   private RequestWriter writer;
 
@@ -40,7 +40,7 @@ public final class RecordServer extends AbstractIdleService {
     File recordingFile = new File("out/recording.har");
     writer = new RequestWriter(recordingFile, true, false, false);
     File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
-    RecordFilterSource filtersSource = new RecordFilterSource(writer, uploadLocation);
+    ProxyFilterSource filtersSource = new ProxyFilterSource(writer, uploadLocation);
 
     writer.startAsync();
 

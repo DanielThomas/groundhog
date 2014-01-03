@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.record
+package io.groundhog.proxy
 
 import com.google.common.base.Predicate
 import com.google.common.net.HostAndPort
@@ -33,7 +33,7 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     ignoreClasses(new Predicate<Class<?>>() {
       @Override
       boolean apply(@Nullable Class<?> input) {
-        Record.class == input
+        Proxy.class == input
       }
     })
 

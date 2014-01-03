@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.record;
+package io.groundhog.proxy;
 
 import io.groundhog.base.HttpArchive;
 
@@ -32,19 +32,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 0.1
  */
-public class RecordPostRequest extends RecordRequest {
+public class ProxyPostRequest extends ProxyRequest {
   private final List<HttpArchive.Param> params;
   private final String content;
 
-  public RecordPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, List<HttpArchive.Param> params) {
+  public ProxyPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, List<HttpArchive.Param> params) {
     this(startedDateTime, hostAndPort, request, response, "", params);
   }
 
-  public RecordPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content) {
+  public ProxyPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content) {
     this(startedDateTime, hostAndPort, request, response, content, Collections.<HttpArchive.Param>emptyList());
   }
 
-  private RecordPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content, List<HttpArchive.Param> params) {
+  private ProxyPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content, List<HttpArchive.Param> params) {
     super(startedDateTime, hostAndPort, request, response);
     this.content = checkNotNull(content);
     this.params = checkNotNull(params);

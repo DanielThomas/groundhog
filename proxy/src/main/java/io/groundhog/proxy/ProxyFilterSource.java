@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.record;
+package io.groundhog.proxy;
 
 import io.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.HttpFilters;
@@ -29,11 +29,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 0.1
  */
-public class RecordFilterSource implements HttpFiltersSource {
+public class ProxyFilterSource implements HttpFiltersSource {
   private final RequestWriter requestWriter;
   private final File uploadLocation;
 
-  public RecordFilterSource(RequestWriter requestWriter, File uploadLocation) {
+  public ProxyFilterSource(RequestWriter requestWriter, File uploadLocation) {
     this.requestWriter = checkNotNull(requestWriter);
     this.uploadLocation = checkNotNull(uploadLocation);
   }
@@ -41,7 +41,7 @@ public class RecordFilterSource implements HttpFiltersSource {
   @Override
   public HttpFilters filterRequest(HttpRequest originalRequest) {
     checkNotNull(originalRequest);
-    return new RecordHttpRequestFilter(requestWriter, uploadLocation);
+    return new ProxyHttpRequestFilter(requestWriter, uploadLocation);
   }
 
   @Override
