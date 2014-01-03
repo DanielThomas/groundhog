@@ -39,7 +39,7 @@ subprojects {
   archivesBaseName = "groundhog-$project.name"
 }
 
-task wrapper(type: Wrapper) { gradleVersion = '1.9' }
+task wrapper(type: Wrapper) { gradleVersion = '1.10' }
 
 defaultTasks 'build'
 
