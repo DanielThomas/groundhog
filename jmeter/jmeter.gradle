@@ -22,6 +22,7 @@ dependencies {
   compile libraries.jmeter, {
     ext {
       fatJarExclude = true
+      exclude group:'com.fifesoft', module: 'rsyntaxtextarea'
     }
   }
 

@@ -37,7 +37,7 @@ libraries.netty = dependencies.module('io.netty:netty-all:4.0.17.Final') {
 libraries.jackson = 'com.fasterxml.jackson.core:jackson-core:2.2.3'
 libraries.jsoup = 'org.jsoup:jsoup:1.7.3'
 
-libraries.jmeter = 'org.apache.jmeter:ApacheJMeter_parent:2.11'
+libraries.jmeter = 'org.apache.jmeter:ApacheJMeter_components:2.11'
 
 
 libraries.cglib = 'cglib:cglib-nodep:3.1'
