@@ -22,11 +22,9 @@ apply from: 'gradle/dependencies.gradle'
 
 allprojects {
   group 'io.groundhog'
-  apply plugin: 'java'
   repositories {
     mavenCentral()
   }
-
 }
 
 subprojects {
