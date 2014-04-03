@@ -22,7 +22,6 @@ apply from: 'gradle/dependencies.gradle'
 
 allprojects {
   group 'io.groundhog'
-
   repositories {
     mavenCentral()
   }
@@ -49,8 +48,8 @@ buildscript {
   }
 
   dependencies {
-    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.1'
-    classpath 'eu.appsatori:gradle-fatjar-plugin:0.2-rc1'
+    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.2'
+    classpath 'eu.appsatori:gradle-fatjar-plugin:0.2'
     classpath 'com.github.ben-manes:gradle-versions-plugin:0.4'
   }
 }
