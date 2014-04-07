@@ -50,7 +50,9 @@ Performance data to come.
 
 ## Acknowledgements
 
-The project's name was inspired by the movie Groundhog Day. The project wouldn't been possible without the hard work of others. Notably:
+The project's name was inspired by the movie Groundhog Day. A _huge_ thank you to Molly Mattis for donating her username to the project.
+
+The project wouldn't been possible without the hard work of others. Notably:
 
 * Adam Fisk's [LittleProxy](https://github.com/adamfisk/LittleProxy)
 * The [Netty Project](http://netty.io/)
