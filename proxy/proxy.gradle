@@ -27,11 +27,7 @@ dependencies {
   compile libraries.logback
   compile libraries.netty
   compile libraries.jackson
-
-  compile('org.littleshoot:littleproxy:1.0.0-beta2') {
-    exclude module: 'log4j'
-    exclude module: 'slf4j-log4j12'
-  }
+  compile libraries.littleproxy
 
   testCompile libraries.testlibs
 }

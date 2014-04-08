@@ -17,6 +17,7 @@
 
 package io.groundhog.proxy;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.HttpFilters;
 import org.littleshoot.proxy.HttpFiltersSource;
@@ -39,8 +40,9 @@ public class ProxyFilterSource implements HttpFiltersSource {
   }
 
   @Override
-  public HttpFilters filterRequest(HttpRequest originalRequest) {
+  public HttpFilters filterRequest(HttpRequest originalRequest, ChannelHandlerContext ctx) {
     checkNotNull(originalRequest);
+    checkNotNull(ctx);
     return new ProxyHttpRequestFilter(requestWriter, uploadLocation);
   }
 

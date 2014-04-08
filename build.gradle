@@ -44,12 +44,13 @@ defaultTasks 'build'
 
 buildscript {
   repositories {
+    maven { url 'https://github.com/ben-manes/gradle-versions-plugin/raw/mvnrepo' }
     mavenCentral()
   }
 
   dependencies {
     classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.0.2'
     classpath 'eu.appsatori:gradle-fatjar-plugin:0.2'
-    classpath 'com.github.ben-manes:gradle-versions-plugin:0.4'
+    classpath 'com.github.ben-manes:gradle-versions-plugin:0.5-beta-2'
   }
 }

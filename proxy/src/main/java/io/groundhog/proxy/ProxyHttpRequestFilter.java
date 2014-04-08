@@ -111,7 +111,6 @@ public class ProxyHttpRequestFilter implements HttpFilters {
 
       LOG.error("Failed to proxy request", t);
     }
-
     return null;
   }
 
@@ -129,7 +128,7 @@ public class ProxyHttpRequestFilter implements HttpFilters {
   }
 
   @Override
-  public void responsePre(HttpObject httpObject) {
+  public HttpObject responsePre(HttpObject httpObject) {
     checkNotNull(httpObject);
     if (httpObject instanceof HttpResponse) {
       HttpResponse response = (HttpResponse) httpObject;
@@ -146,11 +145,13 @@ public class ProxyHttpRequestFilter implements HttpFilters {
       }
       requestWriter.queue(proxyRequest);
     }
+    return null;
   }
 
   @Override
-  public void responsePost(HttpObject httpObject) {
+  public HttpObject responsePost(HttpObject httpObject) {
     checkNotNull(httpObject);
+    return null;
   }
 
   private void readAvailableData() {
