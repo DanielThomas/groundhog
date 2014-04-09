@@ -15,16 +15,19 @@
  *
  */
 
-rootProject.name = 'groundhog'
+package io.groundhog.capture;
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'capture'
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
+/**
+ * @author Danny Thomas
+ * @since 0.2
+ */
+public class Capture {
+  private static final Logger LOG = LoggerFactory.getLogger(Capture.class);
+
+  public static void main(String[] args) throws Exception {
+
+  }
 }

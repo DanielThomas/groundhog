@@ -48,5 +48,4 @@ public class Replay {
     client.startAsync();
     client.awaitTerminated();
   }
-
 }

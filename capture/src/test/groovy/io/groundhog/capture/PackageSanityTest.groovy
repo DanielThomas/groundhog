@@ -15,16 +15,24 @@
  *
  */
 
-rootProject.name = 'groundhog'
+package io.groundhog.capture
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'capture'
+import com.google.common.base.Predicate
+import com.google.common.testing.AbstractPackageSanityTests
 
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
+/**
+ * Package sanity tests for {@link io.groundhog.capture}.
+ *
+ * @author Danny Thomas
+ * @since 0.2
+ */
+class PackageSanityTest extends AbstractPackageSanityTests {
+  PackageSanityTest() {
+    ignoreClasses(new Predicate<Class<?>>() {
+      @Override
+      boolean apply(Class<?> input) {
+        Capture.class == input
+      }
+    })
+  }
 }
