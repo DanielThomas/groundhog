@@ -15,27 +15,17 @@
  *
  */
 
-package io.groundhog.proxy
+apply plugin: 'war'
 
-import com.google.common.base.Predicate
-import com.google.common.net.HostAndPort
-import com.google.common.testing.AbstractPackageSanityTests
-import io.groundhog.base.RequestWriter
+dependencies {
+  compile project(':core')
 
-import javax.annotation.Nullable
-/**
- * Package sanity tests for {@link io.groundhog.replay}.
- *
- * @author Danny Thomas
- * @since 0.1
- */
-class PackageSanityTest extends AbstractPackageSanityTests {
-  PackageSanityTest() {
-    ignoreClasses(new Predicate<Class<?>>() {
-      @Override
-      boolean apply(@Nullable Class<?> input) {
-        Proxy.class == input
-      }
-    })
-  }
+  compile libraries.guava
+  compile libraries.guice
+  compile libraries.logback
+
+  providedCompile libraries.servletapi
+  providedCompile libraries.catalina
+
+  testCompile libraries.testlibs
 }

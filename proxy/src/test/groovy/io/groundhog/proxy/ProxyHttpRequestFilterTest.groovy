@@ -1,5 +1,7 @@
 package io.groundhog.proxy
 
+import io.groundhog.base.CapturedRequest
+import io.groundhog.base.RequestWriter
 import io.netty.handler.codec.http.*
 import spock.lang.Specification
 
@@ -45,6 +47,6 @@ class ProxyHttpRequestFilterTest extends Specification {
     filter.responsePre(response)
 
     then:
-    1 * writer.queue({ it.request != request && it.request.headers().contains(header) } as ProxyRequest)
+    1 * writer.queue({ it.request != request && it.request.headers().contains(header) } as CapturedRequest)
   }
 }

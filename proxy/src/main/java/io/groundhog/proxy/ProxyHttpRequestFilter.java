@@ -17,8 +17,7 @@
 
 package io.groundhog.proxy;
 
-import io.groundhog.base.HttpArchive;
-import io.groundhog.base.HttpRequests;
+import io.groundhog.base.*;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
@@ -85,6 +84,7 @@ public class ProxyHttpRequestFilter implements HttpFilters {
           chunk = chunk.duplicate();
           String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
           if (contentType.startsWith(TEXT_PLAIN)) {
+            // TODO I'm concerned that we're blindly buffering here, we should look at whether the Netty decoder can do this for us
             if (null == content) {
               content = new StringBuilder();
             }
@@ -105,10 +105,12 @@ public class ProxyHttpRequestFilter implements HttpFilters {
         }
       }
     } catch (Throwable t) {
+      // TODO this is probably a little overzealous, catch Exception instead
       if (t instanceof ThreadDeath) {
         throw t;
       }
 
+      // TODO Return an error HttpResponse
       LOG.error("Failed to proxy request", t);
     }
     return null;
@@ -133,17 +135,17 @@ public class ProxyHttpRequestFilter implements HttpFilters {
     if (httpObject instanceof HttpResponse) {
       HttpResponse response = (HttpResponse) httpObject;
       HostAndPort hostAndPort = HttpRequests.identifyHostAndPort(request);
-      ProxyRequest proxyRequest;
+      CapturedRequest capturedRequest;
       if (isPost) {
         if (null == decoder) {
-          proxyRequest = new ProxyPostRequest(startedDateTime, hostAndPort, request, response, content.toString());
+          capturedRequest = new CapturedPostRequest(startedDateTime, hostAndPort, request, response, content.toString());
         } else {
-          proxyRequest = new ProxyPostRequest(startedDateTime, hostAndPort, request, response, params);
+          capturedRequest = new CapturedPostRequest(startedDateTime, hostAndPort, request, response, params);
         }
       } else {
-        proxyRequest = new ProxyRequest(startedDateTime, hostAndPort, request, response);
+        capturedRequest = new CapturedRequest(startedDateTime, hostAndPort, request, response);
       }
-      requestWriter.queue(proxyRequest);
+      requestWriter.queue(capturedRequest);
     }
     return null;
   }

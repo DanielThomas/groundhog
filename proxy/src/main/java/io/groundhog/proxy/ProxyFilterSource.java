@@ -17,6 +17,8 @@
 
 package io.groundhog.proxy;
 
+import io.groundhog.base.RequestWriter;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.HttpFilters;

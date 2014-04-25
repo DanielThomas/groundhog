@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.proxy;
+package io.groundhog.base;
 
 import com.google.common.net.HostAndPort;
 import io.netty.handler.codec.http.HttpRequest;
@@ -27,13 +27,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 0.1
  */
-public class ProxyRequest {
+public class CapturedRequest {
   private final long startedDateTime;
   private final HostAndPort hostAndPort;
   private final HttpRequest request;
   private final HttpResponse response;
 
-  public ProxyRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response) {
+  public CapturedRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response) {
     this.startedDateTime = startedDateTime;
     this.hostAndPort = checkNotNull(hostAndPort);
     this.request = checkNotNull(request);

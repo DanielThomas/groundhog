@@ -18,8 +18,9 @@
 dependencies {
   compile libraries.jsr305
   compile libraries.guava
-  compile libraries.groovy
   compile libraries.slf4j
+
+  compile libraries.jackson
   compile libraries.netty
 
   testCompile libraries.testlibs

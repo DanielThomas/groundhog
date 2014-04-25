@@ -17,6 +17,8 @@
 
 package io.groundhog.proxy;
 
+import io.groundhog.base.RequestWriter;
+
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import org.slf4j.Logger;
