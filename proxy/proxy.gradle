@@ -23,10 +23,7 @@ applicationName = archivesBaseName
 dependencies {
   compile project(':core')
 
-  compile libraries.groovy
   compile libraries.logback
-  compile libraries.netty
-  compile libraries.jackson
   compile libraries.littleproxy
 
   testCompile libraries.testlibs

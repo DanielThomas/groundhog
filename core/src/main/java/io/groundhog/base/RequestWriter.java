@@ -15,9 +15,7 @@
  *
  */
 
-package io.groundhog.proxy;
-
-import io.groundhog.base.HttpArchive;
+package io.groundhog.base;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -63,7 +61,7 @@ public class RequestWriter extends AbstractExecutionThreadService {
   private static final String HTTPS_SCHEME = "https";
 
   private final File recordingFile;
-  private final LinkedBlockingQueue<ProxyRequest> requestQueue;
+  private final LinkedBlockingQueue<CapturedRequest> requestQueue;
   private final boolean lightweight;
   private final boolean includeContent;
   private final boolean pretty;
@@ -120,7 +118,7 @@ public class RequestWriter extends AbstractExecutionThreadService {
   @Override
   protected void run() throws InterruptedException, IOException {
     while (isRunning()) {
-      ProxyRequest request = requestQueue.poll(1, TimeUnit.SECONDS);
+      CapturedRequest request = requestQueue.poll(1, TimeUnit.SECONDS);
       if (null != request) {
         writeEntry(request);
       }
@@ -151,27 +149,31 @@ public class RequestWriter extends AbstractExecutionThreadService {
     generator.writeEndObject();
   }
 
-  public void queue(ProxyRequest proxyRequest) {
-    requestQueue.add(proxyRequest);
+  public void queue(CapturedRequest capturedRequest) {
+    if (isRunning()) {
+      requestQueue.add(capturedRequest);
+    } else {
+      throw new IllegalStateException("Writer is not running");
+    }
   }
 
-  private void writeEntry(ProxyRequest proxyRequest) throws IOException {
+  private void writeEntry(CapturedRequest capturedRequest) throws IOException {
     generator.writeStartObject();
-    String startedDateTime = iso8601Format.format(new Date(proxyRequest.getStartedDateTime()));
+    String startedDateTime = iso8601Format.format(new Date(capturedRequest.getStartedDateTime()));
     generator.writeStringField("startedDateTime", startedDateTime);
-    writeRequest(proxyRequest);
-    writeResponse(proxyRequest);
+    writeRequest(capturedRequest);
+    writeResponse(capturedRequest);
     generator.writeEndObject();
   }
 
-  private void writeRequest(ProxyRequest proxyRequest) throws IOException {
+  private void writeRequest(CapturedRequest capturedRequest) throws IOException {
     generator.writeObjectFieldStart("request");
-    HttpRequest request = proxyRequest.getRequest();
+    HttpRequest request = capturedRequest.getRequest();
 
     if (lightweight && HttpArchive.DEFAULT_METHOD != request.getMethod()) {
       generator.writeStringField("method", request.getMethod().name());
     }
-    generator.writeStringField("url", getUrl(proxyRequest));
+    generator.writeStringField("url", getUrl(capturedRequest));
     if (lightweight && HttpArchive.DEFAULT_HTTP_VERSION != request.getProtocolVersion()) {
       generator.writeStringField("httpVersion", request.getProtocolVersion().text());
     }
@@ -180,22 +182,22 @@ public class RequestWriter extends AbstractExecutionThreadService {
     writeHeaders(headers, false);
     writeCookies(headers);
 
-    if (proxyRequest instanceof ProxyPostRequest) {
-      ProxyPostRequest proxyPostRequest = (ProxyPostRequest) proxyRequest;
+    if (capturedRequest instanceof CapturedPostRequest) {
+      CapturedPostRequest proxyPostRequest = (CapturedPostRequest) capturedRequest;
       writePostData(proxyPostRequest);
     }
     generator.writeEndObject();
   }
 
-  private String getUrl(ProxyRequest proxyRequest) {
-    HostAndPort hostAndPort = proxyRequest.getHostAndPort();
+  private String getUrl(CapturedRequest capturedRequest) {
+    HostAndPort hostAndPort = capturedRequest.getHostAndPort();
     try {
       int port = hostAndPort.getPortOrDefault(80);
       String scheme = getUrlScheme(port);
       if (isDefaultPort(port, scheme)) {
-        return new URL(scheme, hostAndPort.getHostText(), proxyRequest.getRequest().getUri()).toExternalForm();
+        return new URL(scheme, hostAndPort.getHostText(), capturedRequest.getRequest().getUri()).toExternalForm();
       } else {
-        return new URL(scheme, hostAndPort.getHostText(), port, proxyRequest.getRequest().getUri()).toExternalForm();
+        return new URL(scheme, hostAndPort.getHostText(), port, capturedRequest.getRequest().getUri()).toExternalForm();
       }
     } catch (MalformedURLException e) {
       throw Throwables.propagate(e);
@@ -227,9 +229,9 @@ public class RequestWriter extends AbstractExecutionThreadService {
     }
   }
 
-  private void writeResponse(ProxyRequest proxyRequest) throws IOException {
+  private void writeResponse(CapturedRequest capturedRequest) throws IOException {
     generator.writeObjectFieldStart("response");
-    HttpResponse response = proxyRequest.getResponse();
+    HttpResponse response = capturedRequest.getResponse();
     HttpHeaders headers = response.headers();
     generator.writeNumberField("status", response.getStatus().code());
     writeHeaders(headers, lightweight);
@@ -293,7 +295,7 @@ public class RequestWriter extends AbstractExecutionThreadService {
     }
   }
 
-  private void writePostData(ProxyPostRequest recordRequest) throws IOException {
+  private void writePostData(CapturedPostRequest recordRequest) throws IOException {
     HttpHeaders headers = recordRequest.getRequest().headers();
     generator.writeObjectFieldStart("postData");
     generator.writeStringField("mimeType", headers.get(Names.CONTENT_TYPE));

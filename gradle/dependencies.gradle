@@ -20,12 +20,20 @@ ext {
   versions = [:]
 }
 
+versions.guava = '16.0.1'
+
 libraries.groovy = 'org.codehaus.groovy:groovy-all:2.2.2'
-libraries.guava = 'com.google.guava:guava:16.0.1'
+libraries.guice = 'com.google.inject:guice:3.0'
+libraries.guava = "com.google.guava:guava:$versions.guava"
 libraries.jsr305 = 'com.google.code.findbugs:jsr305:2.0.3'
 libraries.inject = 'javax.inject:javax.inject:1'
-libraries.logback = 'ch.qos.logback:logback-classic:1.1.2'
+libraries.logback = [
+  'ch.qos.logback:logback-classic:1.1.2',
+  libraries.groovy
+]
 libraries.slf4j = 'org.slf4j:slf4j-api:1.7.7'
+libraries.servletapi = 'javax.servlet:servlet-api:3.0-alpha-1'
+libraries.catalina = 'org.apache.tomcat:tomcat-catalina:7.0.53'
 
 libraries.netty = [
   'io.netty:netty-all:4.0.18.Final',
@@ -45,10 +53,11 @@ libraries.littleproxy = dependencies.create('org.littleshoot:littleproxy:1.0.0-b
 
 libraries.spock = [
   'org.spockframework:spock-core:0.7-groovy-2.0',
-  'cglib:cglib-nodep:3.1'
+  'cglib:cglib-nodep:3.1',
+  libraries.groovy
 ]
 
-libraries.guavatest = 'com.google.guava:guava-testlib:16.0.1'
+libraries.guavatest = "com.google.guava:guava-testlib:$versions.guava"
 
 libraries.testlibs = [
     libraries.spock,

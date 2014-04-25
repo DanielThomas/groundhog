@@ -15,8 +15,9 @@
  *
  */
 
-package io.groundhog.proxy;
+package io.groundhog.base;
 
+import io.groundhog.base.CapturedRequest;
 import io.groundhog.base.HttpArchive;
 
 import com.google.common.net.HostAndPort;
@@ -32,19 +33,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 0.1
  */
-public class ProxyPostRequest extends ProxyRequest {
+public class CapturedPostRequest extends CapturedRequest {
   private final List<HttpArchive.Param> params;
   private final String content;
 
-  public ProxyPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, List<HttpArchive.Param> params) {
+  public CapturedPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, List<HttpArchive.Param> params) {
     this(startedDateTime, hostAndPort, request, response, "", params);
   }
 
-  public ProxyPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content) {
+  public CapturedPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content) {
     this(startedDateTime, hostAndPort, request, response, content, Collections.<HttpArchive.Param>emptyList());
   }
 
-  private ProxyPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content, List<HttpArchive.Param> params) {
+  private CapturedPostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content, List<HttpArchive.Param> params) {
     super(startedDateTime, hostAndPort, request, response);
     this.content = checkNotNull(content);
     this.params = checkNotNull(params);

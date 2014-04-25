@@ -15,27 +15,21 @@
  *
  */
 
-package io.groundhog.proxy
+package io.groundhog.servlet
 
-import com.google.common.base.Predicate
 import com.google.common.net.HostAndPort
 import com.google.common.testing.AbstractPackageSanityTests
 import io.groundhog.base.RequestWriter
 
-import javax.annotation.Nullable
 /**
- * Package sanity tests for {@link io.groundhog.replay}.
+ * Package sanity tests for {@link io.groundhog.servlet}.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
   PackageSanityTest() {
-    ignoreClasses(new Predicate<Class<?>>() {
-      @Override
-      boolean apply(@Nullable Class<?> input) {
-        Proxy.class == input
-      }
-    })
+    setDefault(RequestWriter.class, new RequestWriter(new File(""), false, false, false))
+    setDefault(HostAndPort.class, HostAndPort.fromParts("host", 80))
   }
 }
