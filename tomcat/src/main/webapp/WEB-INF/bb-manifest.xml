@@ -36,9 +36,19 @@
     <requires>
       <bbversion value="9.1.10000"/>
     </requires>
-  </plugin>
 
-  <permissions>
-    <permission type="java.security.AllPermission" name="*" actions="*"/>
-  </permissions>
+    <permissions>
+      <!-- Guava Finalizer classloader creation -->
+      <permission type="java.lang.RuntimePermission" name="createClassLoader"/>
+      <!-- Tomcat Host lookup -->
+      <permission type="javax.management.MBeanServerPermission" name="findMBeanServer"/>
+      <permission type="javax.management.MBeanPermission" name="*" actions="*"/>
+      <!-- Tomcat Valve invoke -->
+      <permission type="javax.security.auth.AuthPermission" name="*"/>
+      <!-- Har file writing, allow all files -->
+      <permission type="java.io.FilePermission" name="&amp;lt;&amp;lt;ALL FILES&amp;gt;&amp;gt;" actions="read,write,delete,execute"/>
+    </permissions>
+
+    <requires-bean-introspection value="true"/>
+  </plugin>
 </manifest>
