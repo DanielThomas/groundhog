@@ -17,7 +17,7 @@
 
 package io.groundhog.replay;
 
-import io.groundhog.base.HttpArchive;
+import io.groundhog.har.HttpArchive;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;

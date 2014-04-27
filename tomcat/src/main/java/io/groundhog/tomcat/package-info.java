@@ -15,16 +15,9 @@
  *
  */
 
-rootProject.name = 'groundhog'
+/**
+ * Servlet based HTTP capture for Groundhog.
+ */
+@ParametersAreNonnullByDefault package io.groundhog.tomcat;
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'tomcat'
-
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
-}
+import javax.annotation.ParametersAreNonnullByDefault;

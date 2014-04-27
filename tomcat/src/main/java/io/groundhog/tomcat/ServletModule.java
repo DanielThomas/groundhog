@@ -15,16 +15,17 @@
  *
  */
 
-rootProject.name = 'groundhog'
+package io.groundhog.tomcat;
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'tomcat'
+import com.google.inject.AbstractModule;
 
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
+/**
+ * @author Danny Thomas
+ * @since 1.0
+ */
+public class ServletModule extends AbstractModule {
+  @Override
+  protected void configure() {
+    // Placeholder
+  }
 }

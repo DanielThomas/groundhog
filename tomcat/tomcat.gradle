@@ -15,16 +15,19 @@
  *
  */
 
-rootProject.name = 'groundhog'
+apply plugin: 'war'
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'tomcat'
+versions.tomcat = '7.0.53'
 
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
+dependencies {
+  compile project(':core')
+
+  compile libraries.guava
+  compile libraries.guice
+  compile libraries.logback
+
+  providedCompile "org.apache.tomcat:tomcat-catalina:$versions.tomcat"
+  providedCompile "org.apache.tomcat:tomcat-coyote:$versions.tomcat"
+
+  testCompile libraries.testlibs
 }

@@ -20,7 +20,7 @@ package io.groundhog.replay
 import com.google.common.base.Optional
 import com.google.common.base.Predicate
 import com.google.common.testing.AbstractPackageSanityTests
-import io.groundhog.base.HttpArchive
+import io.groundhog.har.HttpArchive
 import io.netty.bootstrap.Bootstrap
 import io.netty.handler.codec.http.*
 /**

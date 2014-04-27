@@ -15,16 +15,9 @@
  *
  */
 
-rootProject.name = 'groundhog'
+/**
+ * HTTP archive (HAR) support.
+ */
+@ParametersAreNonnullByDefault package io.groundhog.har;
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'tomcat'
-
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
-}
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -15,29 +15,17 @@
  *
  */
 
-package io.groundhog.proxy
 
-import com.google.common.base.Predicate
-import com.google.common.testing.AbstractPackageSanityTests
-import io.groundhog.har.HarFileCaptureWriter
-import io.groundhog.capture.CaptureWriter
 
-import javax.annotation.Nullable
+package io.groundhog.har;
+
+import com.google.common.testing.AbstractPackageSanityTests;
 
 /**
- * Package sanity tests for {@link io.groundhog.replay}.
+ * Package sanity tests for {@link io.groundhog.har}.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
-  PackageSanityTest() {
-    ignoreClasses(new Predicate<Class<?>>() {
-      @Override
-      boolean apply(@Nullable Class<?> input) {
-        Proxy.class == input
-      }
-    })
-    setDefault(CaptureWriter.class, new HarFileCaptureWriter(new File(""), false, false, false))
-  }
 }

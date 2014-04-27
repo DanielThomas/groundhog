@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   whttp://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,16 +15,21 @@
  *
  */
 
-rootProject.name = 'groundhog'
+package io.groundhog.capture;
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'tomcat'
+import com.google.common.util.concurrent.Service;
 
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
+/**
+ * A {@link Service} providing asynchronous writing of {@link CaptureRequest}s.
+ *
+ * @author Danny Thomas
+ * @since 1.0
+ */
+public interface CaptureWriter extends Service {
+  /**
+   * Write a request asynchronously.
+   *
+   * @param captureRequest the captured request to be written
+   */
+  public void writeAsync(CaptureRequest captureRequest);
 }

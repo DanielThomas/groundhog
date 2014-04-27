@@ -32,8 +32,6 @@ libraries.logback = [
   libraries.groovy
 ]
 libraries.slf4j = 'org.slf4j:slf4j-api:1.7.7'
-libraries.servletapi = 'javax.servlet:servlet-api:3.0-alpha-1'
-libraries.catalina = 'org.apache.tomcat:tomcat-catalina:7.0.53'
 
 libraries.netty = [
   'io.netty:netty-all:4.0.18.Final',
