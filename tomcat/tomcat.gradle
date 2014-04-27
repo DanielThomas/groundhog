@@ -22,7 +22,6 @@ versions.tomcat = '7.0.53'
 dependencies {
   compile project(':core')
 
-  compile libraries.guava
   compile libraries.guice
   compile libraries.logback
 
