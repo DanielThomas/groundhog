@@ -20,7 +20,7 @@ ext {
   versions = [:]
 }
 
-versions.guava = '16.0.1'
+versions.guava = '17.0'
 
 libraries.groovy = 'org.codehaus.groovy:groovy-all:2.2.2'
 libraries.guice = 'com.google.inject:guice:3.0'
