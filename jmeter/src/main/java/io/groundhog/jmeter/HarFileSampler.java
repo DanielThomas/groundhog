@@ -26,7 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 0.1
  */
-public class HARSampler extends AbstractSampler implements TestBean, ThreadListener, ResultListener {
+public class HarFileSampler extends AbstractSampler implements TestBean, ThreadListener, ResultListener {
   private static final Logger LOG = LoggingManager.getLoggerForClass();
 
   private final BlockingQueue<SampleResult> resultQueue = new LinkedBlockingQueue<>();
