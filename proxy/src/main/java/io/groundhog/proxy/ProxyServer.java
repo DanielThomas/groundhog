@@ -26,6 +26,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
+import java.net.InetSocketAddress;
 
 /**
  * @author Danny Thomas
@@ -38,7 +41,12 @@ public final class ProxyServer extends AbstractIdleService {
 
   @Override
   protected void startUp() throws Exception {
-    int port = 3128;
+    String propertiesLocation = System.getenv("ProxyConfigLocation").isEmpty() ? "conf/properties" : System.getenv("ProxyConfigLocation");
+    Properties prop = new Properties();
+    prop.load(new FileInputStream(propertiesLocation));
+
+    int port = new Integer(prop.getProperty("port"));
+    String serverName = prop.getProperty("serverName");
 
     File recordingFile = new File("out/recording.har");
     captureWriter = new HarFileCaptureWriter(recordingFile, true, false, false);
@@ -48,7 +56,7 @@ public final class ProxyServer extends AbstractIdleService {
     captureWriter.startAsync();
 
     LOG.info("Starting recording server on port " + port);
-    DefaultHttpProxyServer.bootstrap().withPort(port).withFiltersSource(filtersSource).start();
+    DefaultHttpProxyServer.bootstrap().withAddress(new InetSocketAddress(serverName, port)).withPort(port).withFiltersSource(filtersSource).start();
   }
 
   @Override
