@@ -17,7 +17,8 @@
 
 package io.groundhog.proxy;
 
-import io.groundhog.base.RequestWriter;
+import io.groundhog.har.HarFileCaptureWriter;
+import io.groundhog.capture.CaptureWriter;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
@@ -33,18 +34,18 @@ import java.io.File;
 public final class ProxyServer extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
 
-  private RequestWriter writer;
+  private CaptureWriter captureWriter;
 
   @Override
   protected void startUp() throws Exception {
     int port = 3128;
 
     File recordingFile = new File("out/recording.har");
-    writer = new RequestWriter(recordingFile, true, false, false);
+    captureWriter = new HarFileCaptureWriter(recordingFile, true, false, false);
     File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
-    ProxyFilterSource filtersSource = new ProxyFilterSource(writer, uploadLocation);
+    CaptureFilterSource filtersSource = new CaptureFilterSource(captureWriter, uploadLocation);
 
-    writer.startAsync();
+    captureWriter.startAsync();
 
     LOG.info("Starting recording server on port " + port);
     DefaultHttpProxyServer.bootstrap().withPort(port).withFiltersSource(filtersSource).start();
@@ -52,7 +53,7 @@ public final class ProxyServer extends AbstractIdleService {
 
   @Override
   protected void shutDown() throws Exception {
-    writer.stopAsync();
-    writer.awaitTerminated();
+    captureWriter.stopAsync();
+    captureWriter.awaitTerminated();
   }
 }

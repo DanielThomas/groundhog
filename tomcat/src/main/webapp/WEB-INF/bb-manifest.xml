@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2010 the original author or authors.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
+<manifest xmlns="http://www.blackboard.com/bb-manifest-plugin"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://www.blackboard.com/bb-manifest-plugin http://fibbba.medu.com/xsd/bb-manifest-plugin.xsd">
+  <plugin>
+    <name value="Groundhog Capture"/>
+    <handle value="groundhog-capture"/>
+    <version value="1.0"/>
+
+    <vendor>
+      <id value="bb"/>
+      <name value="Blackboard Inc."/>
+      <url value="http://www.blackboard.com/"/>
+    </vendor>
+
+    <description value="Provides HTTP state capture for Groundhog"/>
+    <default-locale value="en_US"/>
+
+    <context-path value="/groundhog"/>
+    <requires>
+      <bbversion value="9.1.10000"/>
+    </requires>
+
+    <permissions>
+      <!-- Guava Finalizer classloader creation -->
+      <permission type="java.lang.RuntimePermission" name="createClassLoader"/>
+      <!-- Tomcat Host lookup -->
+      <permission type="javax.management.MBeanServerPermission" name="findMBeanServer"/>
+      <permission type="javax.management.MBeanPermission" name="*" actions="*"/>
+      <!-- Tomcat Valve invoke -->
+      <permission type="javax.security.auth.AuthPermission" name="*"/>
+      <!-- Har file writing, allow all files -->
+      <permission type="java.io.FilePermission" name="&amp;lt;&amp;lt;ALL FILES&amp;gt;&amp;gt;" actions="read,write,delete,execute"/>
+    </permissions>
+
+    <requires-bean-introspection value="true"/>
+  </plugin>
+</manifest>

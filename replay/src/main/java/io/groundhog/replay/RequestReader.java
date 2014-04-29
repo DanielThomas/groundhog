@@ -17,7 +17,7 @@
 
 package io.groundhog.replay;
 
-import io.groundhog.base.HttpArchive;
+import io.groundhog.har.HttpArchive;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   whttp://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,14 +15,9 @@
  *
  */
 
-dependencies {
-  compile libraries.guava
-  compile libraries.inject
-  compile libraries.jsr305
-  compile libraries.slf4j
+/**
+ * HTTP archive (HAR) support.
+ */
+@ParametersAreNonnullByDefault package io.groundhog.har;
 
-  compile libraries.jackson
-  compile libraries.netty
-
-  testCompile libraries.testlibs
-}
+import javax.annotation.ParametersAreNonnullByDefault;

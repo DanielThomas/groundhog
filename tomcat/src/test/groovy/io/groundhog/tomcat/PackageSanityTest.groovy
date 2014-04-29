@@ -15,29 +15,33 @@
  *
  */
 
-package io.groundhog.proxy
+package io.groundhog.tomcat
 
-import com.google.common.base.Predicate
 import com.google.common.testing.AbstractPackageSanityTests
 import io.groundhog.har.HarFileCaptureWriter
 import io.groundhog.capture.CaptureWriter
+import io.netty.handler.codec.http.HttpResponseStatus
+import io.netty.handler.codec.http.HttpVersion
 
-import javax.annotation.Nullable
+import javax.servlet.ServletInputStream
 
 /**
- * Package sanity tests for {@link io.groundhog.replay}.
+ * Package sanity tests for {@link io.groundhog.tomcat}.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
   PackageSanityTest() {
-    ignoreClasses(new Predicate<Class<?>>() {
+    setDefault(CaptureWriter.class, new HarFileCaptureWriter(new File(""), false, false, false))
+    setDefault(HttpVersion.class, HttpVersion.HTTP_1_1)
+    setDefault(HttpResponseStatus.class, HttpResponseStatus.OK)
+    setDefault(BufferedReader.class, new BufferedReader(new StringReader("")))
+    setDefault(ServletInputStream.class, new ServletInputStream() {
       @Override
-      boolean apply(@Nullable Class<?> input) {
-        Proxy.class == input
+      int read() throws IOException {
+        return 0
       }
     })
-    setDefault(CaptureWriter.class, new HarFileCaptureWriter(new File(""), false, false, false))
   }
 }

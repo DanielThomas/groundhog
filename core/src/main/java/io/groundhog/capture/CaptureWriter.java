@@ -15,14 +15,21 @@
  *
  */
 
-dependencies {
-  compile libraries.guava
-  compile libraries.inject
-  compile libraries.jsr305
-  compile libraries.slf4j
+package io.groundhog.capture;
 
-  compile libraries.jackson
-  compile libraries.netty
+import com.google.common.util.concurrent.Service;
 
-  testCompile libraries.testlibs
+/**
+ * A {@link Service} providing asynchronous writing of {@link CaptureRequest}s.
+ *
+ * @author Danny Thomas
+ * @since 1.0
+ */
+public interface CaptureWriter extends Service {
+  /**
+   * Write a request asynchronously.
+   *
+   * @param captureRequest the captured request to be written
+   */
+  public void writeAsync(CaptureRequest captureRequest);
 }

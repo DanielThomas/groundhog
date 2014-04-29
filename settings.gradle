@@ -21,7 +21,7 @@ include 'core'
 include 'replay'
 include 'jmeter'
 include 'proxy'
-include 'servlet'
+include 'tomcat'
 
 rootProject.children.each { project ->
   project.buildFileName = "${project.name}.gradle"
