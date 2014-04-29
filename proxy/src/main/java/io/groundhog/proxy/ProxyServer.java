@@ -17,18 +17,19 @@
 
 package io.groundhog.proxy;
 
-import io.groundhog.har.HarFileCaptureWriter;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import io.groundhog.capture.CaptureWriter;
 
-import com.google.common.util.concurrent.AbstractIdleService;
+import java.net.InetSocketAddress;
+
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Properties;
-import java.net.InetSocketAddress;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 /**
  * @author Danny Thomas
@@ -36,27 +37,29 @@ import java.net.InetSocketAddress;
  */
 public final class ProxyServer extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
-
+  
   private CaptureWriter captureWriter;
+  private CaptureFilterSource captureFilterSource;
+  private String listenAddress;
+  private int listenPort;
+
+  @Inject
+  public ProxyServer(CaptureWriter captureWriter,
+      CaptureFilterSource captureFilterSource,
+      @Named("listen.address") String listenAddress,
+      @Named("listen.port") int listenPort) {
+    this.captureWriter = checkNotNull(captureWriter);
+    this.captureFilterSource = checkNotNull(captureFilterSource);
+    this.listenAddress = checkNotNull(listenAddress);
+    checkArgument(listenPort > 0, "Listener port must be greater than zero");
+    this.listenPort = listenPort;
+  }
 
   @Override
   protected void startUp() throws Exception {
-    String propertiesLocation = System.getenv("ProxyConfigLocation").isEmpty() ? "conf/properties" : System.getenv("ProxyConfigLocation");
-    Properties prop = new Properties();
-    prop.load(new FileInputStream(propertiesLocation));
-
-    int port = new Integer(prop.getProperty("port"));
-    String serverName = prop.getProperty("serverName");
-
-    File recordingFile = new File("out/recording.har");
-    captureWriter = new HarFileCaptureWriter(recordingFile, true, false, false);
-    File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
-    CaptureFilterSource filtersSource = new CaptureFilterSource(captureWriter, uploadLocation);
-
     captureWriter.startAsync();
-
-    LOG.info("Starting recording server on port " + port);
-    DefaultHttpProxyServer.bootstrap().withAddress(new InetSocketAddress(serverName, port)).withPort(port).withFiltersSource(filtersSource).start();
+    LOG.info("Starting recording server on port " + listenPort);
+    DefaultHttpProxyServer.bootstrap().withAddress(new InetSocketAddress(listenAddress, listenPort)).withPort(listenPort).withFiltersSource(captureFilterSource).start();
   }
 
   @Override

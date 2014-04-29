@@ -19,13 +19,17 @@ package io.groundhog.proxy;
 
 import java.io.FileNotFoundException;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
 /**
  * @author Danny Thomas
  * @since 1.0
  */
 public final class Proxy {
   public static void main(String[] args) throws FileNotFoundException {
-    final ProxyServer server = new ProxyServer();
+    Injector injector = Guice.createInjector(new ProxyModule());
+    final ProxyServer server = injector.getInstance(ProxyServer.class);
 
     Thread shutdownThread = (new Thread(new Runnable() {
       public void run() {

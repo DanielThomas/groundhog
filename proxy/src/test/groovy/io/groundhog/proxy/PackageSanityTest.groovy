@@ -38,6 +38,10 @@ class PackageSanityTest extends AbstractPackageSanityTests {
         Proxy.class == input
       }
     })
-    setDefault(CaptureWriter.class, new HarFileCaptureWriter(new File(""), false, false, false))
+    CaptureWriter captureWriter = new HarFileCaptureWriter(new File(""), false, false, false)
+    CaptureFilterSource captureFilterSource = new CaptureFilterSource(captureWriter, new File(""), "", "", 1)
+    setDefault(CaptureWriter.class, captureWriter)
+    setDefault(CaptureFilterSource.class, captureFilterSource)
+    setDefault(ProxyServer.class, new ProxyServer(captureWriter, captureFilterSource, "", 1))
   }
 }
