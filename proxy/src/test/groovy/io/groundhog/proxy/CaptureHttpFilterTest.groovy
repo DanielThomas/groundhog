@@ -45,7 +45,8 @@ class CaptureHttpFilterTest extends Specification {
     captureFilter.requestPre(request)
     request.headers().remove(header)
     captureFilter.responsePre(response)
-    captureFilter.responsePost(response)
+    def lastContent = new DefaultLastHttpContent()
+    captureFilter.responsePost(lastContent)
 
     then:
     1 * requestWriter.writeAsync({ it.request != request && it.request.headers().contains(header) } as CaptureRequest)

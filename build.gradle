@@ -17,30 +17,35 @@
 
 version '0.2-SNAPSHOT'
 
-apply from: 'gradle/idea.gradle'
-apply from: 'gradle/dependencies.gradle'
+apply plugin: 'idea'
+apply from: 'gradle/idea-project.gradle'
 
 allprojects {
   group 'io.groundhog'
   repositories {
     mavenCentral()
+    maven {
+      url 'https://maven.blackboard.com/content/repositories/releases/'
+    }
   }
+  apply from: "$rootProject.rootDir/gradle/dependencies.gradle"
 }
 
 subprojects {
   apply plugin: 'java'
   apply plugin: 'groovy'
+  apply plugin: 'idea'
   apply plugin: 'errorprone'
   apply plugin: 'project-report'
   apply plugin: 'versions'
+
+  apply from: "$rootProject.rootDir/gradle/integTest.gradle"
 
   version = rootProject.version
   archivesBaseName = "groundhog-$project.name"
 }
 
 task wrapper(type: Wrapper) { gradleVersion = '1.11' }
-
-defaultTasks 'build'
 
 buildscript {
   repositories {

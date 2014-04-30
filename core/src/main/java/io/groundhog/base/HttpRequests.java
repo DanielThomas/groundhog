@@ -19,11 +19,12 @@ package io.groundhog.base;
 
 import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.Enumeration;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;

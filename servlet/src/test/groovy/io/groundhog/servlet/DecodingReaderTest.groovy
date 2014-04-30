@@ -15,16 +15,23 @@
  *
  */
 
-rootProject.name = 'groundhog'
+package io.groundhog.servlet
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'servlet'
+import com.google.common.base.Charsets
+import io.groundhog.capture.HttpCaptureDecoder
+import org.apache.coyote.InputBuffer
+import spock.lang.Specification
 
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
+import javax.servlet.ServletInputStream
+
+/**
+ * Tests for {@link DecodingReader}.
+ */
+class DecodingReaderTest extends Specification {
+  def 'placeholder'() {
+    def reader = Mock(Reader)
+    def captureDecoder = Mock(HttpCaptureDecoder)
+    def decoder = DecodingReader.wrap(reader, Charsets.UTF_8, captureDecoder)
+    decoder.setFailFast(true)
+  }
 }
