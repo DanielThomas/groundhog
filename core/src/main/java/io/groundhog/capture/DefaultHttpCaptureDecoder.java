@@ -142,6 +142,8 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
   public void response(HttpObject httpObject) {
     checkNotNull(httpObject);
     if (httpObject instanceof HttpResponse) {
+      // Signal to the decoder that the request has completed, because we've started to process a response
+      request(LastHttpContent.EMPTY_LAST_CONTENT);
       response = (HttpResponse) httpObject;
     }
   }

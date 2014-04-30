@@ -67,19 +67,24 @@ public class CaptureValve extends ValveBase implements Valve {
     checkNotNull(request);
     checkNotNull(response);
     HttpCaptureDecoder captureDecoder = new DefaultHttpCaptureDecoder(new File("/tmp"));
+    wrapCoyoteInputBuffer(request, captureDecoder);
     try {
-      wrapCoyoteInputBuffer(request, captureDecoder);
+      try {
+        captureDecoder.request(transformRequest(request));
+      } catch (Exception e) {
+        LOG.error("Error capturing request", e);
+      }
 
-      captureDecoder.request(transformRequest(request));
+      // Invoke the next valve without surrounding catch blocks, so we're not changing exception behaviour
       getNext().invoke(request, response);
-      // Signal to the decoder that the request is complete
-      captureDecoder.request(LastHttpContent.EMPTY_LAST_CONTENT);
-      captureDecoder.response(transformResponse(request, response));
 
-      CaptureRequest captureRequest = captureDecoder.complete();
-      writer.writeAsync(captureRequest);
-    } catch (Exception e) {
-      LOG.error("Error capturing request", e);
+      try {
+        captureDecoder.response(transformResponse(request, response));
+        CaptureRequest captureRequest = captureDecoder.complete();
+        writer.writeAsync(captureRequest);
+      } catch (Exception e) {
+        LOG.error("Error capturing response", e);
+      }
     } finally {
       unwrapCoyoteInputBuffer(request);
       captureDecoder.destroy();
