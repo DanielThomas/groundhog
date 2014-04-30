@@ -17,6 +17,7 @@
 
 package io.groundhog.har;
 
+import io.groundhog.base.HttpRequests;
 import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.CaptureRequest;
 import io.groundhog.capture.DefaultCapturePostRequest;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
@@ -40,6 +42,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -194,22 +198,25 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     generator.writeEndObject();
   }
 
-  private String getUrl(CaptureRequest captureRequest) {
-    HostAndPort hostAndPort = captureRequest.getHostAndPort();
+  @VisibleForTesting
+  static String getUrl(CaptureRequest captureRequest) {
+    HttpRequest request = captureRequest.getRequest();
+    HostAndPort hostAndPort = HttpRequests.identifyHostAndPort(request);
     try {
       int port = hostAndPort.getPortOrDefault(80);
       String scheme = getUrlScheme(port);
+      URI uri = new URI(request.getUri());
       if (isDefaultPort(port, scheme)) {
-        return new URL(scheme, hostAndPort.getHostText(), captureRequest.getRequest().getUri()).toExternalForm();
+        return new URL(scheme, hostAndPort.getHostText(), uri.getPath()).toExternalForm();
       } else {
-        return new URL(scheme, hostAndPort.getHostText(), port, captureRequest.getRequest().getUri()).toExternalForm();
+        return new URL(scheme, hostAndPort.getHostText(), port, uri.getPath()).toExternalForm();
       }
-    } catch (MalformedURLException e) {
+    } catch (URISyntaxException | MalformedURLException e) {
       throw Throwables.propagate(e);
     }
   }
 
-  private boolean isDefaultPort(int port, String scheme) {
+  private static boolean isDefaultPort(int port, String scheme) {
     switch (scheme) {
       case HTTP_SCHEME: {
         return DEFAULT_HTTP_PORT == port;
@@ -222,7 +229,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     }
   }
 
-  private String getUrlScheme(int port) {
+  private static String getUrlScheme(int port) {
     // It seems like we can only infer protocol schemes based on port, fine for now in any case
     switch (port) {
       case DEFAULT_HTTPS_PORT:

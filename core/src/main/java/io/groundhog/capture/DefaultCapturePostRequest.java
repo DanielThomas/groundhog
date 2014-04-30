@@ -38,16 +38,16 @@ public class DefaultCapturePostRequest extends DefaultCaptureRequest {
   private final List<HttpArchive.Param> params;
   private final String content;
 
-  public DefaultCapturePostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, List<HttpArchive.Param> params) {
-    this(startedDateTime, hostAndPort, request, response, "", ImmutableList.copyOf(params));
+  public DefaultCapturePostRequest(long startedDateTime, HttpRequest request, HttpResponse response, List<HttpArchive.Param> params) {
+    this(startedDateTime, request, response, "", ImmutableList.copyOf(params));
   }
 
-  public DefaultCapturePostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content) {
-    this(startedDateTime, hostAndPort, request, response, content, Collections.<HttpArchive.Param>emptyList());
+  public DefaultCapturePostRequest(long startedDateTime, HttpRequest request, HttpResponse response, String content) {
+    this(startedDateTime, request, response, content, Collections.<HttpArchive.Param>emptyList());
   }
 
-  private DefaultCapturePostRequest(long startedDateTime, HostAndPort hostAndPort, HttpRequest request, HttpResponse response, String content, List<HttpArchive.Param> params) {
-    super(startedDateTime, hostAndPort, request, response);
+  private DefaultCapturePostRequest(long startedDateTime, HttpRequest request, HttpResponse response, String content, List<HttpArchive.Param> params) {
+    super(startedDateTime, request, response);
     this.params = checkNotNull(params);
     this.content = checkNotNull(content);
   }

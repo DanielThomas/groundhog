@@ -17,15 +17,12 @@
 
 package io.groundhog.capture;
 
-import io.groundhog.base.HttpRequests;
 import io.groundhog.har.HttpArchive;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
-import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.net.HostAndPort;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.Attribute;
@@ -152,16 +149,15 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
   public CaptureRequest complete() {
     checkState(null != request, "Request hasn't been set");
     checkState(null != response, "Response hasn't been set");
-    HostAndPort hostAndPort = HttpRequests.identifyHostAndPort(request);
     CaptureRequest captureRequest;
     if (isPost) {
       if (null == decoder) {
-        captureRequest = new DefaultCapturePostRequest(startedDateTime, hostAndPort, request, response, content.toString());
+        captureRequest = new DefaultCapturePostRequest(startedDateTime, request, response, content.toString());
       } else {
-        captureRequest = new DefaultCapturePostRequest(startedDateTime, hostAndPort, request, response, params);
+        captureRequest = new DefaultCapturePostRequest(startedDateTime, request, response, params);
       }
     } else {
-      captureRequest = new DefaultCaptureRequest(startedDateTime, hostAndPort, request, response);
+      captureRequest = new DefaultCaptureRequest(startedDateTime, request, response);
     }
     return captureRequest;
   }

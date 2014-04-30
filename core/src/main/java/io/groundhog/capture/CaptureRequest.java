@@ -33,8 +33,6 @@ import java.util.Collection;
 public interface CaptureRequest {
   long getStartedDateTime();
 
-  HostAndPort getHostAndPort();
-
   HttpRequest getRequest();
 
   HttpResponse getResponse();
