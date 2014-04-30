@@ -55,6 +55,7 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -110,7 +111,10 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     if(filename.endsWith(".gz") || filename.endsWith(".zhar")) {
       generator = jsonFactory.createGenerator(new GZIPOutputStream(new FileOutputStream(recordingFile)), JsonEncoding.UTF8);
     } else if(filename.endsWith(".zip") || filename.endsWith(".zzhar")) {
-      generator = jsonFactory.createGenerator(new ZipOutputStream(new FileOutputStream(recordingFile)), JsonEncoding.UTF8);
+      ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(recordingFile));
+      generator = jsonFactory.createGenerator(zos, JsonEncoding.UTF8);
+      ZipEntry ze = new ZipEntry(filename.replaceAll(".zip","").replaceAll(".zzhar",".har"));
+      zos.putNextEntry(ze);
     } else {
       generator = jsonFactory.createGenerator(new FileOutputStream(recordingFile), JsonEncoding.UTF8);
     }
