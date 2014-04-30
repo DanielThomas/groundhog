@@ -17,14 +17,15 @@
 
 package io.groundhog.proxy;
 
-import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.CaptureRequest;
+import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.DefaultHttpCaptureDecoder;
 import io.groundhog.capture.HttpCaptureDecoder;
 
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 import org.littleshoot.proxy.HttpFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,18 +75,26 @@ public class CaptureHttpFilter implements HttpFilters {
   @Override
   public HttpObject responsePre(HttpObject httpObject) {
     checkNotNull(httpObject);
-    captureDecoder.response(httpObject);
+    try {
+      captureDecoder.response(httpObject);
+    } catch (Exception e) {
+      LOG.error("Failed to capture response", e);
+    }
     return httpObject;
   }
 
   @Override
   public HttpObject responsePost(HttpObject httpObject) {
     checkNotNull(httpObject);
-    try {
-      CaptureRequest captureRequest = captureDecoder.complete();
-      captureWriter.writeAsync(captureRequest);
-    } finally {
-      captureDecoder.destroy();
+    if (httpObject instanceof LastHttpContent) {
+      try {
+        CaptureRequest captureRequest = captureDecoder.complete();
+        captureWriter.writeAsync(captureRequest);
+      } catch (Exception e) {
+        LOG.error("Failed to complete and write request", e);
+      } finally {
+        captureDecoder.destroy();
+      }
     }
     return httpObject;
   }
