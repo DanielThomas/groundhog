@@ -47,6 +47,21 @@ class HarFileCaptureWriterTest extends Specification {
     HarFileCaptureWriter.getUrl(captureRequest) == "http://localhost/"
   }
 
+  def 'URL includes query string'() {
+    given:
+    def request = Mock(HttpRequest)
+    request.getUri() >> "/request?key=value"
+    def headers = new DefaultHttpHeaders()
+    headers.add(HttpHeaders.Names.HOST, "localhost")
+    request.headers() >> headers
+
+    def response = Mock(HttpResponse)
+    def captureRequest = new DefaultCaptureRequest(System.currentTimeMillis(), request, response)
+
+    expect:
+    HarFileCaptureWriter.getUrl(captureRequest) == "http://localhost/request?key=value"
+  }
+
   def 'URL contains port when not default'() {
     given:
     def request = Mock(HttpRequest)
@@ -71,5 +86,19 @@ class HarFileCaptureWriterTest extends Specification {
 
     expect:
     HarFileCaptureWriter.getUrl(captureRequest) == "http://localhost/"
+  }
+
+  def 'URL infers protocol scheme for default HTTPS port'() {
+    given:
+    def request = Mock(HttpRequest)
+    request.getUri() >> "/"
+    def headers = new DefaultHttpHeaders()
+    headers.add(HttpHeaders.Names.HOST, "localhost:443")
+    request.headers() >> headers
+    def response = Mock(HttpResponse)
+    def captureRequest = new DefaultCaptureRequest(System.currentTimeMillis(), request, response)
+
+    expect:
+    HarFileCaptureWriter.getUrl(captureRequest) == "https://localhost/"
   }
 }
