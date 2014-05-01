@@ -19,12 +19,11 @@ package io.groundhog.base;
 
 import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.Enumeration;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -48,8 +47,11 @@ public class HttpRequests {
         return -1 == uri.getPort() ? HostAndPort.fromString(uri.getHost()) : HostAndPort.fromParts(uri.getHost(), uri.getPort());
       } else {
         String hostHeader = httpRequest.headers().get(HttpHeaders.Names.HOST);
-        checkArgument(null != hostHeader, "The host header may not be null for requests with host relative uris");
-        return HostAndPort.fromString(hostHeader);
+        if (null != hostHeader) {
+          return HostAndPort.fromString(hostHeader);
+        } else {
+          throw new IllegalArgumentException("The host header may not be null for requests with host relative uris");
+        }
       }
     } catch (URISyntaxException e) {
       throw Throwables.propagate(e);
