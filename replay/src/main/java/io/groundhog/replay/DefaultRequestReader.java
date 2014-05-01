@@ -17,8 +17,6 @@
 
 package io.groundhog.replay;
 
-import io.groundhog.har.HttpArchive;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -27,7 +25,9 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import com.google.inject.Inject;
+import io.groundhog.har.HttpArchive;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,10 +35,12 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -53,7 +55,7 @@ public class DefaultRequestReader implements RequestReader {
 
   private static final String REQUIRED_HAR_VERSION = "1.2";
   private static final Set<String> SKIPPED_ENTRY_FIELDS = ImmutableSortedSet.of("pageref", "serverIPAddress",
-      "connection", "comment");
+          "connection", "comment");
   private static final Set<String> SKIPPED_REQUEST_FIELDS = ImmutableSortedSet.of("headersSize", "bodySize", "comment");
 
   private final File uploadLocation;
@@ -68,8 +70,15 @@ public class DefaultRequestReader implements RequestReader {
     this.uploadLocation = checkNotNull(uploadLocation);
 
     JsonFactory jsonFactory = new JsonFactory();
-    parser = jsonFactory.createParser(new FileInputStream(recordingFile));
-
+    String filename = recordingFile.getName();
+    String ext = Files.getFileExtension(filename);
+    InputStream inStream;
+    if (ext.equals("gz")) {
+      inStream = new GZIPInputStream(new FileInputStream(recordingFile));
+    } else {
+      inStream = new FileInputStream(recordingFile);
+    }
+    parser = jsonFactory.createParser(inStream);
     TimeZone tz = TimeZone.getTimeZone("UTC");
     iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     iso8601Format.setTimeZone(tz);
@@ -94,7 +103,7 @@ public class DefaultRequestReader implements RequestReader {
     checkToken(parser.nextToken(), JsonToken.START_OBJECT);
     checkToken(parser.nextToken(), JsonToken.FIELD_NAME);
     checkState("log".equals(parser.getCurrentName()), "The root element must be 'log', found %s",
-        parser.getCurrentName());
+            parser.getCurrentName());
 
     checkObjectStart(parser.nextToken());
     while (JsonToken.END_OBJECT != parser.nextToken()) {
@@ -604,7 +613,7 @@ public class DefaultRequestReader implements RequestReader {
   private void checkToken(JsonToken actual, JsonToken... expected) throws IOException {
     HashSet<JsonToken> expectedSet = Sets.newHashSet(expected);
     checkArgument(expectedSet.contains(actual), "Unexpected token. Actual '%s', expected '%s'. Location '%s'",
-        actual, expectedSet, parser.getCurrentName(), parser.getCurrentLocation());
+            actual, expectedSet, parser.getCurrentName(), parser.getCurrentLocation());
   }
 
   private enum State {

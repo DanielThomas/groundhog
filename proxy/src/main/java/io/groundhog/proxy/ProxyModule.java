@@ -30,7 +30,7 @@ public class ProxyModule extends AbstractModule {
 
     Names.bindProperties(binder(), properties);
 
-    String outputFilename = "out/recording.har";
+    String outputFilename = "out/recording.har.gz";
     File outputFile = new File(outputFilename);
     String uploadDirectoryName = "uploads";
     File uploadLocation = new File(outputFile.getParentFile(), uploadDirectoryName);
