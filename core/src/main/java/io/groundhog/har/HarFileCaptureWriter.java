@@ -18,8 +18,8 @@
 package io.groundhog.har;
 
 import io.groundhog.base.HttpRequests;
-import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.CaptureRequest;
+import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.DefaultCapturePostRequest;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -204,12 +204,17 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     HostAndPort hostAndPort = HttpRequests.identifyHostAndPort(request);
     try {
       int port = hostAndPort.getPortOrDefault(80);
-      String scheme = getUrlScheme(port);
+      String protocol = getUrlScheme(port);
+      String host = hostAndPort.getHostText();
       URI uri = new URI(request.getUri());
-      if (isDefaultPort(port, scheme)) {
-        return new URL(scheme, hostAndPort.getHostText(), uri.getPath()).toExternalForm();
+      String file = uri.getPath();
+      if (null != uri.getQuery()) {
+        file = file + "?" + uri.getQuery();
+      }
+      if (isDefaultPort(port, protocol)) {
+        return new URL(protocol, host, file).toExternalForm();
       } else {
-        return new URL(scheme, hostAndPort.getHostText(), port, uri.getPath()).toExternalForm();
+        return new URL(protocol, host, port, file).toExternalForm();
       }
     } catch (URISyntaxException | MalformedURLException e) {
       throw Throwables.propagate(e);
