@@ -36,7 +36,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class RequestDispatcher extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(RequestDispatcher.class);

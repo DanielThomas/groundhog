@@ -27,7 +27,7 @@ import static com.google.common.base.Preconditions.checkState;
  * TODO look into the monitor waits for this class. Might need to swap out the coarse synchronisation for concurrent collections
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class UserAgent {
   private static final Logger LOG = LoggerFactory.getLogger(UserAgent.class);

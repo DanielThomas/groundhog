@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Static utility methods pertaining to {@link io.netty.handler.codec.http.HttpRequest} instances.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class HttpRequests {
   private HttpRequests() {

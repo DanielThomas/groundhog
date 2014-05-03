@@ -43,7 +43,7 @@ import java.util.Set;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class UserAgentHandler extends ChannelDuplexHandler {
   private static final Logger LOG = LoggerFactory.getLogger(UserAgentHandler.class);

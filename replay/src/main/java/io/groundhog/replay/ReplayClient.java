@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public final class ReplayClient extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(ReplayClient.class);

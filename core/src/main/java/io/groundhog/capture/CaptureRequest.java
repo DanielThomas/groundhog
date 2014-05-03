@@ -28,7 +28,7 @@ import java.util.Collection;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public interface CaptureRequest {
   long getStartedDateTime();

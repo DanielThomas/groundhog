@@ -52,7 +52,7 @@ import static com.google.common.base.Preconditions.*;
  * TODO cut down on the amount of code duplication in this file
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class RequestReader extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(RequestReader.class);

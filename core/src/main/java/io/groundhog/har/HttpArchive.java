@@ -31,7 +31,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class HttpArchive {
   public static final HttpVersion DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_1;

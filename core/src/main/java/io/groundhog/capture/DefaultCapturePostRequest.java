@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class DefaultCapturePostRequest extends DefaultCaptureRequest {
   private final List<HttpArchive.Param> params;

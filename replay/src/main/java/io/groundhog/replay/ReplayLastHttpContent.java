@@ -31,7 +31,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * A {@link LastHttpContent} that allows a parsed JSoup {@link Document} to be attached.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class ReplayLastHttpContent implements LastHttpContent {
   private final LastHttpContent content;

@@ -29,7 +29,7 @@ import java.io.File;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public final class ProxyServer extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);

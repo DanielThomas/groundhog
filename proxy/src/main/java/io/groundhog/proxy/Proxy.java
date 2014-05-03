@@ -21,7 +21,7 @@ import java.io.FileNotFoundException;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public final class Proxy {
   public static void main(String[] args) throws FileNotFoundException {

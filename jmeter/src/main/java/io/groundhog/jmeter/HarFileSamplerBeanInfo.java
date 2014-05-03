@@ -7,7 +7,7 @@ import java.beans.PropertyDescriptor;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class HarFileSamplerBeanInfo extends BeanInfoSupport {
   public HarFileSamplerBeanInfo() {

@@ -22,7 +22,7 @@ import io.netty.handler.codec.http.*;
 
 /**
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 public class ReplayFullHttpRequest extends ReplayHttpRequest implements FullHttpRequest {
   public ReplayFullHttpRequest(FullHttpRequest request, HttpResponse expectedResponse, UserAgent userAgent, boolean blocking) {
