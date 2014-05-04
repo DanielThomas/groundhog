@@ -33,6 +33,9 @@ configurations.all {
       case 'log4j':
         details.useTarget "org.slf4j:log4j-over-slf4j:$versions.slf4j"
         break
+      case 'commons-logging':
+        details.useTarget "org.slf4j:jcl-over-slf4j:$versions.slf4j"
+        break
       case 'groovy-all':
         details.useVersion '2.2.2'
         break
@@ -61,7 +64,6 @@ libraries.jsoup = 'org.jsoup:jsoup:1.7.3'
 libraries.jmeter = 'org.apache.jmeter:ApacheJMeter_components:2.11'
 
 libraries.littleproxy = dependencies.create('org.littleshoot:littleproxy:1.0.0-beta7') {
-  exclude module: 'log4j'
   exclude module: 'slf4j-log4j12'
 }
 
