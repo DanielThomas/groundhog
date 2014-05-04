@@ -43,7 +43,7 @@ public final class TomcatContainerServletCaptureListener implements ContainerSer
 
   @Inject
   TomcatContainerServletCaptureListener(CaptureValve valve) {
-    this.valve = valve;
+    this.valve = checkNotNull(valve);
   }
 
   @Override
