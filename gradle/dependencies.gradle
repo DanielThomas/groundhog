@@ -22,7 +22,6 @@ ext {
 
 versions.slf4j = '1.7.7'
 versions.guava = '17.0'
-versions.netty = '4.0.18.Final'
 
 configurations.all {
   resolutionStrategy.eachDependency { details ->
@@ -51,7 +50,7 @@ libraries.slf4j = "org.slf4j:slf4j-api:$versions.slf4j"
 libraries.logback = 'ch.qos.logback:logback-classic:1.1.2'
 
 libraries.netty = [
-    "io.netty:netty-codec-http:$versions.netty",
+    'io.netty:netty-all:4.0.18.Final',
     'org.javassist:javassist:3.18.1-GA',
     'com.jcraft:jzlib:1.1.3'
 ]
