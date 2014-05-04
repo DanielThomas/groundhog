@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   whttp://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,16 +15,20 @@
  *
  */
 
-apply plugin: 'application'
+package io.groundhog.servlet
 
-mainClassName = 'io.groundhog.replay.Replay'
-applicationName = archivesBaseName
+import io.groundhog.capture.HttpCaptureDecoder
+import org.apache.coyote.InputBuffer
+import spock.lang.Specification
 
-dependencies {
-  compile project(':core')
-
-  compile libraries.logback
-  compile libraries.jsoup
-
-  testCompile libraries.testlibs
+/**
+ * Tests for {@link DecodingInputBuffer}.
+ */
+class DecodingInputBufferTest extends Specification {
+  def 'placeholder'() {
+    def inputBuffer = Mock(InputBuffer)
+    def captureDecoder = Mock(HttpCaptureDecoder)
+    def decoder = DecodingInputBuffer.wrap(inputBuffer, captureDecoder)
+    decoder.setFailFast(true)
+  }
 }

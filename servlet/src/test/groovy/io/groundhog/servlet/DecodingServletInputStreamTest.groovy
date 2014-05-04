@@ -15,16 +15,22 @@
  *
  */
 
-rootProject.name = 'groundhog'
+package io.groundhog.servlet
 
-include 'core'
-include 'replay'
-include 'jmeter'
-include 'proxy'
-include 'servlet'
+import io.groundhog.capture.HttpCaptureDecoder
+import org.apache.coyote.InputBuffer
+import spock.lang.Specification
 
-rootProject.children.each { project ->
-  project.buildFileName = "${project.name}.gradle"
-  assert project.projectDir.isDirectory()
-  assert project.buildFile.isFile()
+import javax.servlet.ServletInputStream
+
+/**
+ * Tests for {@link DecodingServletInputStream}.
+ */
+class DecodingServletInputStreamTest extends Specification {
+  def 'placeholder'() {
+    def inputStream = Mock(ServletInputStream)
+    def captureDecoder = Mock(HttpCaptureDecoder)
+    def decoder = DecodingServletInputStream.wrap(inputStream, captureDecoder)
+    decoder.setFailFast(true)
+  }
 }

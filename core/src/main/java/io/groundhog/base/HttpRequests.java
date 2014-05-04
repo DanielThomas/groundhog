@@ -47,8 +47,11 @@ public class HttpRequests {
         return -1 == uri.getPort() ? HostAndPort.fromString(uri.getHost()) : HostAndPort.fromParts(uri.getHost(), uri.getPort());
       } else {
         String hostHeader = httpRequest.headers().get(HttpHeaders.Names.HOST);
-        checkArgument(null != hostHeader, "The host header may not be null for requests with host relative uris");
-        return HostAndPort.fromString(hostHeader);
+        if (null != hostHeader) {
+          return HostAndPort.fromString(hostHeader);
+        } else {
+          throw new IllegalArgumentException("The host header may not be null for requests with host relative uris");
+        }
       }
     } catch (URISyntaxException e) {
       throw Throwables.propagate(e);

@@ -76,25 +76,31 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
     } else if (httpObject instanceof HttpContent) {
       HttpContent chunk = ((HttpContent) httpObject);
       HttpMethod method = request.getMethod();
+      String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
       if (POST_DECODE_METHODS.contains(method)) {
         isPost = true;
         chunk = chunk.duplicate();
-        String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
         if (contentType.startsWith(TEXT_PLAIN)) {
           if (null == content) {
             content = new StringBuilder();
           }
           ByteBuf buf = chunk.content();
           content.append(buf.copy().toString(Charsets.UTF_8));
-        } else {
+        } else if (isDecodedContentType(contentType)) {
           if (null == decoder) {
             decoder = new HttpPostRequestDecoder(request);
           }
           decoder.offer(chunk);
           readAvailableData();
         }
+      } else {
+        LOG.debug("Unsupported POST content type ", contentType);
       }
     }
+  }
+
+  private boolean isDecodedContentType(String contentType) {
+    return contentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || contentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
   }
 
   private void readAvailableData() {
@@ -151,10 +157,12 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
     checkState(null != response, "Response hasn't been set");
     CaptureRequest captureRequest;
     if (isPost) {
-      if (null == decoder) {
+      if (null != content) {
         captureRequest = new DefaultCapturePostRequest(startedDateTime, request, response, content.toString());
-      } else {
+      } else if (null != decoder) {
         captureRequest = new DefaultCapturePostRequest(startedDateTime, request, response, params);
+      } else {
+        captureRequest = new DefaultCaptureRequest(startedDateTime, request, response);
       }
     } else {
       captureRequest = new DefaultCaptureRequest(startedDateTime, request, response);
