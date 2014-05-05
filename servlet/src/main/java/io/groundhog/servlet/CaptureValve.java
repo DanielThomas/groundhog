@@ -51,7 +51,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class CaptureValve extends ValveBase implements Valve {
   private static final Logger LOG = LoggerFactory.getLogger(CaptureValve.class);
 
-  private static final String INFO = "io.groundhog.servlet.CaptureValve/1.0";
+  private static final String INFO;
+
+  static {
+    Package groundhogPackage = Package.getPackage("io.groundhog.servlet");
+    String version = groundhogPackage.getImplementationVersion();
+    version = null == version ? "Unknown" : version;
+    INFO = "io.groundhog.servlet.CaptureValve/" + version;
+  }
 
   private final CaptureWriter writer;
 

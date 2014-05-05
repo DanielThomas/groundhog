@@ -17,7 +17,6 @@
 
 version '1.0-SNAPSHOT'
 
-apply plugin: 'idea'
 apply from: 'gradle/idea-project.gradle'
 
 allprojects {
@@ -32,17 +31,9 @@ allprojects {
 }
 
 subprojects {
-  apply plugin: 'java'
-  apply plugin: 'groovy'
-  apply plugin: 'idea'
-  apply plugin: 'errorprone'
-  apply plugin: 'project-report'
-  apply plugin: 'versions'
-
+  apply from: "$rootProject.rootDir/gradle/base.gradle"
   apply from: "$rootProject.rootDir/gradle/integTest.gradle"
-
-  version = rootProject.version
-  archivesBaseName = "groundhog-$project.name"
+  apply from: "$rootProject.rootDir/gradle/idea-module.gradle"
 }
 
 task wrapper(type: Wrapper) { gradleVersion = '1.11' }

@@ -143,8 +143,9 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   private void writeCreator() throws IOException {
     generator.writeObjectFieldStart("creator");
     // TODO get these from jar manifest
-    generator.writeStringField("name", "Groundhog Recorder");
-    generator.writeStringField("version", "0.1");
+    generator.writeStringField("name", "Groundhog Capture");
+    Package groundhogPackage = Package.getPackage("io.groundhog.har");
+    generator.writeStringField("version", groundhogPackage.getImplementationVersion());
     if (lightweight) {
       generator.writeStringField("comment", "lightweight");
     }
@@ -312,18 +313,18 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     }
   }
 
-  private void writePostData(DefaultCapturePostRequest recordRequest) throws IOException {
-    HttpHeaders headers = recordRequest.getRequest().headers();
+  private void writePostData(DefaultCapturePostRequest captureRequest) throws IOException {
+    HttpHeaders headers = captureRequest.getRequest().headers();
     generator.writeObjectFieldStart("postData");
     generator.writeStringField("mimeType", headers.get(HttpHeaders.Names.CONTENT_TYPE));
 
-    if (recordRequest.getContent().isPresent()) {
-      generator.writeStringField("text", recordRequest.getContent().get());
+    if (captureRequest.getContent().isPresent()) {
+      generator.writeStringField("text", captureRequest.getContent().get());
     }
 
-    if (!recordRequest.getParams().isEmpty()) {
+    if (!captureRequest.getParams().isEmpty()) {
       generator.writeArrayFieldStart("params");
-      List<HttpArchive.Param> params = recordRequest.getParams();
+      List<HttpArchive.Param> params = captureRequest.getParams();
       for (HttpArchive.Param param : params) {
         generator.writeStartObject();
         writeMandatoryStringField("name", param.getName());
