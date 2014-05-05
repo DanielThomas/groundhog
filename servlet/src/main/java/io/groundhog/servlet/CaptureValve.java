@@ -104,7 +104,7 @@ public final class CaptureValve extends ValveBase implements Valve {
   private void wrapCoyoteInputBuffer(Request request, HttpCaptureDecoder captureDecoder) {
     org.apache.coyote.Request coyoteRequest = request.getCoyoteRequest();
     InputBuffer inputBuffer = coyoteRequest.getInputBuffer();
-    InputBuffer decodingInputBuffer = DecodingInputBuffer.wrap(inputBuffer, captureDecoder);
+    InputBuffer decodingInputBuffer = new DecodingInputBuffer(inputBuffer, captureDecoder);
     coyoteRequest.setInputBuffer(decodingInputBuffer);
   }
 

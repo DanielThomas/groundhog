@@ -31,7 +31,7 @@ class DecodingReaderTest extends Specification {
   def 'placeholder'() {
     def reader = Mock(Reader)
     def captureDecoder = Mock(HttpCaptureDecoder)
-    def decoder = DecodingReader.wrap(reader, Charsets.UTF_8, captureDecoder)
+    def decoder = new DecodingReader(reader, Charsets.UTF_8, captureDecoder)
     decoder.setFailFast(true)
   }
 }

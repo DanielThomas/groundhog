@@ -30,7 +30,7 @@ class DecodingServletInputStreamTest extends Specification {
   def 'placeholder'() {
     def inputStream = Mock(ServletInputStream)
     def captureDecoder = Mock(HttpCaptureDecoder)
-    def decoder = DecodingServletInputStream.wrap(inputStream, captureDecoder)
+    def decoder = new DecodingServletInputStream(inputStream, captureDecoder)
     decoder.setFailFast(true)
   }
 }

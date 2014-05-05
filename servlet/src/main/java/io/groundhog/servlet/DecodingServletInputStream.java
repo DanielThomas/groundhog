@@ -24,13 +24,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
-import org.apache.coyote.InputBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -40,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public final class DecodingServletInputStream extends ServletInputStream {
+public final class DecodingServletInputStream extends ServletInputStream implements FilterWrapper<ServletInputStream> {
   private static final Logger LOG = LoggerFactory.getLogger(DecodingInputBuffer.class);
 
   protected final ServletInputStream in;
@@ -49,11 +47,7 @@ public final class DecodingServletInputStream extends ServletInputStream {
   private byte[] singleByte = new byte[1];
   private boolean failFast;
 
-  public static DecodingServletInputStream wrap(ServletInputStream in, HttpCaptureDecoder captureDecoder) {
-    return new DecodingServletInputStream(in, captureDecoder);
-  }
-
-  private DecodingServletInputStream(ServletInputStream in, HttpCaptureDecoder captureDecoder) {
+  public DecodingServletInputStream(ServletInputStream in, HttpCaptureDecoder captureDecoder) {
     this.in = checkNotNull(in);
     this.captureDecoder = checkNotNull(captureDecoder);
   }
@@ -134,5 +128,10 @@ public final class DecodingServletInputStream extends ServletInputStream {
   @VisibleForTesting
   void setFailFast(boolean failFast) {
     this.failFast = failFast;
+  }
+
+  @Override
+  public ServletInputStream unwrap() {
+    return in;
   }
 }

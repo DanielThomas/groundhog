@@ -41,7 +41,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public final class DecodingInputBuffer implements InputBuffer {
+public final class DecodingInputBuffer implements InputBuffer, FilterWrapper<InputBuffer> {
   private static final Logger LOG = LoggerFactory.getLogger(DecodingInputBuffer.class);
 
   private final InputBuffer inputBuffer;
@@ -49,11 +49,7 @@ public final class DecodingInputBuffer implements InputBuffer {
 
   private boolean failFast;
 
-  public static DecodingInputBuffer wrap(InputBuffer inputBuffer, HttpCaptureDecoder captureDecoder) {
-    return new DecodingInputBuffer(inputBuffer, captureDecoder);
-  }
-
-  private DecodingInputBuffer(InputBuffer inputBuffer, HttpCaptureDecoder captureDecoder) {
+  public DecodingInputBuffer(InputBuffer inputBuffer, HttpCaptureDecoder captureDecoder) {
     this.inputBuffer = checkNotNull(inputBuffer);
     this.captureDecoder = checkNotNull(captureDecoder);
   }
@@ -79,6 +75,7 @@ public final class DecodingInputBuffer implements InputBuffer {
     }
   }
 
+  @Override
   public InputBuffer unwrap() {
     return inputBuffer;
   }

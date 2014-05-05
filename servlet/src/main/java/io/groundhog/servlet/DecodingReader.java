@@ -41,7 +41,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public final class DecodingReader extends FilterReader {
+public final class DecodingReader extends FilterReader implements FilterWrapper<Reader> {
   private static final Logger LOG = LoggerFactory.getLogger(DecodingReader.class);
 
   private final HttpCaptureDecoder captureDecoder;
@@ -50,11 +50,7 @@ public final class DecodingReader extends FilterReader {
   private byte[] singleByte = new byte[1];
   private boolean failFast;
 
-  public static DecodingReader wrap(Reader in, Charset charset, HttpCaptureDecoder captureDecoder) {
-    return new DecodingReader(in, charset, captureDecoder);
-  }
-
-  private DecodingReader(Reader in, Charset charset, HttpCaptureDecoder captureDecoder) {
+  public DecodingReader(Reader in, Charset charset, HttpCaptureDecoder captureDecoder) {
     super(in);
     this.charset = checkNotNull(charset);
     this.captureDecoder = checkNotNull(captureDecoder);
@@ -119,5 +115,10 @@ public final class DecodingReader extends FilterReader {
   @VisibleForTesting
   void setFailFast(boolean failFast) {
     this.failFast = failFast;
+  }
+
+  @Override
+  public Reader unwrap() {
+    return in;
   }
 }

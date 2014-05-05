@@ -52,7 +52,7 @@ public final class CaptureServletRequestHttpWrapper extends HttpServletRequestWr
   @Override
   public ServletInputStream getInputStream() throws IOException {
     if (null == inputStream) {
-      inputStream = DecodingServletInputStream.wrap(super.getInputStream(), captureDecoder);
+      inputStream = new DecodingServletInputStream(super.getInputStream(), captureDecoder);
     }
     return inputStream;
   }
@@ -60,7 +60,7 @@ public final class CaptureServletRequestHttpWrapper extends HttpServletRequestWr
   @Override
   public BufferedReader getReader() throws IOException {
     if (null == reader) {
-      reader = new BufferedReader(DecodingReader.wrap(super.getReader(), getCharset(), captureDecoder));
+      reader = new BufferedReader(new DecodingReader(super.getReader(), getCharset(), captureDecoder));
     }
     return reader;
   }

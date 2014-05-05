@@ -15,20 +15,15 @@
  *
  */
 
-package io.groundhog.servlet
-
-import io.groundhog.capture.HttpCaptureDecoder
-import org.apache.coyote.InputBuffer
-import spock.lang.Specification
+package io.groundhog.servlet;
 
 /**
- * Tests for {@link DecodingInputBuffer}.
+ * Interface for input filter classes, providing a standard way of retrieving the delegate instance.
  */
-class DecodingInputBufferTest extends Specification {
-  def 'placeholder'() {
-    def inputBuffer = Mock(InputBuffer)
-    def captureDecoder = Mock(HttpCaptureDecoder)
-    def decoder = new DecodingInputBuffer(inputBuffer, captureDecoder)
-    decoder.setFailFast(true)
-  }
+public interface FilterWrapper<T> {
+  /**
+   * Unwrap the filter, and return the delegate input class.
+   * @return the delegate input source
+   */
+  T unwrap();
 }
