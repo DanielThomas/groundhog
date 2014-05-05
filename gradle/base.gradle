@@ -17,7 +17,10 @@
 
 apply plugin: 'java'
 apply plugin: 'groovy'
+
 apply plugin: 'errorprone'
+apply plugin: 'jacoco'
+
 apply plugin: 'versions'
 
 version = rootProject.version
