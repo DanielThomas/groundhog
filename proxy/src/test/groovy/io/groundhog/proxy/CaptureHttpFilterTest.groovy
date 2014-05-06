@@ -11,7 +11,40 @@ import spock.lang.Specification
 class CaptureHttpFilterTest extends Specification {
   def file = Mock(File, constructorArgs: [""])
   def requestWriter = Mock(CaptureWriter)
-  def captureFilter = new CaptureHttpFilter(requestWriter, file)
+  def captureFilter = new CaptureHttpFilter(requestWriter, file, 'http', 'localhost', 8080)
+  
+  def 'uri rewriting handles domain without a path or query'() {
+    def uri = 'http://foo.com'
+    def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
+    
+    when:
+    captureFilter.rewriteUri(request)
+    
+    then:
+    request.uri == 'http://localhost:8080'
+  }
+  
+  def 'uri rewriting handles query without a path'() {
+    def uri = 'http://foo.com?q=bar'
+    def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
+    
+    when:
+    captureFilter.rewriteUri(request)
+    
+    then:
+    request.uri == 'http://localhost:8080?q=bar'
+  }
+  
+  def 'uri rewriting handles path without a leading slash'() {
+    def uri = 'index.html'
+    def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri)
+    
+    when:
+    captureFilter.rewriteUri(request)
+    
+    then:
+    request.uri == 'http://localhost:8080/index.html'
+  }
 
   def 'uri rewriting handles pipes in paths'() {
     def uri = 'http://ad.crwdcntrl.net/4/pe=y|c=244|var=CN.ad.lotame.tags|out=json'
@@ -21,7 +54,7 @@ class CaptureHttpFilterTest extends Specification {
     captureFilter.rewriteUri(request)
 
     then:
-    request.uri == uri
+    request.uri == 'http://localhost:8080/4/pe=y|c=244|var=CN.ad.lotame.tags|out=json'
   }
 
   def 'uri writing substitutes hostname from header'() {

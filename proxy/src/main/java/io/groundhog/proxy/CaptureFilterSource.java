@@ -18,15 +18,18 @@
 package io.groundhog.proxy;
 
 import io.groundhog.capture.CaptureWriter;
-
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
+
 import org.littleshoot.proxy.HttpFilters;
 import org.littleshoot.proxy.HttpFiltersSource;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+
 import java.io.File;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * @author Danny Thomas
@@ -35,17 +38,29 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CaptureFilterSource implements HttpFiltersSource {
   private final CaptureWriter captureWriter;
   private final File uploadLocation;
+  private final String protocol;
+  private final String host;
+  private final int port;
 
-  public CaptureFilterSource(CaptureWriter captureWriter, File uploadLocation) {
+  @Inject
+  public CaptureFilterSource(CaptureWriter captureWriter,
+      @Named("UploadLocation") File uploadLocation,
+      @Named("target.protocol") String protocol,
+      @Named("target.host") String host,
+      @Named("target.port") int port) {
     this.captureWriter = checkNotNull(captureWriter);
     this.uploadLocation = checkNotNull(uploadLocation);
+    this.protocol = checkNotNull(protocol);
+    this.host = checkNotNull(host);
+    checkArgument(port > 0, "Port must be greater than zero");
+    this.port = port;
   }
 
   @Override
   public HttpFilters filterRequest(HttpRequest originalRequest, ChannelHandlerContext ctx) {
     checkNotNull(originalRequest);
     checkNotNull(ctx);
-    return new CaptureHttpFilter(captureWriter, uploadLocation);
+    return new CaptureHttpFilter(captureWriter, uploadLocation, protocol, host, port);
   }
 
   @Override
