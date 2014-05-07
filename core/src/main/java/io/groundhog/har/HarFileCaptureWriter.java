@@ -17,6 +17,7 @@
 
 package io.groundhog.har;
 
+import io.groundhog.Groundhog;
 import io.groundhog.base.HttpRequests;
 import io.groundhog.capture.CaptureRequest;
 import io.groundhog.capture.CaptureWriter;
@@ -144,8 +145,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     generator.writeObjectFieldStart("creator");
     // TODO get these from jar manifest
     generator.writeStringField("name", "Groundhog Capture");
-    Package groundhogPackage = Package.getPackage("io.groundhog.har");
-    generator.writeStringField("version", groundhogPackage.getImplementationVersion());
+    generator.writeStringField("version", Groundhog.getVersion());
     if (lightweight) {
       generator.writeStringField("comment", "lightweight");
     }

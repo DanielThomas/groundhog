@@ -17,6 +17,7 @@
 
 package io.groundhog.servlet;
 
+import io.groundhog.Groundhog;
 import io.groundhog.capture.*;
 
 import io.netty.buffer.ByteBuf;
@@ -52,10 +53,7 @@ public final class CaptureValve extends ValveBase implements Valve {
   private static final String INFO;
 
   static {
-    Package groundhogPackage = Package.getPackage("io.groundhog.servlet");
-    String version = groundhogPackage.getImplementationVersion();
-    version = null == version ? "Unknown" : version;
-    INFO = "io.groundhog.servlet.CaptureValve/" + version;
+    INFO = "io.groundhog.servlet.CaptureValve/" + Groundhog.getVersion();
   }
 
   private final CaptureWriter captureWriter;
