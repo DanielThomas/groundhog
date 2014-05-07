@@ -62,7 +62,7 @@ public class CaptureHttpController {
       case "start": {
         if (captureWriter.isRunning()) {
           return statusResponse(Service.State.FAILED, "Capture is already running");
-        } else if (captureWriter.state() == Service.State.NEW) {
+        } else if (Service.State.NEW == captureWriter.state()) {
           captureWriter.startAsync();
           captureWriter.awaitRunning();
           return statusResponse(Service.State.RUNNING, "Started capture");
