@@ -174,6 +174,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     writeRequest(captureRequest);
     writeResponse(captureRequest);
     generator.writeEndObject();
+    generator.flush();
   }
 
   private void writeRequest(CaptureRequest captureRequest) throws IOException {
