@@ -24,14 +24,14 @@ import io.netty.handler.codec.http.DefaultCookie
 import spock.lang.Specification
 
 /**
- * Tests for {@link UserAgent}.
+ * Tests for {@link DefaultUserAgent}.
  *
  * @author Danny Thomas
  * @since 1.0
  */
 class UserAgentTest extends Specification {
   def 'returns cookies, ordered and filtered correctly'() {
-    UserAgent userAgent = new UserAgent(Hashing.goodFastHash(32).hashString("test", Charsets.UTF_8))
+    DefaultUserAgent userAgent = new DefaultUserAgent(Hashing.goodFastHash(32).hashString("test", Charsets.UTF_8))
     Cookie noPath1 = getCookie("cookie1")
     Cookie noPath1DifferentValue = new DefaultCookie("cookie1", "newvalue")
     Cookie noPath2 = getCookie("cookie2")

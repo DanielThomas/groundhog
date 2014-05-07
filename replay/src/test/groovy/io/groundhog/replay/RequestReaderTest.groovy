@@ -19,7 +19,7 @@ package io.groundhog.replay
 
 import spock.lang.Specification
 /**
- * Tests for {@link RequestReader}.
+ * Tests for {@link DefaultRequestReader}.
  *
  * @author Danny Thomas
  * @since 1.0

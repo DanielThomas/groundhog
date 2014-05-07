@@ -43,13 +43,13 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     setDefault(UserAgentRequest.class, new UserAgentRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/",
         Optional.of(postData), HttpHeaders.EMPTY_HEADERS, Collections.<Cookie> emptySet(), new File(""), 0l))
     def resultListener = new LoggingResultListener()
-    setDefault(RequestDispatcher, new RequestDispatcher(new Bootstrap(), HostAndPort.fromHost("localhost"), resultListener))
+    setDefault(RequestDispatcher, new DefaultRequestDispatcher(new Bootstrap(), HostAndPort.fromHost("localhost"), resultListener))
     setDefault(HttpMethod, HttpMethod.GET)
     setDefault(HttpHeaders, HttpHeaders.EMPTY_HEADERS)
     setDefault(HttpVersion, HttpVersion.HTTP_1_1)
     setDefault(HttpArchive.PostData, postData)
     setDefault(ReplayHttpRequest, new ReplayHttpRequest(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/"),
-        new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK), new UserAgent(), false))
+        new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK), new DefaultUserAgent(), false))
     setDefault(ReplayLastHttpContent, new ReplayLastHttpContent(new DefaultLastHttpContent(), Optional.absent()))
     setDefault(HostAndPort, HostAndPort.fromParts("localhost", 80))
   }

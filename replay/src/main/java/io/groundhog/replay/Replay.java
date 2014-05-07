@@ -17,11 +17,11 @@
 
 package io.groundhog.replay;
 
-import com.google.common.net.HostAndPort;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 
 /**
  * @author Danny Thomas
@@ -31,8 +31,9 @@ public class Replay {
   private static final Logger LOG = LoggerFactory.getLogger(Replay.class);
 
   public static void main(String[] args) throws Exception {
-    final ReplayClient client = new ReplayClient(new File("/tmp/recording.har"), HostAndPort.fromParts("localhost", 8080),
-        false, new LoggingResultListener());
+    Injector injector = Guice.createInjector(new ReplayModule());
+
+    final ReplayClient client = injector.getInstance(ReplayClient.class);
 
     // TODO move this logic to a core class
     Thread shutdownThread = (new Thread(new Runnable() {
