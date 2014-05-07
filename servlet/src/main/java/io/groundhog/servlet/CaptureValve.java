@@ -17,11 +17,9 @@
 
 package io.groundhog.servlet;
 
-import io.groundhog.capture.CaptureRequest;
-import io.groundhog.capture.CaptureWriter;
-import io.groundhog.capture.DefaultHttpCaptureDecoder;
-import io.groundhog.capture.HttpCaptureDecoder;
+import io.groundhog.capture.*;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Request;
@@ -60,11 +58,11 @@ public final class CaptureValve extends ValveBase implements Valve {
     INFO = "io.groundhog.servlet.CaptureValve/" + version;
   }
 
-  private final CaptureWriter writer;
+  private final CaptureWriter captureWriter;
 
   @Inject
-  CaptureValve(CaptureWriter writer) {
-    this.writer = checkNotNull(writer);
+  CaptureValve(CaptureWriter captureWriter) {
+    this.captureWriter = checkNotNull(captureWriter);
   }
 
   @Override
@@ -80,7 +78,13 @@ public final class CaptureValve extends ValveBase implements Valve {
     wrapCoyoteInputBuffer(request, captureDecoder);
     try {
       try {
-        captureDecoder.request(transformRequest(request));
+        HttpRequest httpRequest = transformRequest(request);
+        if (CaptureHttpController.isControlRequest(httpRequest)) {
+          handleControlRequest(httpRequest, response);
+          return;
+        }
+
+        captureDecoder.request(httpRequest);
       } catch (Exception e) {
         LOG.error("Error capturing request", e);
       }
@@ -91,7 +95,7 @@ public final class CaptureValve extends ValveBase implements Valve {
       try {
         captureDecoder.response(transformResponse(request, response));
         CaptureRequest captureRequest = captureDecoder.complete();
-        writer.writeAsync(captureRequest);
+        captureWriter.writeAsync(captureRequest);
       } catch (Exception e) {
         LOG.error("Error capturing response", e);
       }
@@ -99,6 +103,19 @@ public final class CaptureValve extends ValveBase implements Valve {
       unwrapCoyoteInputBuffer(request);
       captureDecoder.destroy();
     }
+  }
+
+  private void handleControlRequest(HttpRequest httpRequest, Response response) throws IOException {
+    FullHttpResponse httpResponse = CaptureHttpController.handleControlRequest(httpRequest, captureWriter);
+    response.setStatus(httpResponse.getStatus().code());
+    HttpHeaders headers = httpResponse.headers();
+    for (String headerName : headers.names()) {
+      for (String value : headers.getAll(headerName)) {
+        response.setHeader(headerName, value);
+      }
+    }
+    ByteBuf content = httpResponse.content();
+    content.getBytes(0, response.getOutputStream(), content.capacity());
   }
 
   private void wrapCoyoteInputBuffer(Request request, HttpCaptureDecoder captureDecoder) {
@@ -116,7 +133,7 @@ public final class CaptureValve extends ValveBase implements Valve {
     }
   }
 
-  public static HttpObject transformRequest(HttpServletRequest request) {
+  public static HttpRequest transformRequest(HttpServletRequest request) {
     HttpVersion httpVersion = HttpVersion.valueOf(request.getProtocol());
     HttpMethod httpMethod = HttpMethod.valueOf(request.getMethod());
     HttpRequest httpRequest = new DefaultHttpRequest(httpVersion, httpMethod, request.getRequestURI());
@@ -129,7 +146,7 @@ public final class CaptureValve extends ValveBase implements Valve {
     return httpRequest;
   }
 
-  public static HttpObject transformResponse(HttpServletRequest request, HttpServletResponse response) {
+  public static HttpResponse transformResponse(HttpServletRequest request, HttpServletResponse response) {
     HttpResponseStatus status = HttpResponseStatus.valueOf(response.getStatus());
     HttpVersion httpVersion = HttpVersion.valueOf(request.getProtocol());
     return new DefaultHttpResponse(httpVersion, status);

@@ -43,7 +43,7 @@ public class CaptureFilterSource implements HttpFiltersSource {
   private final int port;
 
   @Inject
-  public CaptureFilterSource(CaptureWriter captureWriter,
+  CaptureFilterSource(CaptureWriter captureWriter,
       @Named("UploadLocation") File uploadLocation,
       @Named("target.protocol") String protocol,
       @Named("target.host") String host,

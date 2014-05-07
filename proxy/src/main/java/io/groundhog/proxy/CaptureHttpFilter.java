@@ -17,25 +17,23 @@
 
 package io.groundhog.proxy;
 
-import static com.google.common.base.Preconditions.*;
-import io.groundhog.capture.CaptureRequest;
-import io.groundhog.capture.CaptureWriter;
-import io.groundhog.capture.DefaultHttpCaptureDecoder;
-import io.groundhog.capture.HttpCaptureDecoder;
+import io.groundhog.capture.*;
+
+import com.google.common.base.Throwables;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import org.littleshoot.proxy.HttpFilters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.littleshoot.proxy.HttpFilters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Throwables;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A capturing {@link HttpFilters}.
@@ -65,6 +63,13 @@ public class CaptureHttpFilter implements HttpFilters {
   public HttpResponse requestPre(HttpObject httpObject) {
     checkNotNull(httpObject);
     try {
+      if (httpObject instanceof HttpRequest) {
+        HttpRequest request = (HttpRequest) httpObject;
+        if (CaptureHttpController.isControlRequest(request)) {
+          return CaptureHttpController.handleControlRequest(request, captureWriter);
+        }
+      }
+
       captureDecoder.request(httpObject);
     } catch (Exception e) {
       LOG.error("Failed to capture request", e);
@@ -125,10 +130,10 @@ public class CaptureHttpFilter implements HttpFilters {
           url = new URL(protocol, host, port, "/" + request.getUri());
         }
       }
-      
+
       URL redirect = new URL(protocol, host, port, url.getFile());
       request.setUri(redirect.toExternalForm());
-      
+
     } catch (MalformedURLException e) {
       LOG.error("A valid URL was not requested");
       Throwables.propagate(e);
