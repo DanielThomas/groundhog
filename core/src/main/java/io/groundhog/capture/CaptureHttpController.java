@@ -17,13 +17,19 @@
 
 package io.groundhog.capture;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.util.concurrent.Service;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -35,6 +41,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public class CaptureHttpController {
+  private static final Logger LOG = LoggerFactory.getLogger(CaptureHttpController.class);
+
   public static boolean isControlRequest(HttpRequest request) {
     checkNotNull(request);
     return request.getUri().startsWith("/groundhog");
@@ -43,48 +51,76 @@ public class CaptureHttpController {
   public static FullHttpResponse handleControlRequest(HttpRequest request, CaptureWriter captureWriter) {
     checkNotNull(request);
     checkNotNull(captureWriter);
-    ByteBuf content;
+
     List<String> parts = Splitter.on('/').limit(3).splitToList(request.getUri());
     if (parts.size() != 3) {
-      content = Unpooled.copiedBuffer("No command provided, expected /groundhog/<command>", Charsets.UTF_8);
-      FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR, content);
-      response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "text/html");
-      return response;
+      return statusResponse(Service.State.FAILED, "No command provided, expected /groundhog/<command>");
     }
 
     String command = parts.get(2);
     switch (command) {
       case "start": {
         if (captureWriter.isRunning()) {
-          content = Unpooled.copiedBuffer("Capture is already running", Charsets.UTF_8);
+          return statusResponse(Service.State.FAILED, "Capture is already running");
         } else if (captureWriter.state() == Service.State.NEW) {
           captureWriter.startAsync();
           captureWriter.awaitRunning();
-          content = Unpooled.copiedBuffer("Started capture", Charsets.UTF_8);
+          return statusResponse(Service.State.RUNNING, "Started capture");
         } else {
-          content = Unpooled.copiedBuffer("Capture has already completed, and is a one shot service (state: " + captureWriter.state() + ")", Charsets.UTF_8);
+          return statusResponse(Service.State.FAILED, "Capture has already completed, and is a one shot service");
         }
-        break;
       }
       case "stop": {
         if (captureWriter.isRunning()) {
           captureWriter.stopAsync();
           captureWriter.awaitTerminated();
-          content = Unpooled.copiedBuffer("Stopped capture", Charsets.UTF_8);
+          return statusResponse(Service.State.TERMINATED, "Stopped capture");
         } else {
-          content = Unpooled.copiedBuffer("Capture is not running", Charsets.UTF_8);
+          return statusResponse(Service.State.FAILED, "Stopped capture");
         }
-        break;
       }
       case "status": {
-        content = Unpooled.copiedBuffer("Capture state: " + captureWriter.state(), Charsets.UTF_8);
-        break;
+        return statusResponse(captureWriter.state(), "Success");
       }
       default: {
-        content = Unpooled.copiedBuffer("Unknown command: " + command, Charsets.UTF_8);
+        return statusResponse(Service.State.FAILED, "Unknown command: " + command);
       }
     }
+  }
+
+  private static FullHttpResponse statusResponse(Service.State state, String message) {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    JsonFactory jsonFactory = new JsonFactory();
+    JsonGenerator generator;
+    try {
+      generator = jsonFactory.createGenerator(outputStream);
+    } catch (IOException e) {
+      String errorMessage = "Could not create JSON generator";
+      LOG.error(errorMessage, e);
+      return errorResponse(errorMessage);
+    }
+
+    try {
+      generator.writeStartObject();
+      generator.writeStringField("state", state.toString());
+      generator.writeStringField("message", message);
+      generator.writeEndObject();
+      generator.close();
+    } catch (IOException e) {
+      String errorMessage = "Error writing";
+      LOG.error(errorMessage, e);
+      return errorResponse(errorMessage);
+    }
+
+    ByteBuf content = Unpooled.wrappedBuffer(outputStream.toByteArray());
     FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content);
+    response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "text/html");
+    return response;
+  }
+
+  private static FullHttpResponse errorResponse(String message) {
+    ByteBuf content = Unpooled.copiedBuffer(message, Charsets.UTF_8);
+    FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR, content);
     response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "text/html");
     return response;
   }
