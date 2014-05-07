@@ -162,8 +162,6 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     checkNotNull(captureRequest);
     if (isRunning()) {
       requestQueue.add(captureRequest);
-    } else {
-      throw new IllegalStateException("Writer is not running");
     }
   }
 
