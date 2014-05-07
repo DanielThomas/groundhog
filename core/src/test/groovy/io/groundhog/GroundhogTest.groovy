@@ -15,22 +15,16 @@
  *
  */
 
-package io.groundhog.servlet
+package io.groundhog
 
-import com.google.common.base.Splitter
-import io.groundhog.Groundhog
-import io.groundhog.capture.CaptureWriter
 import spock.lang.Specification
 
 /**
- * Tests for {@link CaptureValve}.
+ * Tests for {@link Groundhog}.
  */
-class CaptureValveTest extends Specification {
-  def 'information contains implementation version'() {
-    def writer = Mock(CaptureWriter)
-    def valve = new CaptureValve(writer)
-
+class GroundhogTest extends Specification {
+  def 'version returns valid version, or Unknown when not available from jar manifest'() {
     expect:
-    valve.getInfo() == 'io.groundhog.servlet.CaptureValve/' + Groundhog.getVersion();
+    Groundhog.getVersion() =~ /[0-9]{1,2}\.[0-9]{1,2}(-SNAPSHOT)?/ || Groundhog.getVersion() == "Unknown"
   }
 }
