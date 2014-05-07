@@ -119,7 +119,6 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
       Thread.sleep(5000);
     }
     writeLogEnd();
-    generator.flush();
     generator.close();
   }
 
