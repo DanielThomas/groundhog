@@ -42,7 +42,8 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     def postData = new HttpArchive.PostData("name", "value")
     setDefault(UserAgentRequest.class, new UserAgentRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/",
         Optional.of(postData), HttpHeaders.EMPTY_HEADERS, Collections.<Cookie> emptySet(), new File(""), 0l))
-    setDefault(RequestDispatcher, new RequestDispatcher(new Bootstrap(), "localhost", 80))
+    def resultListener = new LoggingResultListener()
+    setDefault(RequestDispatcher, new RequestDispatcher(new Bootstrap(), HostAndPort.fromHost("localhost"), resultListener))
     setDefault(HttpMethod, HttpMethod.GET)
     setDefault(HttpHeaders, HttpHeaders.EMPTY_HEADERS)
     setDefault(HttpVersion, HttpVersion.HTTP_1_1)

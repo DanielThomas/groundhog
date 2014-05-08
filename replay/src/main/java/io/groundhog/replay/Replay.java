@@ -31,7 +31,7 @@ public class Replay {
   private static final Logger LOG = LoggerFactory.getLogger(Replay.class);
 
   public static void main(String[] args) throws Exception {
-    final ReplayClient client = new ReplayClient(new File("out/recording.har"), HostAndPort.fromParts("localhost", 8080),
+    final ReplayClient client = new ReplayClient(new File("/tmp/recording.har"), HostAndPort.fromParts("localhost", 8080),
         false, new LoggingResultListener());
 
     // TODO move this logic to a core class

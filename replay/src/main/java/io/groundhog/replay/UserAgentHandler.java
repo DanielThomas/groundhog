@@ -109,7 +109,7 @@ public class UserAgentHandler extends ChannelDuplexHandler {
 
   private void parseCookies() {
     HttpHeaders headers = response.headers();
-    FluentIterable<Cookie> cookies = FluentIterable.from(headers.getAll(HttpHeaders.Names.SET_COOKIE)).transform(UserAgentRequest.HEADER_TO_COOKIE);
+    FluentIterable<Cookie> cookies = FluentIterable.from(headers.getAll(HttpHeaders.Names.SET_COOKIE)).transform(UserAgentChannelWriter.HEADER_TO_COOKIE);
     userAgent.setCookies(cookies.toList());
   }
 

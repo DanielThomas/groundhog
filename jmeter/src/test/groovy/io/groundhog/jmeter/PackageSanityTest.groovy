@@ -15,8 +15,9 @@
  *
  */
 
-package io.groundhog.jmeter;
+package io.groundhog.jmeter
 
+import com.google.common.net.HostAndPort;
 import com.google.common.testing.AbstractPackageSanityTests;
 
 /**
@@ -26,4 +27,7 @@ import com.google.common.testing.AbstractPackageSanityTests;
  * @since 0.1
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
+  PackageSanityTest() {
+    setDefault(HostAndPort, HostAndPort.fromHost("localhost"))
+  }
 }

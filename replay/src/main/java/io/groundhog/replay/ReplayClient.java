@@ -43,7 +43,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private final RequestDispatcher dispatcher;
   private final RequestReader reader;
 
-  public ReplayClient(File recordingFile, HostAndPort hostAndPort, final boolean useSSL, final ResultListener resultListener) {
+  public ReplayClient(File recordingFile, HostAndPort hostAndPort, final boolean useSSL, final ReplayResultListener resultListener) {
     checkNotNull(recordingFile);
     checkNotNull(resultListener);
 
@@ -59,7 +59,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
       }
     });
 
-    dispatcher = new RequestDispatcher(bootstrap, hostAndPort.getHostText(), hostAndPort.getPort());
+    dispatcher = new RequestDispatcher(bootstrap, hostAndPort, resultListener);
     reader = new RequestReader(recordingFile, dispatcher, uploadLocation);
   }
 
@@ -100,5 +100,4 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   protected void shutDown() throws Exception {
     group.shutdownGracefully();
   }
-
 }

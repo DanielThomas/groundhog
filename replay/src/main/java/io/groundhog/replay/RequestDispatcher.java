@@ -17,6 +17,7 @@
 
 package io.groundhog.replay;
 
+import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.Service;
 import io.netty.bootstrap.Bootstrap;
@@ -49,13 +50,13 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
   private final Bootstrap bootstrap;
   private final ChannelGroup channelGroup;
   private final DelayedRequestQueue queue;
-  private final String hostname;
-  private final int port;
+  private final HostAndPort hostAndPort;
+  private final ReplayResultListener resultListener;
 
-  public RequestDispatcher(Bootstrap bootstrap, String hostname, int port) {
+  public RequestDispatcher(Bootstrap bootstrap, HostAndPort hostAndPort, ReplayResultListener resultListener) {
     this.bootstrap = checkNotNull(bootstrap);
-    this.hostname = checkNotNull(hostname);
-    this.port = checkNotNull(port);
+    this.hostAndPort = checkNotNull(hostAndPort);
+    this.resultListener = checkNotNull(resultListener);
 
     channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     queue = new DelayedRequestQueue(QUEUE_LENGTH);
@@ -97,9 +98,9 @@ public class RequestDispatcher extends AbstractExecutionThreadService {
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
 
         LOG.debug("Adding request to channel {}", delayedRequest);
-        ChannelFuture future = bootstrap.connect(hostname, port);
+        ChannelFuture future = bootstrap.connect(hostAndPort.getHostText(), hostAndPort.getPort());
         UserAgentRequest request = delayedRequest.getRequest();
-        future.addListener(request);
+        future.addListener(new UserAgentChannelWriter(request, resultListener));
         channelGroup.add(future.channel());
       }
     }

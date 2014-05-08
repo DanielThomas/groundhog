@@ -23,6 +23,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.net.MediaType;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.Attribute;
@@ -48,7 +49,6 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
   private static final Logger LOG = LoggerFactory.getLogger(DefaultHttpCaptureDecoder.class);
 
   private static final Set<HttpMethod> POST_DECODE_METHODS = Sets.newHashSet(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH);
-  private static final String TEXT_PLAIN = "text/plain";
 
   private final File uploadLocation;
 
@@ -80,7 +80,7 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
       if (POST_DECODE_METHODS.contains(method)) {
         isPost = true;
         chunk = chunk.duplicate();
-        if (contentType.startsWith(TEXT_PLAIN)) {
+        if (MediaType.parse(contentType).is(MediaType.ANY_TEXT_TYPE)) {
           if (null == content) {
             content = new StringBuilder();
           }
