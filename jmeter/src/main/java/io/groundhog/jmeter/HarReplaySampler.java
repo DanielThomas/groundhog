@@ -1,9 +1,11 @@
 package io.groundhog.jmeter;
 
+import io.groundhog.base.URIScheme;
 import io.groundhog.replay.ReplayClient;
 import io.groundhog.replay.ResultListener;
 
 import com.google.common.base.Throwables;
+import com.google.common.net.HostAndPort;
 import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.SampleResult;
@@ -26,27 +28,30 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class HarFileSampler extends AbstractSampler implements TestBean, ThreadListener, ResultListener {
+public class HarReplaySampler extends AbstractSampler implements TestBean, ThreadListener, ResultListener {
   private static final Logger LOG = LoggingManager.getLoggerForClass();
 
-  private final BlockingQueue<SampleResult> resultQueue = new LinkedBlockingQueue<>();
+  private final BlockingQueue<SampleResult> results = new LinkedBlockingQueue<>();
 
   private String filename;
+  private URIScheme scheme;
+  private String host;
+  private int port;
   private ReplayClient client;
 
   @Override
   public SampleResult sample(Entry entry) {
     if (null == client) {
       LOG.info("Creating replay client for filename " + filename);
-      client = new ReplayClient(new File(filename), this);
+      client = new ReplayClient(new File(filename), HostAndPort.fromParts(host, port), URIScheme.HTTPS == scheme, this);
       client.startAsync();
       client.awaitRunning();
     }
 
     while (true) {
-      if (client.isRunning()) {
+      if (client.isRunning() || !results.isEmpty()) {
         try {
-          SampleResult result = resultQueue.poll(5000, TimeUnit.MILLISECONDS);
+          SampleResult result = results.poll(500, TimeUnit.MILLISECONDS);
           if (null != result) {
             return result;
           }
@@ -59,16 +64,7 @@ public class HarFileSampler extends AbstractSampler implements TestBean, ThreadL
         break;
       }
     }
-
     return null;
-  }
-
-  public String getFilename() {
-    return filename;
-  }
-
-  public void setFilename(String filename) {
-    this.filename = checkNotNull(filename);
   }
 
   @Override
@@ -77,7 +73,7 @@ public class HarFileSampler extends AbstractSampler implements TestBean, ThreadL
 
   @Override
   public void threadFinished() {
-    if (client.isRunning()) {
+    if (null != client && client.isRunning()) {
       client.stopAsync();
       client.awaitTerminated();
     }
@@ -90,9 +86,9 @@ public class HarFileSampler extends AbstractSampler implements TestBean, ThreadL
     result.setSuccessful(successful);
     result.setSampleLabel(checkNotNull(label));
     checkNotNull(method);
-    // FIXME get the host and scheme into the listener
+    checkNotNull(location);
     try {
-      result.setURL(new URL("http://somehost/" + checkNotNull(location)));
+      result.setURL(new URL(scheme.getScheme(), host, port, location));
     } catch (MalformedURLException e) {
       throw Throwables.propagate(e);
     }
@@ -102,6 +98,38 @@ public class HarFileSampler extends AbstractSampler implements TestBean, ThreadL
     result.setResponseMessage(checkNotNull(reasonPhrase));
     result.setResponseHeaders(checkNotNull(responseHeaders));
     result.setBytes(bytesRead);
-    resultQueue.add(result);
+    results.add(result);
+  }
+
+  public String getFilename() {
+    return filename;
+  }
+
+  public void setFilename(String filename) {
+    this.filename = checkNotNull(filename);
+  }
+
+  public int getScheme() {
+    return scheme.ordinal();
+  }
+
+  public void setScheme(int scheme) {
+    this.scheme = URIScheme.values()[scheme];
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  public void setHost(String host) {
+    this.host = checkNotNull(host);
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public void setPort(int port) {
+    this.port = port;
   }
 }

@@ -19,6 +19,7 @@ package io.groundhog.replay
 
 import com.google.common.base.Optional
 import com.google.common.base.Predicate
+import com.google.common.net.HostAndPort
 import com.google.common.testing.AbstractPackageSanityTests
 import io.groundhog.har.HttpArchive
 import io.netty.bootstrap.Bootstrap
@@ -49,5 +50,6 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     setDefault(ReplayHttpRequest, new ReplayHttpRequest(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/"),
         new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK), new UserAgent(), false))
     setDefault(ReplayLastHttpContent, new ReplayLastHttpContent(new DefaultLastHttpContent(), Optional.absent()))
+    setDefault(HostAndPort, HostAndPort.fromParts("localhost", 80))
   }
 }

@@ -52,16 +52,16 @@ public class ReplayHandler extends ChannelDuplexHandler {
   private long started;
   private final AtomicInteger bytesRead = new AtomicInteger();
 
-  public ReplayHandler(ChannelPipeline pipeline, ResultListener resultListener) throws Exception {
+  public ReplayHandler(ChannelPipeline pipeline, ResultListener resultListener, boolean useSSL) throws Exception {
     checkNotNull(pipeline);
     this.resultListener = checkNotNull(resultListener);
-    initPipeline(pipeline, false);
+    initPipeline(pipeline, useSSL);
   }
 
-  private void initPipeline(ChannelPipeline p, boolean ssl) throws Exception {
+  private void initPipeline(ChannelPipeline p, boolean useSSL) throws Exception {
     p.addLast("bytesRead", new BytesReadHandler());
 
-    if (ssl) {
+    if (useSSL) {
       SSLContext context = SSLContext.getInstance("TLS");
       context.init(null, null, null);
       SSLEngine engine = context.createSSLEngine();

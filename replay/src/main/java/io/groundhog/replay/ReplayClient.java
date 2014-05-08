@@ -17,6 +17,7 @@
 
 package io.groundhog.replay;
 
+import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -42,7 +43,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private final RequestDispatcher dispatcher;
   private final RequestReader reader;
 
-  public ReplayClient(File recordingFile, final ResultListener resultListener) {
+  public ReplayClient(File recordingFile, HostAndPort hostAndPort, final boolean useSSL, final ResultListener resultListener) {
     checkNotNull(recordingFile);
     checkNotNull(resultListener);
 
@@ -54,11 +55,11 @@ public final class ReplayClient extends AbstractExecutionThreadService {
     bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        new ReplayHandler(ch.pipeline(), resultListener);
+        new ReplayHandler(ch.pipeline(), resultListener, useSSL);
       }
     });
 
-    dispatcher = new RequestDispatcher(bootstrap, "localhost", 8080);
+    dispatcher = new RequestDispatcher(bootstrap, hostAndPort.getHostText(), hostAndPort.getPort());
     reader = new RequestReader(recordingFile, dispatcher, uploadLocation);
   }
 

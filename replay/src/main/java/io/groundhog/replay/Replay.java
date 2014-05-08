@@ -17,6 +17,7 @@
 
 package io.groundhog.replay;
 
+import com.google.common.net.HostAndPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,8 @@ public class Replay {
   private static final Logger LOG = LoggerFactory.getLogger(Replay.class);
 
   public static void main(String[] args) throws Exception {
-    final ReplayClient client = new ReplayClient(new File("out/recording.har"), new LoggingResultListener());
+    final ReplayClient client = new ReplayClient(new File("out/recording.har"), HostAndPort.fromParts("localhost", 8080),
+        false, new LoggingResultListener());
 
     // TODO move this logic to a core class
     Thread shutdownThread = (new Thread(new Runnable() {
