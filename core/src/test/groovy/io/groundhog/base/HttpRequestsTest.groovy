@@ -7,7 +7,7 @@ import spock.lang.Specification
  * Tests for {@link HttpRequests}.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 class HttpRequestsTest extends Specification {
   def 'returns host with port'() {

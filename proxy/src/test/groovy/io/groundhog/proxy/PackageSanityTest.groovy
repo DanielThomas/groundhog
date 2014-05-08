@@ -28,7 +28,7 @@ import javax.annotation.Nullable
  * Package sanity tests for {@link io.groundhog.replay}.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
   PackageSanityTest() {

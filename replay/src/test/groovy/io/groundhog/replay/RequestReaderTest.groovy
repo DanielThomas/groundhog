@@ -22,7 +22,7 @@ import spock.lang.Specification
  * Tests for {@link RequestReader}.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 class RequestReaderTest extends Specification {
 }

@@ -27,7 +27,7 @@ import spock.lang.Specification
  * Tests for {@link UserAgent}.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 class UserAgentTest extends Specification {
   def 'returns cookies, ordered and filtered correctly'() {

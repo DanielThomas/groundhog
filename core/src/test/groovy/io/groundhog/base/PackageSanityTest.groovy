@@ -23,7 +23,7 @@ import com.google.common.testing.AbstractPackageSanityTests;
  * Package sanity tests for {@link io.groundhog.base}.
  *
  * @author Danny Thomas
- * @since 0.1
+ * @since 1.0
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
 }
