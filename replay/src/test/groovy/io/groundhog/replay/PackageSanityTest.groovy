@@ -35,7 +35,7 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     ignoreClasses(new Predicate<Class<?>>() {
       @Override
       boolean apply(Class<?> input) {
-        Replay.class == input
+        Replay.class == input || ReplayClient.class == input || DefaultRequestReader.class == input
       }
     })
 
