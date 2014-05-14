@@ -41,7 +41,7 @@ public class UserAgentRequest extends DefaultHttpRequest {
 
   public UserAgentRequest(HttpVersion httpVersion, HttpMethod method, String uri, Optional<HttpArchive.PostData> postData, HttpHeaders headers,
                           Set<Cookie> cookies, File uploadLocation, long startedDateTime) {
-    super(httpVersion, method, uri);
+    super(httpVersion, method, uri, false);
     this.postData = checkNotNull(postData);
     headers().set(headers);
     this.cookies = checkNotNull(cookies);

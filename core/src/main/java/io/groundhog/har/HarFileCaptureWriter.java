@@ -123,6 +123,11 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   }
 
   @Override
+  public String toString() {
+    return super.toString() + " " + recordingFile;
+  }
+
+  @Override
   protected void run() throws InterruptedException, IOException {
     while (isRunning()) {
       CaptureRequest request = requestQueue.poll(1, TimeUnit.SECONDS);

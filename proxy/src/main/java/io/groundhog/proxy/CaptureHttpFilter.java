@@ -69,7 +69,6 @@ public class CaptureHttpFilter implements HttpFilters {
           return CaptureHttpController.handleControlRequest(request, captureWriter);
         }
       }
-
       captureDecoder.request(httpObject);
     } catch (Exception e) {
       LOG.error("Failed to capture request", e);

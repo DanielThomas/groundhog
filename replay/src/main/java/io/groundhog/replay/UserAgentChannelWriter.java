@@ -205,7 +205,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
   }
 
   private HttpRequest copyRequest(HttpRequest request) {
-    return new DefaultHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
+    return new DefaultHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri(), false);
   }
 
   private List<HttpArchive.Param> getPostParamsWithOverrides(List<HttpArchive.Param> params, UserAgent userAgent) {

@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class DelayedReplayRequest implements Delayed {
+public class DelayedUserAgentRequest implements Delayed {
   // TODO make this configurable. This avoids requests at the very start of replay from piling on top on one another
   private static final int WARMUP_TIME = 250;
 
@@ -38,7 +38,7 @@ public class DelayedReplayRequest implements Delayed {
   private final long timeReplayStartedNanos;
   private final long firstRequestTime;
 
-  public DelayedReplayRequest(UserAgentRequest request, long startedDateTime, long timeReplayStartedNanos, long firstRequestTime) {
+  public DelayedUserAgentRequest(UserAgentRequest request, long startedDateTime, long timeReplayStartedNanos, long firstRequestTime) {
     this.request = checkNotNull(request);
     this.startedDateTime = startedDateTime + WARMUP_TIME;
     this.timeReplayStartedNanos = timeReplayStartedNanos;

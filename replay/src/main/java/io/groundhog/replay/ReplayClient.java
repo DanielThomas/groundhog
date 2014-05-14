@@ -17,8 +17,9 @@
 
 package io.groundhog.replay;
 
-import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.netty.bootstrap.Bootstrap;
@@ -31,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -41,18 +44,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class ReplayClient extends AbstractExecutionThreadService {
   private static final Logger LOG = LoggerFactory.getLogger(ReplayClient.class);
 
+  // The maximum delay for a request before the service pauses reading requests, to prevent excessive number of objects in the dispatcher queue
+  private static final int DELAY_LIMIT_MS = 10000;
+
   private final EventLoopGroup group;
+  private final RequestReader requestReader;
   private final RequestDispatcher dispatcher;
-  private final RequestReader reader;
 
   @Inject
-  ReplayClient(File recordingFile, @Named("target") HostAndPort hostAndPort, @Named("usessl") final boolean useSSL, final ReplayResultListener resultListener) {
+  public ReplayClient(File recordingFile, @Named("target") HostAndPort hostAndPort, @Named("usessl") final boolean useSSL, final ReplayResultListener resultListener) {
     checkNotNull(recordingFile);
     checkNotNull(resultListener);
 
     group = new NioEventLoopGroup();
-
-    File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
 
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
@@ -62,8 +66,41 @@ public final class ReplayClient extends AbstractExecutionThreadService {
       }
     });
 
+    File uploadLocation = new File(recordingFile.getParentFile(), "uploads");
+    try {
+      requestReader = new DefaultRequestReader(recordingFile, uploadLocation);
+    } catch (IOException e) {
+      throw Throwables.propagate(e);
+    }
     dispatcher = new DefaultRequestDispatcher(bootstrap, hostAndPort, resultListener);
-    reader = new DefaultRequestReader(recordingFile, dispatcher, uploadLocation);
+  }
+
+  @Override
+  protected void run() throws Exception {
+    UserAgentRequest firstRequest = requestReader.readRequest();
+    long firstRequestTime = firstRequest.getStartedDateTime();
+    long timeStartedNanos = System.nanoTime();
+    LOG.debug("Starting replay, first request time (millis) {}, time started (nanos) {}", firstRequestTime, timeStartedNanos);
+    dispatcher.queue(new DelayedUserAgentRequest(firstRequest, firstRequestTime, timeStartedNanos, firstRequestTime));
+
+    while (isRunning()) {
+      UserAgentRequest userAgentRequest = requestReader.readRequest();
+      long startedDateTime = userAgentRequest.getStartedDateTime();
+      DelayedUserAgentRequest delayedRequest = new DelayedUserAgentRequest(userAgentRequest, startedDateTime, timeStartedNanos, firstRequestTime);
+      long delayMillis = delayedRequest.getDelay(TimeUnit.MILLISECONDS);
+      if (DELAY_LIMIT_MS < delayMillis) {
+        long sleepMillis = delayMillis - DELAY_LIMIT_MS;
+        LOG.info("Reached delay limit of {}ms, request delay {}ms, sleeping for {}ms", DELAY_LIMIT_MS, delayMillis, sleepMillis);
+        Thread.sleep(sleepMillis);
+      }
+      dispatcher.queue(delayedRequest);
+      if (requestReader.isLastRequest(userAgentRequest)) {
+        LOG.info("Performing graceful shutdown of dispatcher");
+        dispatcher.stopAsync();
+        dispatcher.awaitTerminated();
+        break;
+      }
+    }
   }
 
   @Override
@@ -71,32 +108,14 @@ public final class ReplayClient extends AbstractExecutionThreadService {
     LOG.info("Starting dispatcher");
     dispatcher.startAsync();
     dispatcher.awaitRunning();
-
-    LOG.info("Starting reader");
-    reader.startAsync();
   }
 
   @Override
   protected void triggerShutdown() {
-    if (reader.isRunning()) {
-      LOG.info("Shutting down reader");
-      reader.stopAsync();
-      reader.awaitTerminated();
-    }
-
-    LOG.info("Clearing dispatcher queue");
+    LOG.info("Forced shutdown requested, clearing dispatcher queue and shutting down dispatcher");
     dispatcher.clearQueue();
-  }
-
-  @Override
-  protected void run() throws Exception {
-    reader.awaitTerminated();
-    if (dispatcher.isRunning()) {
-      LOG.info("Shutting down dispatcher");
-      dispatcher.stopAsync();
-      dispatcher.awaitTerminated();
-    }
-    stopAsync();
+    dispatcher.stopAsync();
+    dispatcher.awaitTerminated();
   }
 
   @Override

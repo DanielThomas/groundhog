@@ -17,18 +17,22 @@ import java.util.Properties;
 public class ReplayModule extends AbstractModule {
   @Override
   protected void configure() {
-    String propsLocation = "conf/properties.config";
-    Properties props = new Properties();
-    try {
-      props.load(new FileInputStream(propsLocation));
-    } catch (IOException io) {
-      Throwables.propagate(io);
-    }
-    int port = Integer.parseInt(props.getProperty("replayPort"));
-    String hostname = props.getProperty("replayHostName");
-    File recordingFile = new File(props.getProperty("replayRecordingFile"));
+    // Temporarily comment out the configuration logic - this class is only for development as it stands
+//    String propsLocation = "conf/config.properties";
+//    Properties props = new Properties();
+//    try {
+//      props.load(new FileInputStream(propsLocation));
+//    } catch (IOException e) {
+//      Throwables.propagate(e);
+//    }
+//    String hostname = props.getProperty("replayHostName");
+//    int port = Integer.parseInt(props.getProperty("replayPort"));
+//    File recordingFile = new File(props.getProperty("replayRecordingFile"));
 
-    bind(ReplayClient.class);
+    String hostname = "localhost";
+    int port = 8080;
+    File recordingFile = new File("replay/src/test/resources/github.com.har");
+
     bind(ReplayResultListener.class).to(LoggingResultListener.class);
     bind(HostAndPort.class).annotatedWith(Names.named("target")).toInstance(HostAndPort.fromParts(hostname, port));
     bind(boolean.class).annotatedWith(Names.named("usessl")).toInstance(false);

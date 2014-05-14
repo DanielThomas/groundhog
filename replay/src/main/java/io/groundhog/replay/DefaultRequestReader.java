@@ -17,6 +17,8 @@
 
 package io.groundhog.replay;
 
+import io.groundhog.har.HttpArchive;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -25,9 +27,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
-import io.groundhog.har.HttpArchive;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,36 +43,32 @@ import java.util.*;
 import static com.google.common.base.Preconditions.*;
 
 /**
- * A reader that uses the Jackson streaming API to translate HAR logs into requests.
- * <p/>
- * If an object mapping based approach is desired, the browsermob project has some ready made classes:
- * <p/>
- * https://github.com/cburroughs/browsermob-proxy/tree/morestats/src/main/java/org/browsermob/core/har/
- * <p/>
- * TODO cut down on the amount of code duplication in this file
+ * A reader that uses the Jackson streaming API to translate HARs into requests.
  *
  * @author Danny Thomas
  * @since 1.0
  */
-public class DefaultRequestReader extends AbstractExecutionThreadService implements RequestReader {
+public class DefaultRequestReader implements RequestReader {
   private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestReader.class);
 
+  private static final String REQUIRED_HAR_VERSION = "1.2";
   private static final Set<String> SKIPPED_ENTRY_FIELDS = ImmutableSortedSet.of("pageref", "serverIPAddress",
-          "connection", "comment");
+      "connection", "comment");
   private static final Set<String> SKIPPED_REQUEST_FIELDS = ImmutableSortedSet.of("headersSize", "bodySize", "comment");
 
-  private final RequestDispatcher dispatcher;
-  private final File recordingFile;
-  private final SimpleDateFormat iso8601Format;
   private final File uploadLocation;
+  private final JsonParser parser;
+  private final SimpleDateFormat iso8601Format;
 
-  private JsonParser parser;
+  private boolean lightweight;
+  private State state = State.START;
 
   @Inject
-  DefaultRequestReader(File recordingFile, RequestDispatcher dispatcher, File uploadLocation) {
-    this.recordingFile = checkNotNull(recordingFile);
-    this.dispatcher = checkNotNull(dispatcher);
+  DefaultRequestReader(File recordingFile, File uploadLocation) throws IOException {
     this.uploadLocation = checkNotNull(uploadLocation);
+
+    JsonFactory jsonFactory = new JsonFactory();
+    parser = jsonFactory.createParser(new FileInputStream(recordingFile));
 
     TimeZone tz = TimeZone.getTimeZone("UTC");
     iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -80,46 +76,38 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
   }
 
   @Override
-  protected String serviceName() {
-    return getClass().getSimpleName();
+  public UserAgentRequest readRequest() throws IOException {
+    if (State.START == state) {
+      state = seekEntries();
+    } else if (State.ENTRIES != state) {
+      throw new IOException("No requests are available. State: " + state);
+    }
+    return parseEntry();
   }
 
   @Override
-  protected void startUp() throws Exception {
-    LOG.info("Reader starting up");
-
-    JsonFactory jsonFactory = new JsonFactory();
-    parser = jsonFactory.createParser(new FileInputStream(recordingFile));
+  public boolean isLastRequest(UserAgentRequest request) {
+    return request instanceof LastUserAgentRequest;
   }
 
-  @Override
-  protected void run() throws Exception {
-    parseLog();
-    stopAsync();
-  }
-
-  private void parseLog() throws IOException {
-    long timeReplayStartedNanos = System.nanoTime();
-    long firstRequestTime = 0;
-    long lastRequestTime;
-    HttpArchive.Creator creator = null;
-
+  private State seekEntries() throws IOException {
     checkToken(parser.nextToken(), JsonToken.START_OBJECT);
     checkToken(parser.nextToken(), JsonToken.FIELD_NAME);
     checkState("log".equals(parser.getCurrentName()), "The root element must be 'log', found %s",
-            parser.getCurrentName());
+        parser.getCurrentName());
 
     checkObjectStart(parser.nextToken());
-    while (isRunning() && JsonToken.END_OBJECT != parser.nextToken()) {
+    while (JsonToken.END_OBJECT != parser.nextToken()) {
       String fieldName = parser.getCurrentName();
       switch (fieldName) {
         case "version": {
           String version = getTextValue();
-          checkArgument("1.2".equals(version), "HAR version 1.2 required. Found %s");
+          checkArgument(REQUIRED_HAR_VERSION.equals(version), "HAR version 1.2 required. Found %s");
           break;
         }
         case "creator": {
-          creator = parseCreator();
+          HttpArchive.Creator creator = parseCreator();
+          lightweight = null != creator && creator.getComment().contains("lightweight");
           break;
         }
         case "browser": {
@@ -132,14 +120,9 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
         }
         case "entries": {
           checkArrayStart(parser.nextToken());
-          while (isRunning() && JsonToken.END_ARRAY != parser.nextToken()) {
-            boolean lightweight = null != creator && creator.getComment().contains("lightweight");
-            lastRequestTime = parseAndDispatchEntry(timeReplayStartedNanos, firstRequestTime, lightweight);
-            if (0l == firstRequestTime) {
-              firstRequestTime = lastRequestTime;
-            }
-          }
-          break;
+          // Seek to the first entry start
+          checkObjectStart(parser.nextToken());
+          return State.ENTRIES;
         }
         case "comment": {
           getTextValue();
@@ -150,6 +133,7 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
         }
       }
     }
+    return State.END;
   }
 
   private HttpArchive.Creator parseCreator() throws IOException {
@@ -179,7 +163,7 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
     return new HttpArchive.Creator(name, version, comment);
   }
 
-  private long parseAndDispatchEntry(long timeReplayStartedNanos, long firstRequestTime, boolean lightweight) throws IOException {
+  private UserAgentRequest parseEntry() throws IOException {
     checkObjectStart(parser.getCurrentToken());
 
     UserAgentRequest userAgentRequest = null;
@@ -223,26 +207,22 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
           if (SKIPPED_ENTRY_FIELDS.contains(fieldName)) {
             getTextValue();
           } else {
-            checkState(false, "Unknown field name %s. Location %s", fieldName, parser.getCurrentLocation());
+            checkState(false, "Unknown field name '%s'. Location '%s'", fieldName, parser.getCurrentLocation());
           }
         }
       }
     }
-
-    checkArgument(null != userAgentRequest, "A userAgentRequest was not parsed for the entry. Entry ending %s", parser.getCurrentLocation());
-    checkArgument(null != expectedResponse, "An expected response was not parsed for the entry. Entry ending %s", parser.getCurrentLocation());
-    checkArgument(0 != startedDateTime, "A startedDateTime was not parsed for the entry. Entry ending %s", parser.getCurrentLocation());
-
-    userAgentRequest = new UserAgentRequest(userAgentRequest, expectedResponse);
-    DelayedReplayRequest delayedRequest = new DelayedReplayRequest(userAgentRequest, startedDateTime, timeReplayStartedNanos,
-            firstRequestTime);
-    try {
-      dispatcher.queue(delayedRequest);
-    } catch (InterruptedException e) {
-      throw Throwables.propagate(e);
+    JsonToken jsonToken = parser.nextToken();
+    if (JsonToken.START_OBJECT == jsonToken) {
+      //noinspection ConstantConditions
+      return new UserAgentRequest(userAgentRequest, expectedResponse);
+    } else if (JsonToken.END_ARRAY == jsonToken) {
+      state = State.END;
+      //noinspection ConstantConditions
+      return new LastUserAgentRequest(userAgentRequest, expectedResponse);
+    } else {
+      throw new IOException(String.format("Unexpected token '%s'. Location '%s'", jsonToken, parser.getCurrentLocation()));
     }
-
-    return startedDateTime;
   }
 
   private UserAgentRequest parseRequest(long startedDateTime, boolean lightweight) throws IOException {
@@ -294,7 +274,7 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
           break;
         }
         default: {
-          checkState(false, "Unknown field name %s. Location %s", fieldName, parser.getCurrentLocation());
+          checkState(false, "Unknown field name '%s'. Location '%s'", fieldName, parser.getCurrentLocation());
         }
       }
     }
@@ -302,7 +282,7 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
     if (lightweight) {
       cookies = decodeCookies(headers, cookies);
     }
-
+    //noinspection ConstantConditions
     return new UserAgentRequest(httpVersion, method, uri, Optional.fromNullable(postData), headers, cookies, uploadLocation, startedDateTime);
   }
 
@@ -312,13 +292,12 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
     if (null != cookie) {
       return CookieDecoder.decode(cookie);
     }
-
     return defaultCookies;
   }
 
   private HttpHeaders parseHeaders() throws IOException {
     checkArrayStart(parser.nextToken());
-    HttpHeaders headers = new DefaultHttpHeaders();
+    HttpHeaders headers = new DefaultHttpHeaders(false);
     while (JsonToken.END_ARRAY != parser.nextToken()) {
       checkObjectStart(parser.getCurrentToken());
 
@@ -383,9 +362,15 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
           }
           case "expires": {
             try {
-              cookie.setMaxAge(iso8601Format.parse(getTextValue()).getTime());
+              Optional<String> expiresValue = getOptionalTextValue();
+              if (expiresValue.isPresent()) {
+                long time = iso8601Format.parse(expiresValue.get()).getTime();
+                cookie.setMaxAge(time);
+              } else {
+                cookie.setMaxAge(Long.MIN_VALUE);
+              }
             } catch (ParseException e) {
-              throw Throwables.propagate(e);
+              throw new IOException("Parse error parsing cookie expires", e);
             }
             break;
           }
@@ -402,7 +387,7 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
             break;
           }
           default: {
-            checkState(false, "Unknown field name '%s'. Location %s", fieldName, parser.getCurrentLocation());
+            checkState(false, "Unknown field name '%s'. Location '%s'", fieldName, parser.getCurrentLocation());
           }
         }
       }
@@ -441,9 +426,9 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
       }
     }
 
-    checkArgument(null != mimeType, "Field 'mimeType' was not found. postData entry ending %s", parser.getCurrentLocation());
-    checkArgument(null != text || null != params, "Field 'text' or 'params' was not found. postData entry ending %s", parser.getCurrentLocation());
-
+    checkArgument(null != mimeType, "Field 'mimeType' was not found. postData entry ending '%s'", parser.getCurrentLocation());
+    checkArgument(null != text || null != params, "Field 'text' or 'params' was not found. postData entry ending '%s'", parser.getCurrentLocation());
+    //noinspection ConstantConditions
     return new HttpArchive.PostData(mimeType, text, params);
   }
 
@@ -491,7 +476,7 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
       }
     }
 
-    checkState(!name.isEmpty(), "'%s' was not set for postData object. Location %s", "name", parser.getCurrentLocation());
+    checkState(!name.isEmpty(), "'%s' was not set for postData object. Location '%s'", "name", parser.getCurrentLocation());
 
     return new HttpArchive.Param(name, value, fileName, contentType, comment);
   }
@@ -568,6 +553,15 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
     return parser.getText();
   }
 
+  /**
+   * Get a text value, or {@link Optional#absent()} if null.
+   */
+  private Optional<String> getOptionalTextValue() throws IOException {
+    checkToken(parser.nextToken(), JsonToken.VALUE_STRING, JsonToken.VALUE_NULL);
+    String text = parser.getText();
+    return "null".equals(text) ? Optional.<String>absent() : Optional.of(text);
+  }
+
   private int getIntegerValue() throws IOException {
     checkToken(parser.nextToken(), JsonToken.VALUE_NUMBER_INT);
     return parser.getIntValue();
@@ -609,7 +603,13 @@ public class DefaultRequestReader extends AbstractExecutionThreadService impleme
 
   private void checkToken(JsonToken actual, JsonToken... expected) throws IOException {
     HashSet<JsonToken> expectedSet = Sets.newHashSet(expected);
-    checkArgument(expectedSet.contains(actual), "Unexpected token. Actual %s, expected %s. Location %s",
-            actual, expectedSet, parser.getCurrentName(), parser.getCurrentLocation());
+    checkArgument(expectedSet.contains(actual), "Unexpected token. Actual '%s', expected '%s'. Location '%s'",
+        actual, expectedSet, parser.getCurrentName(), parser.getCurrentLocation());
+  }
+
+  private enum State {
+    START,
+    ENTRIES,
+    END
   }
 }

@@ -18,11 +18,44 @@
 package io.groundhog.replay
 
 import spock.lang.Specification
+
 /**
  * Tests for {@link DefaultRequestReader}.
  *
  * @author Danny Thomas
  * @since 1.0
  */
-class RequestReaderTest extends Specification {
+class DefaultRequestReaderTest extends Specification {
+  def 'reader reads expected number of entries'() {
+    def count = 0;
+    def reader = getReader();
+    when:
+    while (true) {
+      def request = reader.readRequest();
+      count++
+      if (reader.isLastRequest(request)) {
+        break
+      }
+    }
+
+    then:
+    count == 21
+  }
+
+  def 'attempt to read more than the available entries throws IOException'() {
+    def reader = getReader();
+
+    when:
+    for (int i = 0; i < 22; i++) {
+      reader.readRequest();
+    }
+
+    then:
+    thrown(IOException)
+  }
+
+  def getReader() {
+    def url = getClass().getClassLoader().getResource('github.com.har')
+    new DefaultRequestReader(new File(url.getFile()), new File('/tmp'))
+  }
 }

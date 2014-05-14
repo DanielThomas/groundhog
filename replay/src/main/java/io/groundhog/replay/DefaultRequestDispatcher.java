@@ -44,25 +44,23 @@ import static com.google.common.base.Preconditions.checkState;
 public class DefaultRequestDispatcher extends AbstractExecutionThreadService implements RequestDispatcher{
   private static final Logger LOG = LoggerFactory.getLogger(RequestDispatcher.class);
 
-  private static final int QUEUE_TIMEOUT = 1000;
-  private static final int QUEUE_LENGTH = 1000;
   private static final int SKEW_THRESHOLD = 100;
   private static final int CHANNEL_WAIT_DURATION = 5000;
 
   private final Bootstrap bootstrap;
   private final ChannelGroup channelGroup;
-  private final DelayedRequestQueue queue;
+  private final DelayQueue<DelayedUserAgentRequest> queue;
   private final HostAndPort hostAndPort;
   private final ReplayResultListener resultListener;
 
   @Inject
-  DefaultRequestDispatcher(Bootstrap bootstrap, @Named("hostandport") HostAndPort hostAndPort, ReplayResultListener resultListener) {
+  DefaultRequestDispatcher(Bootstrap bootstrap, @Named("target") HostAndPort hostAndPort, ReplayResultListener resultListener) {
     this.bootstrap = checkNotNull(bootstrap);
     this.hostAndPort = checkNotNull(hostAndPort);
     this.resultListener = checkNotNull(resultListener);
 
     channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    queue = new DelayedRequestQueue(QUEUE_LENGTH);
+    queue = new DelayQueue<>();
   }
 
   public Service clearQueue() {
@@ -70,17 +68,10 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
     return stopAsync();
   }
 
-  public void queue(DelayedReplayRequest request) throws InterruptedException {
+  public void queue(DelayedUserAgentRequest request) throws InterruptedException {
     checkNotNull(request);
     checkState(isRunning(), "The dispatcher is not running");
-    boolean queued = false;
-    while (!queued) {
-      LOG.debug("Queuing {}", request);
-      queued = queue.put(request, QUEUE_TIMEOUT);
-      if (!isRunning()) {
-        break;
-      }
-    }
+    queue.put(request);
   }
 
   @Override
@@ -93,7 +84,7 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
     long startTime = System.nanoTime();
     LOG.info("Running request replay");
     while (isRunning() || !queue.isEmpty()) {
-      DelayedReplayRequest delayedRequest = queue.poll(QUEUE_TIMEOUT);
+      DelayedUserAgentRequest delayedRequest = queue.poll();
       if (null == delayedRequest) {
         LOG.debug("Request queue poll timeout, next request: {}", queue.peek());
       } else {
@@ -120,51 +111,10 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
   @Override
   protected void shutDown() throws Exception {
     LOG.info("Dispatcher shutting down");
-
     while (!channelGroup.isEmpty()) {
       LOG.info("Waiting for in flight channels to complete...");
       Thread.sleep(CHANNEL_WAIT_DURATION);
     }
-
     checkState(queue.isEmpty(), "The request queue should have been drained before shutdown");
-  }
-
-  /**
-   * A composed {@link java.util.concurrent.DelayQueue} that supports blocking on capacity.
-   */
-  private static final class DelayedRequestQueue {
-    private final DelayQueue<DelayedReplayRequest> queue = new DelayQueue<>();
-    private final Semaphore available;
-
-    public DelayedRequestQueue(int capacity) {
-      available = new Semaphore(capacity, true);
-    }
-
-    public boolean put(DelayedReplayRequest e, long timeout) throws InterruptedException {
-      if (available.tryAcquire(timeout, TimeUnit.MILLISECONDS)) {
-        queue.put(e);
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    public DelayedReplayRequest poll(long timeout) throws InterruptedException {
-      DelayedReplayRequest request = queue.poll(timeout, TimeUnit.MILLISECONDS);
-      available.release();
-      return request;
-    }
-
-    public DelayedReplayRequest peek() {
-      return queue.peek();
-    }
-
-    public boolean isEmpty() {
-      return queue.isEmpty();
-    }
-
-    public void clear() {
-      queue.clear();
-    }
   }
 }

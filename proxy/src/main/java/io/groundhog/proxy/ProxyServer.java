@@ -57,7 +57,7 @@ public final class ProxyServer extends AbstractIdleService {
 
   @Override
   protected void startUp() throws Exception {
-    LOG.info("Starting recording server on address " + listenAddress + ":" + listenPort);
+    LOG.info("Starting recording server on address {}:{}, capture writer {}", listenAddress, listenPort, captureWriter);
     DefaultHttpProxyServer.bootstrap().withAddress(new InetSocketAddress(listenAddress, listenPort)).withFiltersSource(captureFilterSource).start();
   }
 

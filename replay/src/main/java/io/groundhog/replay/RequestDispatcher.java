@@ -7,9 +7,7 @@ import com.google.common.util.concurrent.Service;
  * @since 1.0
  */
 public interface RequestDispatcher extends Service {
+  void queue(DelayedUserAgentRequest request) throws InterruptedException;
 
   Service clearQueue();
-
-  void queue(DelayedReplayRequest request) throws InterruptedException;
-
 }
