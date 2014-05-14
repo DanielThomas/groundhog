@@ -34,11 +34,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class AbstractReplayResultListener implements ReplayResultListener {
   public static final String TRANSACTION_LABEL_HEADER = "X-Transaction-Label";
   public static final String UNTITLED_PAGE_LABEL = "Untitled Page";
+  private static final MediaType APPLICATION_WOFF = MediaType.create("application", "x-font-woff");
 
   protected static Optional<String> getErrorMessage(Throwable cause) {
     //noinspection ThrowableResultOfMethodCallIgnored
     checkNotNull(cause);
-    if ( cause instanceof ClosedChannelException) {
+    if (cause instanceof ClosedChannelException) {
       return Optional.of("Connection closed");
     }
     return Optional.absent();
@@ -109,7 +110,7 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
         return "Script";
       } else if (type.is(MediaType.CSS_UTF_8)) {
         return "Stylesheet";
-      } else if (type.is(MediaType.create("application", "application/x-font-woff"))) {
+      } else if (type.is(APPLICATION_WOFF)) {
         return "Font";
       }
     }

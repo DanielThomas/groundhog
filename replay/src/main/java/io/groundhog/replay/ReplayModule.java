@@ -31,7 +31,7 @@ public class ReplayModule extends AbstractModule {
 
     String hostname = "localhost";
     int port = 8080;
-    File recordingFile = new File("replay/src/test/resources/github.com.har");
+    File recordingFile = new File("out/recording.har");
 
     bind(ReplayResultListener.class).to(LoggingResultListener.class);
     bind(HostAndPort.class).annotatedWith(Names.named("target")).toInstance(HostAndPort.fromParts(hostname, port));

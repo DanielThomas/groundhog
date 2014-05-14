@@ -45,7 +45,7 @@ public class CaptureFilterSource implements HttpFiltersSource {
   @Inject
   CaptureFilterSource(CaptureWriter captureWriter,
       @Named("UploadLocation") File uploadLocation,
-      @Named("target.protocol") String protocol,
+      @Named("target.scheme") String protocol,
       @Named("target.host") String host,
       @Named("target.port") int port) {
     this.captureWriter = checkNotNull(captureWriter);
