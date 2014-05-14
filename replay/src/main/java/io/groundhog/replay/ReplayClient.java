@@ -46,7 +46,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private final RequestReader reader;
 
   @Inject
-  public ReplayClient(File recordingFile, @Named("hostandport") HostAndPort hostAndPort, @Named("usessl") final boolean useSSL, final ReplayResultListener resultListener) {
+  ReplayClient(File recordingFile, @Named("target") HostAndPort hostAndPort, @Named("usessl") final boolean useSSL, final ReplayResultListener resultListener) {
     checkNotNull(recordingFile);
     checkNotNull(resultListener);
 
@@ -103,5 +103,4 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   protected void shutDown() throws Exception {
     group.shutdownGracefully();
   }
-
 }

@@ -15,29 +15,8 @@ import java.util.Properties;
  * @since 1.0
  */
 public class ReplayModule extends AbstractModule {
-
-  private Integer port;
-  private String hostName;
-  private File readFile;
-
-  public ReplayModule() {
-    getProperties();
-  }
-
   @Override
   protected void configure() {
-
-    bind(ReplayClient.class);
-    bind(ReplayResultListener.class).to(LoggingResultListener.class);
-    bind(HostAndPort.class).annotatedWith(Names.named("hostandport")).toInstance(HostAndPort.fromParts(hostName, port));
-    bind(boolean.class).annotatedWith(Names.named("usessl")).toInstance(false);
-    bind(RequestDispatcher.class).to(DefaultRequestDispatcher.class);
-    bind(RequestReader.class).to(DefaultRequestReader.class);
-    bind(File.class).toInstance(readFile);
-
-  }
-
-  public void getProperties() {
     String propsLocation = "conf/properties.config";
     Properties props = new Properties();
     try {
@@ -45,9 +24,16 @@ public class ReplayModule extends AbstractModule {
     } catch (IOException io) {
       Throwables.propagate(io);
     }
-    port = Integer.parseInt(props.getProperty("replayPort"));
-    hostName = props.getProperty("replayHostName");
-    readFile = new File(props.getProperty("replayRecordingFile"));
-  }
+    int port = Integer.parseInt(props.getProperty("replayPort"));
+    String hostname = props.getProperty("replayHostName");
+    File recordingFile = new File(props.getProperty("replayRecordingFile"));
 
+    bind(ReplayClient.class);
+    bind(ReplayResultListener.class).to(LoggingResultListener.class);
+    bind(HostAndPort.class).annotatedWith(Names.named("target")).toInstance(HostAndPort.fromParts(hostname, port));
+    bind(boolean.class).annotatedWith(Names.named("usessl")).toInstance(false);
+    bind(RequestDispatcher.class).to(DefaultRequestDispatcher.class);
+    bind(RequestReader.class).to(DefaultRequestReader.class);
+    bind(File.class).toInstance(recordingFile);
+  }
 }
