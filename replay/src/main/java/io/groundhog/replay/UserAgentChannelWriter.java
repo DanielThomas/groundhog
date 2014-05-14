@@ -19,6 +19,7 @@ package io.groundhog.replay;
 
 import io.groundhog.har.HttpArchive;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -49,6 +50,9 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.*;
 
 /**
+ * A {@link ChannelFutureListener} that writes a {@link UserAgentRequest} to the channel future,
+ * and notifies a {@link ReplayResultListener} of failures, if any.
+ *
  * @author Danny Thomas
  * @since 1.0
  */
@@ -83,6 +87,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
   };
 
   private static final LoadingCache<HashCode, UserAgent> UA;
+  private static final UserAgent NON_PERSISTENT_UA;
 
   static {
     CacheLoader<HashCode, UserAgent> loader = new CacheLoader<HashCode, UserAgent>() {
@@ -92,6 +97,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
       }
     };
     UA = CacheBuilder.newBuilder().build(loader);
+    NON_PERSISTENT_UA = new DefaultUserAgent();
   }
 
   private final UserAgentRequest uaRequest;
@@ -106,8 +112,6 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
   public void operationComplete(ChannelFuture future) throws Exception {
     checkNotNull(future);
     HttpRequest request = copyRequest(uaRequest);
-    setHeaders(request);
-
     UserAgent userAgent = getUserAgent();
     HttpPostRequestEncoder encoder = null;
     Optional<HttpArchive.PostData> postData = uaRequest.getPostData();
@@ -188,7 +192,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
     }
 
     LOG.debug("Generated {} for session {}, set session {}", cacheKey, sessionCookie, setSessionCookie);
-    return cacheKey.isPresent() ? UA.getUnchecked(cacheKey.get()) : new DefaultUserAgent();
+    return cacheKey.isPresent() ? UA.getUnchecked(cacheKey.get()) : NON_PERSISTENT_UA;
   }
 
   private Optional<Cookie> getSessionCookie() {
@@ -204,8 +208,11 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
     return Hashing.goodFastHash(64).hashString(cookie.getValue(), Charsets.UTF_8);
   }
 
-  private HttpRequest copyRequest(HttpRequest request) {
-    return new DefaultHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri(), false);
+  @VisibleForTesting
+  HttpRequest copyRequest(HttpRequest request) {
+    DefaultHttpRequest copiedRequest = new DefaultHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri(), false);
+    setHeaders(copiedRequest);
+    return copiedRequest;
   }
 
   private List<HttpArchive.Param> getPostParamsWithOverrides(List<HttpArchive.Param> params, UserAgent userAgent) {
@@ -220,7 +227,6 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
         it.set(overrideParam);
       }
     }
-
     return params;
   }
 
@@ -256,7 +262,6 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
         LOG.debug("Unable to update DWR request content for an non-persistent user agent");
       }
     }
-
     return text;
   }
 
