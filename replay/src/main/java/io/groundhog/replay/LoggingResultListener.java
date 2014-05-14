@@ -45,3 +45,4 @@ public class LoggingResultListener extends AbstractReplayResultListener implemen
     }
   }
 }
+

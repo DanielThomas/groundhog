@@ -17,8 +17,10 @@
 
 package io.groundhog.replay;
 
-import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.net.HostAndPort;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -43,7 +45,8 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private final RequestDispatcher dispatcher;
   private final RequestReader reader;
 
-  public ReplayClient(File recordingFile, HostAndPort hostAndPort, final boolean useSSL, final ReplayResultListener resultListener) {
+  @Inject
+  public ReplayClient(File recordingFile, @Named("hostandport") HostAndPort hostAndPort, @Named("usessl") final boolean useSSL, final ReplayResultListener resultListener) {
     checkNotNull(recordingFile);
     checkNotNull(resultListener);
 
@@ -59,8 +62,8 @@ public final class ReplayClient extends AbstractExecutionThreadService {
       }
     });
 
-    dispatcher = new RequestDispatcher(bootstrap, hostAndPort, resultListener);
-    reader = new RequestReader(recordingFile, dispatcher, uploadLocation);
+    dispatcher = new DefaultRequestDispatcher(bootstrap, hostAndPort, resultListener);
+    reader = new DefaultRequestReader(recordingFile, dispatcher, uploadLocation);
   }
 
   @Override
@@ -100,4 +103,5 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   protected void shutDown() throws Exception {
     group.shutdownGracefully();
   }
+
 }

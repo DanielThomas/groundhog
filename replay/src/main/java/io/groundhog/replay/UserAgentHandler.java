@@ -17,13 +17,12 @@
 
 package io.groundhog.replay;
 
-import io.groundhog.har.HttpArchive;
-
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import io.groundhog.har.HttpArchive;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;

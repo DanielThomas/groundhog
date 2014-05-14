@@ -88,7 +88,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
     CacheLoader<HashCode, UserAgent> loader = new CacheLoader<HashCode, UserAgent>() {
       @Override
       public UserAgent load(HashCode key) throws Exception {
-        return new UserAgent(key);
+        return new DefaultUserAgent(key);
       }
     };
     UA = CacheBuilder.newBuilder().build(loader);
@@ -188,7 +188,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
     }
 
     LOG.debug("Generated {} for session {}, set session {}", cacheKey, sessionCookie, setSessionCookie);
-    return cacheKey.isPresent() ? UA.getUnchecked(cacheKey.get()) : new UserAgent();
+    return cacheKey.isPresent() ? UA.getUnchecked(cacheKey.get()) : new DefaultUserAgent();
   }
 
   private Optional<Cookie> getSessionCookie() {
