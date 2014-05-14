@@ -10,9 +10,7 @@ import java.util.Collection;
 import java.util.Set;
 
 /**
- * TODO look into the monitor waits for this class. Might need to swap out the coarse synchronisation for concurrent collections
- *
- * @author Danny Thomas
+g * @author Danny Thomas
  * @since 1.0
  */
 public interface UserAgent {
