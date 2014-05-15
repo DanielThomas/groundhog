@@ -18,7 +18,6 @@
 apply plugin: 'war'
 
 versions.tomcat = '7.0.53'
-versions.jetty = '9.1.4.v20140401'
 
 ext {
   learnServer = 'localhost:8080'
@@ -33,11 +32,11 @@ dependencies {
 
   providedCompile "org.apache.tomcat:tomcat-catalina:$versions.tomcat"
   providedCompile "org.apache.tomcat:tomcat-coyote:$versions.tomcat"
-  providedCompile "org.eclipse.jetty:jetty-server:$versions.jetty"
+  providedCompile libraries.jettyserver
   providedCompile 'org.oscelot:b2deploy-task:0.1.0'
 
   testCompile libraries.testlibs
-  testCompile "org.eclipse.jetty:jetty-client:$versions.jetty"
+  integTestCompile libraries.jettytest
 
   task deployB2(dependsOn: 'war') << {
     description = 'Deploy a war to Blackboard Learn as a B2 using the starting block'

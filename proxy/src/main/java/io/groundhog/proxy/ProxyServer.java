@@ -23,6 +23,7 @@ import io.groundhog.capture.CaptureWriter;
 
 import java.net.InetSocketAddress;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -20,8 +20,10 @@ ext {
   versions = [:]
 }
 
-versions.slf4j = '1.7.7'
 versions.guava = '17.0'
+versions.jetty = '9.1.4.v20140401'
+versions.slf4j = '1.7.7'
+versions.spock = '0.7-groovy-2.0'
 
 configurations.all {
   resolutionStrategy.eachDependency { details ->
@@ -61,21 +63,32 @@ libraries.netty = [
 libraries.jackson = 'com.fasterxml.jackson.core:jackson-core:2.3.2'
 libraries.jsoup = 'org.jsoup:jsoup:1.7.3'
 
+libraries.jettyserver = "org.eclipse.jetty:jetty-server:$versions.jetty"
+libraries.jettyclient = "org.eclipse.jetty:jetty-client:$versions.jetty"
+libraries.jettyservlet = "org.eclipse.jetty:jetty-servlet:$versions.jetty"
+
+// Dependencies for using Jetty in integration tests
+libraries.jettytest = [
+    libraries.jettyserver,
+    libraries.jettyclient,
+    libraries.jettyservlet
+]
+
 libraries.jmeter = 'org.apache.jmeter:ApacheJMeter_components:2.11'
 
 libraries.littleproxy = dependencies.create('org.littleshoot:littleproxy:1.0.0-beta7') {
   exclude module: 'slf4j-log4j12'
 }
 
+libraries.guavatest = "com.google.guava:guava-testlib:$versions.guava"
 libraries.spock = [
-    'org.spockframework:spock-core:0.7-groovy-2.0',
+    "org.spockframework:spock-core:$versions.spock",
+    "org.spockframework:spock-guice:$versions.spock",
     'cglib:cglib-nodep:3.1',
     'org.objenesis:objenesis:2.1'
 ]
 
-libraries.guavatest = "com.google.guava:guava-testlib:$versions.guava"
-
 libraries.testlibs = [
-    libraries.spock,
-    libraries.guavatest
+    libraries.guavatest,
+    libraries.spock
 ]

@@ -80,7 +80,7 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
       if (POST_DECODE_METHODS.contains(method)) {
         isPost = true;
         chunk = chunk.duplicate();
-        if (MediaType.parse(contentType).is(MediaType.ANY_TEXT_TYPE)) {
+        if (null == contentType || MediaType.parse(contentType).is(MediaType.ANY_TEXT_TYPE)) {
           if (null == content) {
             content = new StringBuilder();
           }
