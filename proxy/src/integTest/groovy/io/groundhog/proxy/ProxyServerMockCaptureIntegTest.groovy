@@ -131,10 +131,10 @@ class ProxyServerMockCaptureIntegTest extends Specification {
 
     when:
     def response = client.POST(getURI(BASE_PATH)).send()
-    response.contentAsString == 'POSTRESP'
 
     then:
     response.status == 200
+    response.contentAsString == 'POSTRESP'
 
     then:
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
