@@ -32,6 +32,9 @@ configurations.all {
       case 'junit-dep':
         details.useTarget 'junit:junit:4.11'
         break
+      case 'slf4j-api':
+        details.useVersion versions.slf4j
+        break
       case 'log4j':
         details.useTarget "org.slf4j:log4j-over-slf4j:$versions.slf4j"
         break
@@ -48,11 +51,9 @@ configurations.all {
 
 libraries.guava = "com.google.guava:guava:$versions.guava"
 libraries.guice = 'com.google.inject:guice:3.0'
+libraries.logback = 'ch.qos.logback:logback-classic:1.1.2'
 libraries.jsr305 = 'com.google.code.findbugs:jsr305:2.0.3'
 libraries.inject = 'javax.inject:javax.inject:1'
-libraries.slf4j = "org.slf4j:slf4j-api:$versions.slf4j"
-
-libraries.logback = 'ch.qos.logback:logback-classic:1.1.2'
 
 libraries.netty = [
     'io.netty:netty-all:4.0.18.Final',

@@ -10,7 +10,12 @@ configurations {
   integTestRuntime.extendsFrom testRuntime
 }
 
-task integTest(type: Test) {}
+task integTest(type: Test) {
+  testClassesDir = sourceSets.integTest.output.classesDir
+  classpath = sourceSets.integTest.runtimeClasspath
+  testSrcDirs = []
+}
+
 check.dependsOn(integTest)
 integTest.dependsOn(test)
 
