@@ -22,6 +22,7 @@ import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.DefaultHttpCaptureDecoder;
 import io.groundhog.capture.HttpCaptureDecoder;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
@@ -46,7 +47,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class CaptureHandler extends HandlerWrapper {
   private static final Logger LOG = LoggerFactory.getLogger(CaptureHandler.class);
 
-  private final CaptureWriter writer;
+  private CaptureWriter writer;
 
   @Inject
   CaptureHandler(CaptureWriter writer) {
@@ -80,5 +81,10 @@ public final class CaptureHandler extends HandlerWrapper {
     } finally {
       captureDecoder.destroy();
     }
+  }
+
+  @VisibleForTesting
+  void setCaptureWriter(CaptureWriter writer) {
+    this.writer = checkNotNull(writer);
   }
 }

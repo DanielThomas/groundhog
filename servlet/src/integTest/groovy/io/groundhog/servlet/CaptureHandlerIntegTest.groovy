@@ -21,7 +21,6 @@ import io.groundhog.capture.CaptureWriter
 import org.eclipse.jetty.client.HttpClient
 import org.eclipse.jetty.client.api.ContentResponse
 import org.eclipse.jetty.server.Server
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -29,14 +28,17 @@ import spock.lang.Specification
  * Integration tests for {@link CaptureServletRequestHttpWrapper}.
  */
 class CaptureHandlerIntegTest extends Specification {
-  @Shared Server server
-  @Shared HttpClient client
-  @Shared CaptureWriter writer
+  @Shared
+  Server server
+  @Shared
+  HttpClient client
+  @Shared
+  CaptureHandler handler
 
   def setupSpec() {
     server = new Server(18080);
-    writer = Mock(CaptureWriter.class)
-    server.setHandler(new CaptureHandler(writer))
+    handler = new CaptureHandler(Mock(CaptureWriter))
+    server.setHandler(handler)
     server.start();
 
     client = new HttpClient();
@@ -48,8 +50,10 @@ class CaptureHandlerIntegTest extends Specification {
     client.stop()
   }
 
-  @Ignore // Appears to be failing due to a threading/concurrency issue, more work needed
   def 'GET for root document returns 404, and captured request matches'() {
+    def writer = Mock(CaptureWriter.class)
+    handler.setCaptureWriter(writer)
+
     when:
     ContentResponse response = client.GET('http://localhost:18080/')
 
