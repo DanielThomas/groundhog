@@ -19,6 +19,8 @@ package io.groundhog.proxy
 
 import com.google.common.base.Predicate
 import com.google.common.testing.AbstractPackageSanityTests
+import io.groundhog.capture.CaptureController
+import io.groundhog.capture.DefaultCaptureController
 import io.groundhog.har.HarFileCaptureWriter
 import io.groundhog.capture.CaptureWriter
 
@@ -38,10 +40,12 @@ class PackageSanityTest extends AbstractPackageSanityTests {
         Proxy.class == input
       }
     })
-    CaptureWriter captureWriter = new HarFileCaptureWriter(new File(""), false, false, false)
-    CaptureFilterSource captureFilterSource = new CaptureFilterSource(captureWriter, new File(""), "", "", 1)
-    setDefault(CaptureWriter.class, captureWriter)
+    CaptureWriter writer = new HarFileCaptureWriter(new File(""), false, false, false)
+    CaptureController controller = new DefaultCaptureController(writer)
+    CaptureFilterSource captureFilterSource = new CaptureFilterSource(writer, controller, new File(""), "", "", 1)
+    setDefault(CaptureWriter.class, writer)
     setDefault(CaptureFilterSource.class, captureFilterSource)
-    setDefault(ProxyServer.class, new ProxyServer(captureWriter, captureFilterSource, "", 1))
+    setDefault(ProxyServer.class, new ProxyServer(writer, captureFilterSource, "", 1))
+    setDefault(CaptureController, new DefaultCaptureController(writer))
   }
 }

@@ -57,10 +57,12 @@ public final class CaptureValve extends ValveBase implements Valve {
   }
 
   private final CaptureWriter captureWriter;
+  private final CaptureController captureController;
 
   @Inject
-  CaptureValve(CaptureWriter captureWriter) {
+  CaptureValve(CaptureWriter captureWriter, CaptureController captureController) {
     this.captureWriter = checkNotNull(captureWriter);
+    this.captureController = checkNotNull(captureController);
   }
 
   @Override
@@ -72,12 +74,12 @@ public final class CaptureValve extends ValveBase implements Valve {
   public void invoke(Request request, Response response) throws IOException, ServletException {
     checkNotNull(request);
     checkNotNull(response);
-    HttpCaptureDecoder captureDecoder = new DefaultHttpCaptureDecoder(new File("/tmp"));
+    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(new File("/tmp"));
     wrapCoyoteInputBuffer(request, captureDecoder);
     try {
       try {
         HttpRequest httpRequest = transformRequest(request);
-        if (CaptureHttpController.isControlRequest(httpRequest)) {
+        if (captureController.isControlRequest(httpRequest)) {
           handleControlRequest(httpRequest, response);
           return;
         }
@@ -104,7 +106,7 @@ public final class CaptureValve extends ValveBase implements Valve {
   }
 
   private void handleControlRequest(HttpRequest httpRequest, Response response) throws IOException {
-    FullHttpResponse httpResponse = CaptureHttpController.handleControlRequest(httpRequest, captureWriter);
+    FullHttpResponse httpResponse = captureController.handleControlRequest(httpRequest);
     response.setStatus(httpResponse.getStatus().code());
     HttpHeaders headers = httpResponse.headers();
     for (String headerName : headers.names()) {
@@ -116,7 +118,7 @@ public final class CaptureValve extends ValveBase implements Valve {
     content.getBytes(0, response.getOutputStream(), content.capacity());
   }
 
-  private void wrapCoyoteInputBuffer(Request request, HttpCaptureDecoder captureDecoder) {
+  private void wrapCoyoteInputBuffer(Request request, CaptureHttpDecoder captureDecoder) {
     org.apache.coyote.Request coyoteRequest = request.getCoyoteRequest();
     InputBuffer inputBuffer = coyoteRequest.getInputBuffer();
     InputBuffer decodingInputBuffer = new DecodingInputBuffer(inputBuffer, captureDecoder);

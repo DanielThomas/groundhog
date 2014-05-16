@@ -15,13 +15,21 @@
  *
  */
 
-package io.groundhog.capture
+package io.groundhog.proxy
 
+import io.groundhog.capture.CaptureController
+import io.groundhog.capture.CaptureWriter
 import spock.lang.Specification
 
 /**
- * Tests for {@link DefaultHttpCaptureDecoder}.
+ * Tests for {@link CaptureFilterSource}.
  */
-class DefaultHttpCaptureDecoderTest extends Specification {
+class CaptureFilterSourceTest extends Specification {
+  def 'port number less than zero throws an IllegalArgumentException'() {
+    when:
+    new CaptureFilterSource(Mock(CaptureWriter), Mock(CaptureController), Mock(File), 'http', 'localhost', 0 )
 
+    then:
+    thrown(IllegalArgumentException)
+  }
 }

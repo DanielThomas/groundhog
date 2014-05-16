@@ -1,6 +1,8 @@
 package io.groundhog.proxy;
 
+import io.groundhog.capture.CaptureController;
 import io.groundhog.capture.CaptureWriter;
+import io.groundhog.capture.DefaultCaptureController;
 import io.groundhog.har.HarFileCaptureWriter;
 
 import com.google.common.base.Throwables;
@@ -38,5 +40,6 @@ public class ProxyModule extends AbstractModule {
 
     CaptureWriter captureWriter = new HarFileCaptureWriter(outputFile, true, false, false);
     bind(CaptureWriter.class).toInstance(captureWriter);
+    bind(CaptureController.class).to(DefaultCaptureController.class);
   }
 }

@@ -17,10 +17,9 @@
 
 package io.groundhog.servlet;
 
-import io.groundhog.capture.CaptureRequest;
-import io.groundhog.capture.CaptureWriter;
-import io.groundhog.capture.DefaultHttpCaptureDecoder;
-import io.groundhog.capture.HttpCaptureDecoder;
+import io.groundhog.capture.*;
+import io.groundhog.capture.DefaultCaptureHttpDecoder;
+import io.groundhog.capture.CaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.eclipse.jetty.server.Handler;
@@ -60,7 +59,7 @@ public final class CaptureHandler extends HandlerWrapper {
     checkNotNull(baseRequest);
     checkNotNull(request);
     checkNotNull(response);
-    HttpCaptureDecoder captureDecoder = new DefaultHttpCaptureDecoder(new File("/tmp"));
+    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(new File("/tmp"));
     try {
       try {
         captureDecoder.request(CaptureValve.transformRequest(request));

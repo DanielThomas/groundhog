@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.proxy
+package io.groundhog.base
 
 import com.google.common.base.VerifyException
 import org.slf4j.LoggerFactory
@@ -25,7 +25,7 @@ import spock.lang.Specification
  * Test to ensure that the {@link io.groundhog.base.AssertAppender} is correctly configured for this project.
  */
 class AssertAppenderIntegTest extends Specification {
-  def 'logging an error results in a VerifyException'() {
+  def 'logging an error results in a AssertionError'() {
     def logger = LoggerFactory.getLogger(AssertAppenderIntegTest)
 
     when:

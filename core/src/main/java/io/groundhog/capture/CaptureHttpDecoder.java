@@ -31,7 +31,7 @@ import io.netty.handler.codec.http.HttpObject;
  * @author Danny Thomas
  * @since 1.0
  */
-public interface HttpCaptureDecoder {
+public interface CaptureHttpDecoder {
   /**
    * Process request objects.
    *

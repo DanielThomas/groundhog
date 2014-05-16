@@ -45,8 +45,8 @@ import static com.google.common.base.Preconditions.checkState;
  * @author Danny Thomas
  * @since 1.0
  */
-public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
-  private static final Logger LOG = LoggerFactory.getLogger(DefaultHttpCaptureDecoder.class);
+public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
+  private static final Logger LOG = LoggerFactory.getLogger(DefaultCaptureHttpDecoder.class);
 
   private static final Set<HttpMethod> POST_DECODE_METHODS = Sets.newHashSet(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH);
 
@@ -60,7 +60,7 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
   private StringBuilder content;
   private HttpResponse response;
 
-  public DefaultHttpCaptureDecoder(File uploadLocation) {
+  public DefaultCaptureHttpDecoder(File uploadLocation) {
     this.uploadLocation = checkNotNull(uploadLocation);
   }
 
@@ -69,10 +69,7 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
     checkNotNull(httpObject);
     if (httpObject instanceof HttpRequest) {
       startedDateTime = System.currentTimeMillis();
-      // Duplicate the request, so the state can't be modified
-      HttpRequest originalRequest = (HttpRequest) httpObject;
-      request = new DefaultHttpRequest(originalRequest.getProtocolVersion(), originalRequest.getMethod(), originalRequest.getUri());
-      request.headers().set(originalRequest.headers());
+      request = (HttpRequest) httpObject;
     } else if (httpObject instanceof HttpContent) {
       HttpContent chunk = ((HttpContent) httpObject);
       HttpMethod method = request.getMethod();
@@ -92,9 +89,9 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
           }
           decoder.offer(chunk);
           readAvailableData();
+        } else {
+          LOG.debug("Unsupported POST content type ", contentType);
         }
-      } else {
-        LOG.debug("Unsupported POST content type ", contentType);
       }
     }
   }

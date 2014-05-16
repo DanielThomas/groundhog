@@ -18,7 +18,7 @@
 package io.groundhog.servlet
 
 import com.google.common.base.Charsets
-import io.groundhog.capture.HttpCaptureDecoder
+import io.groundhog.capture.CaptureHttpDecoder
 import spock.lang.Specification
 
 import javax.servlet.http.HttpServletRequest
@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletRequest
 class CaptureServletRequestHttpWrapperTest extends Specification {
   def 'ISO-8859-1 is default character set'() {
     def request = Mock(HttpServletRequest)
-    def decoder = Mock(HttpCaptureDecoder)
+    def decoder = Mock(CaptureHttpDecoder)
     def wrapper = new CaptureServletRequestHttpWrapper(request, decoder)
 
     expect:
@@ -39,7 +39,7 @@ class CaptureServletRequestHttpWrapperTest extends Specification {
   def 'UTF-8 charset is supported'() {
     def request = Mock(HttpServletRequest)
     request.getCharacterEncoding() >> 'UTF-8'
-    def decoder = Mock(HttpCaptureDecoder)
+    def decoder = Mock(CaptureHttpDecoder)
     def wrapper = new CaptureServletRequestHttpWrapper(request, decoder)
 
     expect:

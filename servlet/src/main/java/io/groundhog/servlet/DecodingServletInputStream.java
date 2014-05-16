@@ -17,7 +17,7 @@
 
 package io.groundhog.servlet;
 
-import io.groundhog.capture.HttpCaptureDecoder;
+import io.groundhog.capture.CaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
@@ -33,7 +33,7 @@ import java.io.IOException;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A {@link ServletInputStream} that decodes read bytes using a {@link HttpCaptureDecoder}.
+ * A {@link ServletInputStream} that decodes read bytes using a {@link io.groundhog.capture.CaptureHttpDecoder}.
  *
  * @author Danny Thomas
  * @since 1.0
@@ -42,12 +42,12 @@ public final class DecodingServletInputStream extends ServletInputStream impleme
   private static final Logger LOG = LoggerFactory.getLogger(DecodingInputBuffer.class);
 
   protected final ServletInputStream in;
-  private final HttpCaptureDecoder captureDecoder;
+  private final CaptureHttpDecoder captureDecoder;
 
   private byte[] singleByte = new byte[1];
   private boolean failFast;
 
-  public DecodingServletInputStream(ServletInputStream in, HttpCaptureDecoder captureDecoder) {
+  public DecodingServletInputStream(ServletInputStream in, CaptureHttpDecoder captureDecoder) {
     this.in = checkNotNull(in);
     this.captureDecoder = checkNotNull(captureDecoder);
   }

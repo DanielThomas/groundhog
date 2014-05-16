@@ -18,12 +18,13 @@
 package io.groundhog.servlet
 
 import com.google.common.testing.AbstractPackageSanityTests
-import io.groundhog.har.HarFileCaptureWriter
+import io.groundhog.capture.CaptureController
 import io.groundhog.capture.CaptureWriter
+import io.groundhog.capture.DefaultCaptureController
+import io.groundhog.har.HarFileCaptureWriter
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.netty.handler.codec.http.HttpVersion
 import org.eclipse.jetty.server.Request
-import org.junit.Ignore
 
 import javax.servlet.ServletInputStream
 
@@ -48,6 +49,8 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     })
     setDefault(Request.class, new Request(null, null))
     setDefault(CaptureHandler.class, new CaptureHandler(writer))
-    setDefault(CaptureValve.class, new CaptureValve(writer))
+    def controller = new DefaultCaptureController(writer)
+    setDefault(CaptureValve.class, new CaptureValve(writer, controller))
+    setDefault(CaptureController.class, controller)
   }
 }

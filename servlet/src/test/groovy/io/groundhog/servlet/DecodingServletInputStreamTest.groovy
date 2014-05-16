@@ -17,8 +17,7 @@
 
 package io.groundhog.servlet
 
-import io.groundhog.capture.HttpCaptureDecoder
-import org.apache.coyote.InputBuffer
+import io.groundhog.capture.CaptureHttpDecoder
 import spock.lang.Specification
 
 import javax.servlet.ServletInputStream
@@ -29,7 +28,7 @@ import javax.servlet.ServletInputStream
 class DecodingServletInputStreamTest extends Specification {
   def 'placeholder'() {
     def inputStream = Mock(ServletInputStream)
-    def captureDecoder = Mock(HttpCaptureDecoder)
+    def captureDecoder = Mock(CaptureHttpDecoder)
     def decoder = new DecodingServletInputStream(inputStream, captureDecoder)
     decoder.setFailFast(true)
   }

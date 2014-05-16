@@ -19,6 +19,7 @@ package io.groundhog.servlet
 
 import com.google.common.base.Splitter
 import io.groundhog.Groundhog
+import io.groundhog.capture.CaptureController
 import io.groundhog.capture.CaptureWriter
 import spock.lang.Specification
 
@@ -27,8 +28,7 @@ import spock.lang.Specification
  */
 class CaptureValveTest extends Specification {
   def 'information contains implementation version'() {
-    def writer = Mock(CaptureWriter)
-    def valve = new CaptureValve(writer)
+    def valve = new CaptureValve(Mock(CaptureWriter), Mock(CaptureController))
 
     expect:
     valve.getInfo() == 'io.groundhog.servlet.CaptureValve/' + Groundhog.getVersion();

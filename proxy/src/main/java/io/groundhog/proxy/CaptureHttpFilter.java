@@ -17,18 +17,17 @@
 
 package io.groundhog.proxy;
 
-import io.groundhog.capture.*;
+import io.groundhog.capture.CaptureController;
+import io.groundhog.capture.CaptureHttpDecoder;
+import io.groundhog.capture.CaptureRequest;
+import io.groundhog.capture.CaptureWriter;
 
 import com.google.common.base.Throwables;
-import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import org.littleshoot.proxy.HttpFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -41,18 +40,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class CaptureHttpFilter implements HttpFilters {
+final class CaptureHttpFilter implements HttpFilters {
   private static final Logger LOG = LoggerFactory.getLogger(CaptureHttpFilter.class);
 
-  private final HttpCaptureDecoder captureDecoder;
+  private final CaptureHttpDecoder captureDecoder;
   private final CaptureWriter captureWriter;
   private final String protocol;
   private final String host;
   private final int port;
+  private final CaptureController captureController;
 
-  public CaptureHttpFilter(CaptureWriter captureWriter, File uploadLocation, String protocol, String host, int port) {
-    captureDecoder = new DefaultHttpCaptureDecoder(uploadLocation);
+  CaptureHttpFilter(CaptureHttpDecoder captureDecoder, CaptureWriter captureWriter,
+                    CaptureController captureController, String protocol, String host, int port) {
     this.captureWriter = checkNotNull(captureWriter);
+    this.captureDecoder = checkNotNull(captureDecoder);
+    this.captureController = checkNotNull(captureController);
     this.protocol = checkNotNull(protocol);
     this.host = checkNotNull(host);
     checkArgument(port > 0, "Port must be greater than zero");
@@ -65,11 +67,16 @@ public class CaptureHttpFilter implements HttpFilters {
     try {
       if (httpObject instanceof HttpRequest) {
         HttpRequest request = (HttpRequest) httpObject;
-        if (CaptureHttpController.isControlRequest(request)) {
-          return CaptureHttpController.handleControlRequest(request, captureWriter);
+        if (captureController.isControlRequest(request)) {
+          return captureController.handleControlRequest(request);
         }
+        // Duplicate the request, so the state can't be modified downstream
+        HttpRequest copiedRequest = new DefaultHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
+        copiedRequest.headers().set(request.headers());
+        captureDecoder.request(copiedRequest);
+      } else {
+        captureDecoder.request(httpObject);
       }
-      captureDecoder.request(httpObject);
     } catch (Exception e) {
       LOG.error("Failed to capture request", e);
     }
