@@ -15,12 +15,9 @@
  *
  */
 
-package io.groundhog.base;
-
-import com.google.common.testing.AbstractPackageSanityTests;
-
 /**
- * Package sanity tests for {@link io.groundhog.base}.
+ * Proxy server based capture.
  */
-class PackageSanityTest extends AbstractPackageSanityTests {
-}
+@ParametersAreNonnullByDefault package io.groundhog.proxy;
+
+import javax.annotation.ParametersAreNonnullByDefault;

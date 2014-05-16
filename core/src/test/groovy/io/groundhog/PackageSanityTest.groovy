@@ -15,12 +15,12 @@
  *
  */
 
-package io.groundhog.base;
+package io.groundhog;
 
 import com.google.common.testing.AbstractPackageSanityTests;
 
 /**
- * Package sanity tests for {@link io.groundhog.base}.
+ * Package sanity tests for {@link io.groundhog}.
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
 }

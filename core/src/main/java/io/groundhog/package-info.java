@@ -15,12 +15,9 @@
  *
  */
 
-package io.groundhog.base;
-
-import com.google.common.testing.AbstractPackageSanityTests;
-
 /**
- * Package sanity tests for {@link io.groundhog.base}.
+ * Groundhog project root package.
  */
-class PackageSanityTest extends AbstractPackageSanityTests {
-}
+@ParametersAreNonnullByDefault package io.groundhog;
+
+import javax.annotation.ParametersAreNonnullByDefault;

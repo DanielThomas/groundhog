@@ -15,12 +15,9 @@
  *
  */
 
-package io.groundhog.base;
-
-import com.google.common.testing.AbstractPackageSanityTests;
-
 /**
- * Package sanity tests for {@link io.groundhog.base}.
+ * Capture replay.
  */
-class PackageSanityTest extends AbstractPackageSanityTests {
-}
+@ParametersAreNonnullByDefault package io.groundhog.replay;
+
+import javax.annotation.ParametersAreNonnullByDefault;
