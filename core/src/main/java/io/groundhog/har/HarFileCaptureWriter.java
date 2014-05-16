@@ -49,11 +49,11 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * @author Danny Thomas
@@ -69,7 +69,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   private static final String HTTPS_SCHEME = "https";
 
   private final File recordingFile;
-  private final LinkedBlockingQueue<CaptureRequest> requestQueue;
+  private final BlockingQueue<CaptureRequest> requestQueue;
   private final boolean lightweight;
   private final boolean includeContent;
   private final boolean pretty;
@@ -78,16 +78,19 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   private JsonGenerator generator;
 
   public HarFileCaptureWriter(File recordingFile, boolean lightweight, boolean includeContent, boolean pretty) {
+    this(recordingFile, lightweight, includeContent, pretty, new LinkedBlockingQueue<CaptureRequest>());
+  }
+
+  HarFileCaptureWriter(File recordingFile, boolean lightweight, boolean includeContent, boolean pretty, BlockingQueue<CaptureRequest> requestQueue) {
     this.recordingFile = checkNotNull(recordingFile);
     this.lightweight = lightweight;
     this.includeContent = includeContent;
     this.pretty = pretty;
+    this.requestQueue = checkNotNull(requestQueue);
 
     if (lightweight) {
       checkArgument(!this.includeContent, "Content cannot be included in lightweight recordings");
     }
-
-    requestQueue = new LinkedBlockingQueue<>();
 
     TimeZone tz = TimeZone.getTimeZone("UTC");
     iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -116,10 +119,11 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     LOG.info("Writer shutting down");
     while (!requestQueue.isEmpty()) {
       LOG.info("Waiting for request queue to be drained...");
-      Thread.sleep(5000);
+      Thread.sleep(1000);
     }
     writeLogEnd();
     generator.close();
+    checkState(requestQueue.isEmpty(), "The request queue should have been drained before shutdown");
   }
 
   @Override
@@ -129,7 +133,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
 
   @Override
   protected void run() throws InterruptedException, IOException {
-    while (isRunning()) {
+    while (isRunning() || !requestQueue.isEmpty()) {
       CaptureRequest request = requestQueue.poll(1, TimeUnit.SECONDS);
       if (null != request) {
         writeEntry(request);
@@ -147,7 +151,6 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
 
   private void writeCreator() throws IOException {
     generator.writeObjectFieldStart("creator");
-    // TODO get these from jar manifest
     generator.writeStringField("name", "Groundhog Capture");
     generator.writeStringField("version", Groundhog.getVersion());
     if (lightweight) {

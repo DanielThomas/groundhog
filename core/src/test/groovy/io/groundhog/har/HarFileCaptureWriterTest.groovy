@@ -17,21 +17,55 @@
 
 package io.groundhog.har
 
-import com.google.common.net.HostAndPort
+import com.google.common.io.Files
 import io.groundhog.capture.DefaultCaptureRequest
 import io.netty.handler.codec.http.DefaultHttpHeaders
 import io.netty.handler.codec.http.HttpHeaders
 import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.HttpResponse
+import spock.lang.Shared
 import spock.lang.Specification
+
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * Tests for {@link HarFileCaptureWriter}.
- *
- * @author Danny Thomas
- * @since 1.0
  */
 class HarFileCaptureWriterTest extends Specification {
+  @Shared File tempDir
+
+  def setupSpec() {
+    tempDir = Files.createTempDir()
+  }
+
+  def cleanupSpec() {
+    tempDir.deleteDir()
+  }
+
+  def 'queue is drained on shutdown'() {
+    given:
+    def queue = Mock(BlockingQueue)
+    queue.isEmpty() >>> [false, false, true]
+    queue.poll(_, _) >> { args ->
+      TimeUnit unit = args[1]
+      long millis = unit.toMillis(args[0])
+      Thread.sleep(millis)
+      null
+    }
+    def writer = new HarFileCaptureWriter(new File(tempDir, 'capture.har'), true, false, false, queue)
+    writer.startAsync()
+    writer.awaitRunning()
+
+    when:
+    writer.stopAsync()
+    writer.awaitTerminated(5, TimeUnit.SECONDS)
+
+    then:
+    notThrown(TimeoutException)
+  }
+
   def 'URL has correct external form'() {
     given:
     def request = Mock(HttpRequest)
