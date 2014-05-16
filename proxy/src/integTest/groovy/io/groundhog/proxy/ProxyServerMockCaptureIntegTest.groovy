@@ -100,7 +100,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     new URI('http', null, LOCALHOST, proxyPort, path, null, null)
   }
 
-  def 'Simple GET request is written'() {
+  def 'simple GET request is written'() {
     CaptureRequest captured = null
 
     given:
@@ -122,7 +122,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     capturedRequest.protocolVersion == HttpVersion.HTTP_1_1
   }
 
-  def 'Simple POST request is written'() {
+  def 'simple POST request is written'() {
     CaptureRequest captured = null
 
     given:

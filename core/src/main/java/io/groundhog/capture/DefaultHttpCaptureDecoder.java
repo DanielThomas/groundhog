@@ -71,8 +71,8 @@ public class DefaultHttpCaptureDecoder implements HttpCaptureDecoder {
       startedDateTime = System.currentTimeMillis();
       // Duplicate the request, so the state can't be modified
       HttpRequest originalRequest = (HttpRequest) httpObject;
-      this.request = new DefaultHttpRequest(originalRequest.getProtocolVersion(), originalRequest.getMethod(), originalRequest.getUri());
-      this.request.headers().set(originalRequest.headers());
+      request = new DefaultHttpRequest(originalRequest.getProtocolVersion(), originalRequest.getMethod(), originalRequest.getUri());
+      request.headers().set(originalRequest.headers());
     } else if (httpObject instanceof HttpContent) {
       HttpContent chunk = ((HttpContent) httpObject);
       HttpMethod method = request.getMethod();
