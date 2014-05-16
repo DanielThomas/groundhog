@@ -37,3 +37,23 @@ plugins.withType(org.gradle.plugins.ide.eclipse.EclipsePlugin) {
     }
   }
 }
+
+// These tasks allow integTest tests and resources to be provided to every project by :core
+def coreProject = project(':core')
+if (coreProject != project) {
+  task copyCoreIntegTestClasses(type: Copy) {
+    description 'Copy core project integTest classes to the current project'
+    from coreProject.sourceSets.integTest.output.classesDir
+    into sourceSets.integTest.output.classesDir
+    dependsOn ':core:compileIntegTestGroovy'
+  }
+  task copyCoreIntegTestResources(type: Copy) {
+    description 'Copy core project integTest resources to the current project'
+    from coreProject.sourceSets.integTest.output.resourcesDir
+    into sourceSets.integTest.output.resourcesDir
+    dependsOn ':core:processIntegTestResources'
+  }
+
+  integTest.dependsOn(copyCoreIntegTestClasses)
+  integTest.dependsOn(copyCoreIntegTestResources)
+}

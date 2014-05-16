@@ -26,6 +26,12 @@ apply plugin: 'versions'
 version = rootProject.version
 archivesBaseName = "groundhog-$project.name"
 
+dependencies {
+  if(project(':core') != project) {
+    compile project(':core')
+  }
+}
+
 jar {
   manifest {
     attributes("Implementation-Title": "Groundhog $project.name", "Implementation-Version": version)

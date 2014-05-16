@@ -21,8 +21,6 @@ mainClassName = 'io.groundhog.proxy.Proxy'
 applicationName = archivesBaseName
 
 dependencies {
-  compile project(':core')
-
   compile libraries.logback
   compile libraries.littleproxy
   compile libraries.guice

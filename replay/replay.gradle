@@ -21,8 +21,6 @@ mainClassName = 'io.groundhog.replay.Replay'
 applicationName = archivesBaseName
 
 dependencies {
-    compile project(':core')
-
     compile libraries.logback
     compile libraries.jsoup
     compile libraries.guice
