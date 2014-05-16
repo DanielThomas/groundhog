@@ -17,7 +17,6 @@ task integTest(type: Test) {
 }
 
 check.dependsOn(integTest)
-integTest.dependsOn(test)
 
 plugins.withType(org.gradle.plugins.ide.idea.IdeaPlugin) {
   idea {
