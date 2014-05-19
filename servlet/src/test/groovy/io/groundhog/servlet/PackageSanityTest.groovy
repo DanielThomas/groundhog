@@ -36,7 +36,7 @@ import javax.servlet.ServletInputStream
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
   PackageSanityTest() {
-    def writer = new HarFileCaptureWriter(new File(''), false, false, false)
+    def writer = new HarFileCaptureWriter(new File(''), false, false, false, false)
     setDefault(CaptureWriter.class, writer)
     setDefault(HttpVersion.class, HttpVersion.HTTP_1_1)
     setDefault(HttpResponseStatus.class, HttpResponseStatus.OK)

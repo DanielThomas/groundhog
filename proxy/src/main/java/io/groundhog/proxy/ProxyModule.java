@@ -49,13 +49,15 @@ public class ProxyModule extends AbstractModule {
 
     Names.bindProperties(binder(), properties);
 
-    String outputFilename = "out/recording.har.gz";
-    File outputFile = new File(outputFilename);
-    String uploadDirectoryName = "uploads";
-    File uploadLocation = new File(outputFile.getParentFile(), uploadDirectoryName);
-    bind(File.class).annotatedWith(Names.named("uploadLocation")).toInstance(uploadLocation);
+    File outputLocation = new File(properties.getProperty("output.location"));
+    checkArgument(outputLocation.isDirectory(), "output.location must be a directory and must exist");
 
-    CaptureWriter captureWriter = new HarFileCaptureWriter(outputFile, true, false, false);
+    String uploadDirectoryName = "uploads";
+    File uploadLocation = new File(outputLocation.getParentFile(), uploadDirectoryName);
+    bind(File.class).annotatedWith(Names.named("uploadLocation")).toInstance(uploadLocation);
+    String outputCompression = properties.getProperty("output.compression");
+
+    CaptureWriter captureWriter = new HarFileCaptureWriter(outputLocation, true, false, false, "gzip".equals(outputCompression));
     bind(CaptureWriter.class).toInstance(captureWriter);
     bind(CaptureController.class).to(DefaultCaptureController.class);
   }

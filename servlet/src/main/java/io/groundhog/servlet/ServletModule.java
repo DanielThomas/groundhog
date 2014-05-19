@@ -55,8 +55,8 @@ public final class ServletModule extends AbstractModule {
 
     bind(ContainerServletCaptureListener.class).to(listenerClass);
 
-    File recordingFile = new File("/tmp/recording.har");
-    CaptureWriter captureWriter = new HarFileCaptureWriter(recordingFile, true, false, false);
+    File outputLocation = new File("/tmp");
+    CaptureWriter captureWriter = new HarFileCaptureWriter(outputLocation, true, false, false, false);
     bind(CaptureWriter.class).toInstance(captureWriter);
   }
 }

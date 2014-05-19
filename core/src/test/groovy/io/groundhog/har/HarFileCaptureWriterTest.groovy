@@ -54,7 +54,7 @@ class HarFileCaptureWriterTest extends Specification {
       Thread.sleep(millis)
       null
     }
-    def writer = new HarFileCaptureWriter(new File(tempDir, 'capture.har'), true, false, false, queue)
+    def writer = new HarFileCaptureWriter(tempDir, true, false, false, false, queue)
     writer.startAsync()
     writer.awaitRunning()
 

@@ -17,6 +17,12 @@
 
 package io.groundhog.har;
 
+import io.groundhog.Groundhog;
+import io.groundhog.base.HttpRequests;
+import io.groundhog.capture.CaptureRequest;
+import io.groundhog.capture.CaptureWriter;
+import io.groundhog.capture.DefaultCapturePostRequest;
+
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -27,26 +33,18 @@ import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import io.groundhog.Groundhog;
-import io.groundhog.base.HttpRequests;
-import io.groundhog.capture.CaptureRequest;
-import io.groundhog.capture.CaptureWriter;
-import io.groundhog.capture.DefaultCapturePostRequest;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -70,24 +68,27 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   private static final String HTTP_SCHEME = "http";
   private static final String HTTPS_SCHEME = "https";
 
-  private final File recordingFile;
+  private final File outputLocation;
   private final BlockingQueue<CaptureRequest> requestQueue;
   private final boolean lightweight;
+  @SuppressWarnings("FieldCanBeLocal")
   private final boolean includeContent;
   private final boolean pretty;
+  private final boolean gzip;
   private final DateFormat iso8601Format;
 
   private JsonGenerator generator;
 
-  public HarFileCaptureWriter(File recordingFile, boolean lightweight, boolean includeContent, boolean pretty) {
-    this(recordingFile, lightweight, includeContent, pretty, new LinkedBlockingQueue<CaptureRequest>());
+  public HarFileCaptureWriter(File outputLocation, boolean lightweight, boolean includeContent, boolean pretty, boolean gzip) {
+    this(outputLocation, lightweight, includeContent, pretty, gzip, new LinkedBlockingQueue<CaptureRequest>());
   }
 
-  HarFileCaptureWriter(File recordingFile, boolean lightweight, boolean includeContent, boolean pretty, BlockingQueue<CaptureRequest> requestQueue) {
-    this.recordingFile = checkNotNull(recordingFile);
+  HarFileCaptureWriter(File outputLocation, boolean lightweight, boolean includeContent, boolean pretty, boolean gzip, BlockingQueue<CaptureRequest> requestQueue) {
+    this.outputLocation = checkNotNull(outputLocation);
     this.lightweight = lightweight;
     this.includeContent = includeContent;
     this.pretty = pretty;
+    this.gzip = gzip;
     this.requestQueue = checkNotNull(requestQueue);
 
     if (lightweight) {
@@ -107,20 +108,20 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   @Override
   protected void startUp() throws Exception {
     LOG.info("Writer starting up");
-
-    JsonFactory jsonFactory = new JsonFactory();
-    String filename = recordingFile.getName();
-    String ext = Files.getFileExtension(filename);
-    OutputStream outStream;
-    if (ext.equals("gz")) {
-      outStream = new GZIPOutputStream(new FileOutputStream(recordingFile));
-    } else {
-      outStream = new FileOutputStream(recordingFile);
+    checkArgument(outputLocation.isDirectory(), "Output location must be a directory");
+    String hostName = InetAddress.getLocalHost().getHostName();
+    File outputDir = new File(outputLocation, hostName + "-" + System.currentTimeMillis());
+    if (!outputDir.mkdirs()) {
+      throw new IOException("Could not create directory " + outputDir);
     }
-    generator = jsonFactory.createGenerator(outStream, JsonEncoding.UTF8);
+    File outputFile = new File(outputDir, gzip ? "capture.har.gz" : "capture.har");
+    OutputStream outputStream = gzip ? new GZIPOutputStream(new FileOutputStream(outputFile)) : new FileOutputStream(outputFile);
+    JsonFactory jsonFactory = new JsonFactory();
+    generator = jsonFactory.createGenerator(outputStream, JsonEncoding.UTF8);
     if (pretty) {
       generator.setPrettyPrinter(new DefaultPrettyPrinter());
     }
+    LOG.info("Created JSON generator for {}", outputFile);
     writeLogStart();
   }
 
@@ -138,7 +139,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
 
   @Override
   public String toString() {
-    return super.toString() + " " + recordingFile;
+    return super.toString() + " " + outputLocation;
   }
 
   @Override
@@ -276,8 +277,8 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   private void writeHeaders(HttpHeaders headers, final boolean minimumOnly) throws IOException {
     Predicate<Map.Entry<String, String>> excludeHeader = new Predicate<Map.Entry<String, String>>() {
       @Override
-      public boolean apply(Map.Entry<String, String> input) {
-        String name = input.getKey();
+      public boolean apply(@Nullable Map.Entry<String, String> input) {
+        String name = null == input ? "" : input.getKey();
         return EXCLUDED_HEADERS.contains(name) || (minimumOnly && !HttpArchive.MINIMUM_RESPONSE_HEADERS.contains(name));
       }
     };
