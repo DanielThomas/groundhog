@@ -18,6 +18,7 @@
 package io.groundhog.proxy
 
 import com.google.common.io.Files
+import io.groundhog.base.URIScheme
 import io.groundhog.capture.*
 import io.groundhog.har.HttpArchive
 import io.netty.handler.codec.http.DefaultFullHttpResponse
@@ -78,7 +79,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     tempDir = Files.createTempDir()
     def writer = Mock(CaptureWriter)
     def controller = new DefaultCaptureController(writer)
-    filterSource = new CaptureFilterSource(writer, controller, 'http', LOCALHOST, serverPort, tempDir)
+    filterSource = new CaptureFilterSource(writer, controller, URIScheme.HTTP.scheme, LOCALHOST, serverPort, tempDir)
     proxy = new ProxyServer(writer, filterSource, LOCALHOST, proxyPort)
 
     server = new Server(serverPort);
@@ -119,11 +120,11 @@ class ProxyServerMockCaptureIntegTest extends Specification {
   }
 
   URI getURI(String path) {
-    new URI('http', null, LOCALHOST, proxyPort, path, null, null)
+    new URI(URIScheme.HTTP.scheme, null, LOCALHOST, proxyPort, path, null, null)
   }
 
   URI getURI(String path, String query) {
-    new URI('http', null, LOCALHOST, proxyPort, path, query, null)
+    new URI(URIScheme.HTTP.scheme, null, LOCALHOST, proxyPort, path, query, null)
   }
 
   CaptureWriter mockWriter() {
