@@ -17,12 +17,6 @@
 
 package io.groundhog.har;
 
-import io.groundhog.Groundhog;
-import io.groundhog.base.HttpRequests;
-import io.groundhog.capture.CaptureRequest;
-import io.groundhog.capture.CaptureWriter;
-import io.groundhog.capture.DefaultCapturePostRequest;
-
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -33,8 +27,14 @@ import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import io.groundhog.Groundhog;
+import io.groundhog.base.HttpRequests;
+import io.groundhog.capture.CaptureRequest;
+import io.groundhog.capture.CaptureWriter;
+import io.groundhog.capture.DefaultCapturePostRequest;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -52,6 +53,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -107,7 +109,15 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     LOG.info("Writer starting up");
 
     JsonFactory jsonFactory = new JsonFactory();
-    generator = jsonFactory.createGenerator(new FileOutputStream(recordingFile), JsonEncoding.UTF8);
+    String filename = recordingFile.getName();
+    String ext = Files.getFileExtension(filename);
+    OutputStream outStream;
+    if (ext.equals("gz")) {
+      outStream = new GZIPOutputStream(new FileOutputStream(recordingFile));
+    } else {
+      outStream = new FileOutputStream(recordingFile);
+    }
+    generator = jsonFactory.createGenerator(outStream, JsonEncoding.UTF8);
     if (pretty) {
       generator.setPrettyPrinter(new DefaultPrettyPrinter());
     }
