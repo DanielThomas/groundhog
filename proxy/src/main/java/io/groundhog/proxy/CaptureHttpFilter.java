@@ -129,7 +129,6 @@ final class CaptureHttpFilter implements HttpFilters {
 
       URL redirect = new URL(protocol, host, port, url.getFile());
       request.setUri(redirect.toExternalForm());
-
     } catch (MalformedURLException e) {
       LOG.error("A valid URL was not requested");
       Throwables.propagate(e);

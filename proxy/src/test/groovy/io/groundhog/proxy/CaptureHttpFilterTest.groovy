@@ -89,4 +89,12 @@ class CaptureHttpFilterTest extends Specification {
     !capturedRequest.is(request)
     capturedRequest.headers().get(HttpHeaders.Names.CONNECTION) == HttpHeaders.Values.KEEP_ALIVE
   }
+
+  def 'port number less than zero throws an IllegalArgumentException'() {
+    when:
+    new CaptureHttpFilter(Mock(CaptureHttpDecoder), Mock(CaptureController), '', '', 0)
+
+    then:
+    thrown(IllegalArgumentException)
+  }
 }

@@ -351,12 +351,26 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     def writer = mockWriter()
 
     when:
-    def contentProvider = new StringContentProvider("field1=%E2%98%BA") // value == ☺
+    def contentProvider = new StringContentProvider('field1=%E2%98%BA') // value == ☺
     client.POST(getURI(BASE_PATH)).content(contentProvider, ContentType.APPLICATION_FORM_URLENCODED.mimeType).send()
 
     then:
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
     captured.params == [new HttpArchive.Param('field1', '%E2%98%BA')]
+  }
+
+  def 'plain text POST requests are captured'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+    def expected = 'Some request string\nwith newlines\tand other control characters, and UTF-8 for good measure ☺'
+
+    when:
+    def contentProvider = new StringContentProvider(expected)
+    client.POST(getURI(BASE_PATH)).content(contentProvider, ContentType.TEXT_PLAIN.mimeType).send()
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    captured.content.get() == expected
   }
 
   private static class ProxyTestHttpServlet extends HttpServlet {
