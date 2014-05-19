@@ -182,6 +182,11 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     writeIfComplete();
   }
 
+  /**
+   * Due to Netty's event driven nature, depending on the server behaviour it's possible to still be receiving a request
+   * when the response has already been written, so we conditionally write based on whether the request and response
+   * have been completed, rather than at the end of the response.
+   */
   private void writeIfComplete() {
     if (!(requestComplete && responseComplete)) {
       return;

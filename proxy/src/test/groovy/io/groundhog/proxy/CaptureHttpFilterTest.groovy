@@ -2,7 +2,6 @@ package io.groundhog.proxy
 
 import io.groundhog.capture.CaptureController
 import io.groundhog.capture.CaptureHttpDecoder
-import io.groundhog.capture.CaptureWriter
 import io.netty.handler.codec.http.*
 import spock.lang.Specification
 
@@ -81,8 +80,7 @@ class CaptureHttpFilterTest extends Specification {
     captureFilter.requestPre(request)
     request.headers().remove(header)
     captureFilter.responsePre(response)
-    def lastContent = new DefaultLastHttpContent()
-    captureFilter.responsePost(lastContent)
+    captureFilter.responsePost(DefaultLastHttpContent.EMPTY_LAST_CONTENT)
 
     then:
     1 * decoder.request({ decodedObject = it } as HttpObject)
