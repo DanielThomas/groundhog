@@ -17,6 +17,8 @@
 
 package io.groundhog.proxy;
 
+import io.groundhog.base.Services;
+
 import java.io.FileNotFoundException;
 
 import com.google.inject.Guice;
@@ -30,18 +32,7 @@ public final class Proxy {
   public static void main(String[] args) throws FileNotFoundException {
     Injector injector = Guice.createInjector(new ProxyModule());
     final ProxyServer server = injector.getInstance(ProxyServer.class);
-
-    Thread shutdownThread = (new Thread(new Runnable() {
-      public void run() {
-        if (server.isRunning()) {
-          server.stopAsync();
-          server.awaitTerminated();
-        }
-      }
-    }));
-    shutdownThread.setName(Proxy.class.getSimpleName() + "-shutdown");
-    Runtime.getRuntime().addShutdownHook(shutdownThread);
-
+    Services.addShutdownHook(server);
     server.startAsync();
     server.awaitTerminated();
   }
