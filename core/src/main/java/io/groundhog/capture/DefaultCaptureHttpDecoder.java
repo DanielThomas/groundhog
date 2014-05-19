@@ -200,6 +200,7 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
         captureRequest = new DefaultCapturePostRequest(startedDateTime, request, response, content.toString());
       } else if (null != decoder) {
         captureRequest = new DefaultCapturePostRequest(startedDateTime, request, response, params);
+        decoder.destroy();
       } else {
         captureRequest = new DefaultCaptureRequest(startedDateTime, request, response);
       }
@@ -208,13 +209,6 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     }
     captureWriter.writeAsync(captureRequest);
     captureComplete = true;
-  }
-
-  @Override
-  public void destroy() {
-    if (null != decoder) {
-      decoder.destroy();
-    }
   }
 
   @Override

@@ -101,7 +101,6 @@ public final class CaptureValve extends ValveBase implements Valve {
       }
     } finally {
       unwrapCoyoteInputBuffer(request);
-      captureDecoder.destroy();
     }
   }
 

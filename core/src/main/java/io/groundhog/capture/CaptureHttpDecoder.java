@@ -25,8 +25,6 @@ import io.netty.handler.codec.http.HttpObject;
  * <p/>
  * This is coupled to the Netty HTTP codecs, and has the same expectations of the order of {@link HttpObject} classes,
  * in particular {@link io.netty.handler.codec.http.LastHttpContent} to signal the end of HTTP content.
- * <p/>
- * {@link #destroy()} must be called to clean up temporary resources.
  *
  * @author Danny Thomas
  * @since 1.0
@@ -45,9 +43,4 @@ public interface CaptureHttpDecoder {
    * @param httpObject the {@link HttpObject} to be processed
    */
   void response(HttpObject httpObject);
-
-  /**
-   * Destroy the decoder, cleaning up any temporary resources.
-   */
-  void destroy();
 }
