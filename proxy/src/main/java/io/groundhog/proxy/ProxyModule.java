@@ -15,10 +15,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class ProxyModule extends AbstractModule {
   private static final Logger LOG = LoggerFactory.getLogger(ProxyModule.class);
 
-  private static final int PARENT_LIMIT = 3;
+  private static final int PARENT_LIMIT = 2;
   private static final String PROPERTIES_FILENAME = "conf/config.properties";
 
   @Override
@@ -56,8 +59,10 @@ public class ProxyModule extends AbstractModule {
   }
 
   private Optional<File> findConfigInParent(File parentDir, int limit) {
+    checkNotNull(parentDir);
+    checkArgument(limit > 0, "Limit must be greater than zero");
     File currentDir = parentDir;
-    for (int i = 0; i < limit; i++) {
+    for (int i = 0; i <= limit; i++) {
       if (null == currentDir) {
         break;
       }
