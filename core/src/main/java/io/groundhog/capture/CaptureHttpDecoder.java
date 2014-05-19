@@ -47,11 +47,6 @@ public interface CaptureHttpDecoder {
   void response(HttpObject httpObject);
 
   /**
-   * Complete the capture.
-   */
-  CaptureRequest complete();
-
-  /**
    * Destroy the decoder, cleaning up any temporary resources.
    */
   void destroy();

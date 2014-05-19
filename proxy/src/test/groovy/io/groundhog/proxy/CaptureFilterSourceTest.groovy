@@ -27,7 +27,7 @@ import spock.lang.Specification
 class CaptureFilterSourceTest extends Specification {
   def 'port number less than zero throws an IllegalArgumentException'() {
     when:
-    new CaptureFilterSource(Mock(CaptureWriter), Mock(CaptureController), Mock(File), 'http', 'localhost', 0 )
+    new CaptureFilterSource(Mock(CaptureWriter), Mock(CaptureController), 'http', 'localhost', 0, Mock(File))
 
     then:
     thrown(IllegalArgumentException)

@@ -22,6 +22,7 @@ import io.groundhog.capture.DefaultCaptureHttpDecoder;
 import io.groundhog.capture.CaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.netty.handler.codec.http.LastHttpContent;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
@@ -46,11 +47,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class CaptureHandler extends HandlerWrapper {
   private static final Logger LOG = LoggerFactory.getLogger(CaptureHandler.class);
 
-  private CaptureWriter writer;
+  private CaptureWriter captureWriter;
 
   @Inject
-  CaptureHandler(CaptureWriter writer) {
-    this.writer = checkNotNull(writer);
+  CaptureHandler(CaptureWriter captureWriter) {
+    this.captureWriter = checkNotNull(captureWriter);
   }
 
   @Override
@@ -59,7 +60,7 @@ public final class CaptureHandler extends HandlerWrapper {
     checkNotNull(baseRequest);
     checkNotNull(request);
     checkNotNull(response);
-    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(new File("/tmp"));
+    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter, new File("/tmp"));
     try {
       try {
         captureDecoder.request(CaptureValve.transformRequest(request));
@@ -71,9 +72,10 @@ public final class CaptureHandler extends HandlerWrapper {
       super.handle(target, baseRequest, new CaptureServletRequestHttpWrapper(request, captureDecoder), response);
 
       try {
+        // We're emulating the Netty codec, so signal to the decoder that the request has completed, because we've started to process a response
+        captureDecoder.request(LastHttpContent.EMPTY_LAST_CONTENT);
         captureDecoder.response(CaptureValve.transformResponse(request, response));
-        CaptureRequest captureRequest = captureDecoder.complete();
-        writer.writeAsync(captureRequest);
+        captureDecoder.response(LastHttpContent.EMPTY_LAST_CONTENT);
       } catch (Exception e) {
         LOG.error("Error capturing response", e);
       }
@@ -84,6 +86,6 @@ public final class CaptureHandler extends HandlerWrapper {
 
   @VisibleForTesting
   void setCaptureWriter(CaptureWriter writer) {
-    this.writer = checkNotNull(writer);
+    this.captureWriter = checkNotNull(writer);
   }
 }

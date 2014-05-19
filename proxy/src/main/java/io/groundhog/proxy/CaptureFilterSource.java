@@ -17,11 +17,13 @@
 
 package io.groundhog.proxy;
 
-import io.groundhog.capture.*;
-import io.groundhog.capture.DefaultCaptureHttpDecoder;
+import io.groundhog.capture.CaptureController;
 import io.groundhog.capture.CaptureHttpDecoder;
+import io.groundhog.capture.CaptureWriter;
+import io.groundhog.capture.DefaultCaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.netty.channel.ChannelHandlerContext;
@@ -39,38 +41,44 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public class CaptureFilterSource extends HttpFiltersSourceAdapter {
-  private final File uploadLocation;
   private final String protocol;
   private final String host;
   private final int port;
+  private final CaptureWriter captureWriter;
+  private final File uploadLocation;
 
-  private CaptureWriter captureWriter;
+  private Optional<CaptureHttpDecoder> captureDecoder = Optional.absent();
   private CaptureController captureController;
 
   @Inject
   CaptureFilterSource(CaptureWriter captureWriter, CaptureController captureController,
-                      @Named("UploadLocation") File uploadLocation, @Named("target.scheme") String protocol,
-                      @Named("target.host") String host, @Named("target.port") int port) {
+                      @Named("target.scheme") String protocol,
+                      @Named("target.host") String host,
+                      @Named("target.port") int port,
+                      @Named("uploadLocation") File uploadLocation) {
     this.captureWriter = checkNotNull(captureWriter);
     this.captureController = checkNotNull(captureController);
-    this.uploadLocation = checkNotNull(uploadLocation);
     this.protocol = checkNotNull(protocol);
     this.host = checkNotNull(host);
     checkArgument(port > 0, "Port must be greater than zero");
     this.port = port;
+    this.uploadLocation = checkNotNull(uploadLocation);
   }
 
   @Override
   public HttpFilters filterRequest(HttpRequest originalRequest, ChannelHandlerContext ctx) {
     checkNotNull(originalRequest);
     checkNotNull(ctx);
-    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(uploadLocation);
-    return new CaptureHttpFilter(captureDecoder, captureWriter, captureController, protocol, host, port);
+    if (captureDecoder.isPresent()) {
+      return new CaptureHttpFilter(captureDecoder.get(), captureController, protocol, host, port);
+    } else {
+      return new CaptureHttpFilter(new DefaultCaptureHttpDecoder(captureWriter, uploadLocation), captureController, protocol, host, port);
+    }
   }
 
   @VisibleForTesting
-  void setCaptureWriter(CaptureWriter captureWriter) {
-    this.captureWriter = checkNotNull(captureWriter);
+  void setCaptureDecoder(CaptureHttpDecoder captureDecoder) {
+    this.captureDecoder = Optional.of(captureDecoder);
   }
 
   @VisibleForTesting

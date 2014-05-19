@@ -22,6 +22,7 @@ ext {
 
 versions.guava = '17.0'
 versions.jetty = '9.1.4.v20140401'
+versions.hc = '4.3.3'
 versions.slf4j = '1.7.7'
 versions.spock = '0.7-groovy-2.0'
 
@@ -65,14 +66,17 @@ libraries.jackson = 'com.fasterxml.jackson.core:jackson-core:2.3.2'
 libraries.jsoup = 'org.jsoup:jsoup:1.7.3'
 
 libraries.jettyserver = "org.eclipse.jetty:jetty-server:$versions.jetty"
-libraries.jettyclient = "org.eclipse.jetty:jetty-client:$versions.jetty"
 libraries.jettyservlet = "org.eclipse.jetty:jetty-servlet:$versions.jetty"
+libraries.jettyclient = "org.eclipse.jetty:jetty-client:$versions.jetty"
+libraries.httpclient = "org.apache.httpcomponents:httpclient:$versions.hc"
+libraries.httpmime = "org.apache.httpcomponents:httpmime:$versions.hc"
 
-// Dependencies for using Jetty in integration tests
-libraries.jettytest = [
+libraries.httptest = [
     libraries.jettyserver,
     libraries.jettyclient,
-    libraries.jettyservlet
+    libraries.jettyservlet,
+    libraries.httpclient,
+    libraries.httpmime
 ]
 
 libraries.jmeter = 'org.apache.jmeter:ApacheJMeter_components:2.11'

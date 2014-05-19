@@ -40,9 +40,9 @@ class PackageSanityTest extends AbstractPackageSanityTests {
         Proxy.class == input
       }
     })
-    CaptureWriter writer = new HarFileCaptureWriter(new File(""), false, false, false)
+    CaptureWriter writer = new HarFileCaptureWriter(new File(''), false, false, false)
     CaptureController controller = new DefaultCaptureController(writer)
-    CaptureFilterSource captureFilterSource = new CaptureFilterSource(writer, controller, new File(""), "", "", 1)
+    CaptureFilterSource captureFilterSource = new CaptureFilterSource(writer, controller,  '', '', 1, new File(''))
     setDefault(CaptureWriter.class, writer)
     setDefault(CaptureFilterSource.class, captureFilterSource)
     setDefault(ProxyServer.class, new ProxyServer(writer, captureFilterSource, "", 1))

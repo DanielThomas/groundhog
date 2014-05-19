@@ -23,8 +23,6 @@ import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
 import com.google.common.base.Optional;
 
-import java.io.PrintWriter;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**

@@ -19,15 +19,17 @@ package io.groundhog.proxy;
 
 import io.groundhog.capture.CaptureController;
 import io.groundhog.capture.CaptureHttpDecoder;
-import io.groundhog.capture.CaptureRequest;
-import io.groundhog.capture.CaptureWriter;
 
 import com.google.common.base.Throwables;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import org.littleshoot.proxy.HttpFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -44,15 +46,13 @@ final class CaptureHttpFilter implements HttpFilters {
   private static final Logger LOG = LoggerFactory.getLogger(CaptureHttpFilter.class);
 
   private final CaptureHttpDecoder captureDecoder;
-  private final CaptureWriter captureWriter;
+  private final CaptureController captureController;
   private final String protocol;
   private final String host;
   private final int port;
-  private final CaptureController captureController;
 
-  CaptureHttpFilter(CaptureHttpDecoder captureDecoder, CaptureWriter captureWriter,
-                    CaptureController captureController, String protocol, String host, int port) {
-    this.captureWriter = checkNotNull(captureWriter);
+  @Inject
+  CaptureHttpFilter(CaptureHttpDecoder captureDecoder, CaptureController captureController, String protocol, String host, int port) {
     this.captureDecoder = checkNotNull(captureDecoder);
     this.captureController = checkNotNull(captureController);
     this.protocol = checkNotNull(protocol);
@@ -107,16 +107,6 @@ final class CaptureHttpFilter implements HttpFilters {
   @Override
   public HttpObject responsePost(HttpObject httpObject) {
     checkNotNull(httpObject);
-    if (httpObject instanceof LastHttpContent) {
-      try {
-        CaptureRequest captureRequest = captureDecoder.complete();
-        captureWriter.writeAsync(captureRequest);
-      } catch (Exception e) {
-        LOG.error("Failed to complete and write request", e);
-      } finally {
-        captureDecoder.destroy();
-      }
-    }
     return httpObject;
   }
 

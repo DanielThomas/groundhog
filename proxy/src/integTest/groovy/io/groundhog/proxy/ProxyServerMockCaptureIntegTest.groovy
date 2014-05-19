@@ -17,17 +17,20 @@
 
 package io.groundhog.proxy
 
-import com.google.common.base.Charsets
 import com.google.common.io.Files
-import com.google.common.net.MediaType
-import io.groundhog.capture.CaptureController
-import io.groundhog.capture.CaptureRequest
-import io.groundhog.capture.CaptureWriter
-import io.groundhog.capture.DefaultCaptureController
+import io.groundhog.capture.*
+import io.groundhog.har.HttpArchive
 import io.netty.handler.codec.http.DefaultFullHttpResponse
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.netty.handler.codec.http.HttpVersion
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.ContentType
+import org.apache.http.entity.mime.MultipartEntityBuilder
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager
+import org.apache.http.util.EntityUtils
 import org.eclipse.jetty.client.HttpClient
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
@@ -60,9 +63,12 @@ class ProxyServerMockCaptureIntegTest extends Specification {
   @Shared
   Server server
   @Shared
+  HttpServlet servlet
+
+  @Shared
   HttpClient client
   @Shared
-  HttpServlet servlet
+  CloseableHttpClient hcClient
 
   def setupSpec() {
     proxyPort = getRandomPort()
@@ -71,7 +77,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     tempDir = Files.createTempDir()
     def writer = Mock(CaptureWriter)
     def controller = new DefaultCaptureController(writer)
-    filterSource = new CaptureFilterSource(writer, controller, tempDir, 'http', LOCALHOST, serverPort)
+    filterSource = new CaptureFilterSource(writer, controller, 'http', LOCALHOST, serverPort, tempDir)
     proxy = new ProxyServer(writer, filterSource, LOCALHOST, proxyPort)
 
     server = new Server(serverPort);
@@ -89,6 +95,10 @@ class ProxyServerMockCaptureIntegTest extends Specification {
 
     client = new HttpClient()
     client.start()
+
+    // Use a basic connection manager so we catch connection leaks caused by tests that don't consume the response
+    def connectionManager = new BasicHttpClientConnectionManager()
+    hcClient = HttpClients.createMinimal(connectionManager)
   }
 
   def cleanupSpec() {
@@ -111,9 +121,14 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     new URI('http', null, LOCALHOST, proxyPort, path, null, null)
   }
 
+  URI getURI(String path, String query) {
+    new URI('http', null, LOCALHOST, proxyPort, path, query, null)
+  }
+
   CaptureWriter mockWriter() {
     def writer = Mock(CaptureWriter)
-    filterSource.setCaptureWriter(writer)
+    def decoder = new DefaultCaptureHttpDecoder(writer, tempDir)
+    filterSource.setCaptureDecoder(decoder)
     writer
   }
 
@@ -228,6 +243,79 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
     def response = captured.response
     response.status == HttpResponseStatus.OK
+  }
+
+  def 'query string is captured as part of URI for GET request'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+
+    when:
+    client.GET(getURI(BASE_PATH, "key1=value1&key2=value2"))
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    def capturedRequest = captured.request
+    capturedRequest.uri == BASE_PATH + "?key1=value1&key2=value2"
+  }
+
+  def 'query string is captured as part of URI for POST request'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+
+    when:
+    client.POST(getURI(BASE_PATH, "key1=value1&key2=value2")).send()
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    def capturedRequest = captured.request
+    capturedRequest.uri == BASE_PATH + "?key1=value1&key2=value2"
+  }
+
+  def 'multipart text fields are captured'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+
+    given:
+    HttpPost httpPost = new HttpPost(getURI())
+    def builder = MultipartEntityBuilder.create()
+    builder.addTextBody('field1', 'value1')
+    builder.addTextBody('field2', 'value2')
+    httpPost.setEntity(builder.build())
+
+    when:
+    def response = hcClient.execute(httpPost)
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    captured.params == [new HttpArchive.Param('field1', 'value1'), new HttpArchive.Param('field2', 'value2')]
+
+    cleanup:
+    EntityUtils.consumeQuietly(response.getEntity())
+  }
+
+  def 'mixed multipart text and binary fields are captured'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+
+    given:
+    HttpPost httpPost = new HttpPost(getURI())
+    def builder = MultipartEntityBuilder.create()
+    builder.addTextBody('field1', 'value1')
+    builder.addBinaryBody('filefield', new byte[1024], ContentType.APPLICATION_OCTET_STREAM, 'filename.bin')
+    builder.addTextBody('field2', 'value2')
+    httpPost.setEntity(builder.build())
+
+    when:
+    def response = hcClient.execute(httpPost)
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    captured.params == [new HttpArchive.Param('field1', 'value1'),
+                        new HttpArchive.Param('filefield', 'filename.bin',
+                            ContentType.APPLICATION_OCTET_STREAM.mimeType), new HttpArchive.Param('field2', 'value2')]
+
+    cleanup:
+    EntityUtils.consumeQuietly(response.getEntity())
   }
 
   private static class ProxyTestHttpServlet extends HttpServlet {

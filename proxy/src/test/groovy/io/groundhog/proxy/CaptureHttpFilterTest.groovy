@@ -10,7 +10,7 @@ import spock.lang.Specification
  * Tests for {@link CaptureHttpFilter}.
  */
 class CaptureHttpFilterTest extends Specification {
-  def captureFilter = new CaptureHttpFilter(Mock(CaptureHttpDecoder), Mock(CaptureWriter), Mock(CaptureController), 'http', 'localhost', 8080)
+  def captureFilter = new CaptureHttpFilter(Mock(CaptureHttpDecoder), Mock(CaptureController), 'http', 'localhost', 8080)
 
   def 'uri rewriting handles domain without a path or query'() {
     def uri = 'http://foo.com'
@@ -69,7 +69,7 @@ class CaptureHttpFilterTest extends Specification {
 
   def 'defensive copy of request is made, preventing proxy from modifying recorded request'() {
     def decoder = Mock(CaptureHttpDecoder)
-    def captureFilter = new CaptureHttpFilter(decoder, Mock(CaptureWriter), Mock(CaptureController), 'http', 'localhost', 8080)
+    def captureFilter = new CaptureHttpFilter(decoder, Mock(CaptureController), 'http', 'localhost', 8080)
     def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, 'http://localhost/')
     def header = HttpHeaders.Names.CONNECTION
     request.headers().add(header, HttpHeaders.Values.KEEP_ALIVE)

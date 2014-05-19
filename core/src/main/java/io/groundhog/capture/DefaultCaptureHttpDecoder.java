@@ -20,6 +20,7 @@ package io.groundhog.capture;
 import io.groundhog.har.HttpArchive;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -49,7 +50,10 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
   private static final Logger LOG = LoggerFactory.getLogger(DefaultCaptureHttpDecoder.class);
 
   private static final Set<HttpMethod> POST_DECODE_METHODS = Sets.newHashSet(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH);
+  private static final MediaType MULTIPART_FORM_DATA = MediaType.parse(HttpHeaders.Values.MULTIPART_FORM_DATA);
+  private static final MediaType APPLICATION_X_WWW_FORM_URLENCODED = MediaType.parse(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
 
+  private final CaptureWriter captureWriter;
   private final File uploadLocation;
 
   private long startedDateTime;
@@ -60,7 +64,12 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
   private StringBuilder content;
   private HttpResponse response;
 
-  public DefaultCaptureHttpDecoder(File uploadLocation) {
+  private boolean requestComplete;
+  private boolean responseComplete;
+  private boolean captureComplete;
+
+  public DefaultCaptureHttpDecoder(CaptureWriter captureWriter, File uploadLocation) {
+    this.captureWriter = checkNotNull(captureWriter);
     this.uploadLocation = checkNotNull(uploadLocation);
   }
 
@@ -73,38 +82,48 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     } else if (httpObject instanceof HttpContent) {
       HttpContent chunk = ((HttpContent) httpObject);
       HttpMethod method = request.getMethod();
-      String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+      MediaType mediaType = getMediaType(request);
       if (POST_DECODE_METHODS.contains(method)) {
         isPost = true;
         chunk = chunk.duplicate();
-        if (null == contentType || MediaType.parse(contentType).is(MediaType.ANY_TEXT_TYPE)) {
+        if (mediaType.is(MediaType.ANY_TEXT_TYPE)) {
           if (null == content) {
             content = new StringBuilder();
           }
           ByteBuf buf = chunk.content();
           content.append(buf.copy().toString(Charsets.UTF_8));
-        } else if (isDecodedContentType(contentType)) {
+        } else if (mediaType.is(MediaType.OCTET_STREAM)) {
+          LOG.warn("{} media types are not currently handled", mediaType);
+        } else if (isDecodedMediaType(mediaType)) {
           if (null == decoder) {
             decoder = new HttpPostRequestDecoder(request);
+          }
+          if (null == params) {
+            params = Lists.newArrayList();
           }
           decoder.offer(chunk);
           readAvailableData();
         } else {
-          LOG.debug("Unsupported POST content type ", contentType);
+          throw new IllegalArgumentException("Unsupported POST media type: " + mediaType);
         }
       }
+      if (httpObject instanceof LastHttpContent) {
+        requestComplete = true;
+      }
     }
+    writeIfComplete();
   }
 
-  private boolean isDecodedContentType(String contentType) {
-    return contentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || contentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+  private MediaType getMediaType(HttpRequest request) {
+    String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+    return null == contentType ? MediaType.OCTET_STREAM : MediaType.parse(contentType);
+  }
+
+  private boolean isDecodedMediaType(MediaType mediaType) {
+    return mediaType.is(MULTIPART_FORM_DATA) || mediaType.is(APPLICATION_X_WWW_FORM_URLENCODED);
   }
 
   private void readAvailableData() {
-    if (null == params) {
-      params = Lists.newArrayList();
-    }
-
     try {
       while (decoder.hasNext()) {
         InterfaceHttpData data = decoder.next();
@@ -142,16 +161,20 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
   public void response(HttpObject httpObject) {
     checkNotNull(httpObject);
     if (httpObject instanceof HttpResponse) {
-      // Signal to the decoder that the request has completed, because we've started to process a response
-      request(LastHttpContent.EMPTY_LAST_CONTENT);
       response = (HttpResponse) httpObject;
+    } else if (httpObject instanceof LastHttpContent) {
+      responseComplete = true;
     }
+    writeIfComplete();
   }
 
-  @Override
-  public CaptureRequest complete() {
+  private void writeIfComplete() {
+    if (!(requestComplete && responseComplete)) {
+      return;
+    }
     checkState(null != request, "Request hasn't been set");
     checkState(null != response, "Response hasn't been set");
+    checkState(!captureComplete, "This decoder has already completed");
     CaptureRequest captureRequest;
     if (isPost) {
       if (null != content) {
@@ -164,7 +187,8 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     } else {
       captureRequest = new DefaultCaptureRequest(startedDateTime, request, response);
     }
-    return captureRequest;
+    captureWriter.writeAsync(captureRequest);
+    captureComplete = true;
   }
 
   @Override
@@ -172,5 +196,17 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     if (null != decoder) {
       decoder.destroy();
     }
+  }
+  @Override
+  public String toString() {
+    Objects.ToStringHelper helper = Objects.toStringHelper(this);
+    helper.add("startedDateTime", startedDateTime);
+    helper.add("request", request);
+    helper.add("isPost", isPost);
+    helper.add("decoder", decoder);
+    helper.add("params", params);
+    helper.add("content", content);
+    helper.add("response", response);
+    return helper.toString();
   }
 }

@@ -34,7 +34,7 @@ dependencies {
   providedCompile 'org.oscelot:b2deploy-task:0.1.0'
 
   testCompile libraries.testlibs
-  integTestCompile libraries.jettytest
+  integTestCompile libraries.httptest
 
   task deployB2(dependsOn: 'war') << {
     description = 'Deploy a war to Blackboard Learn as a B2 using the starting block'

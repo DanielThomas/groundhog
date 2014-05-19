@@ -74,7 +74,7 @@ public final class CaptureValve extends ValveBase implements Valve {
   public void invoke(Request request, Response response) throws IOException, ServletException {
     checkNotNull(request);
     checkNotNull(response);
-    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(new File("/tmp"));
+    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter, new File("/tmp"));
     wrapCoyoteInputBuffer(request, captureDecoder);
     try {
       try {
@@ -83,7 +83,6 @@ public final class CaptureValve extends ValveBase implements Valve {
           handleControlRequest(httpRequest, response);
           return;
         }
-
         captureDecoder.request(httpRequest);
       } catch (Exception e) {
         LOG.error("Error capturing request", e);
@@ -93,9 +92,10 @@ public final class CaptureValve extends ValveBase implements Valve {
       getNext().invoke(request, response);
 
       try {
+        // We're emulating the Netty codec, so signal to the decoder that the request has completed, because we've started to process a response
+        captureDecoder.request(LastHttpContent.EMPTY_LAST_CONTENT);
         captureDecoder.response(transformResponse(request, response));
-        CaptureRequest captureRequest = captureDecoder.complete();
-        captureWriter.writeAsync(captureRequest);
+        captureDecoder.response(LastHttpContent.EMPTY_LAST_CONTENT);
       } catch (Exception e) {
         LOG.error("Error capturing response", e);
       }
