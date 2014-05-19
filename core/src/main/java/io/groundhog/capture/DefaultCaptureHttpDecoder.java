@@ -36,6 +36,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Set;
 
@@ -102,7 +105,11 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
             params = Lists.newArrayList();
           }
           decoder.offer(chunk);
-          readAvailableData();
+          try {
+            readAvailableData();
+          } catch (IOException e) {
+            throw Throwables.propagate(e);
+          }
         } else {
           throw new IllegalArgumentException("Unsupported POST media type: " + mediaType);
         }
@@ -123,32 +130,29 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     return mediaType.is(MULTIPART_FORM_DATA) || mediaType.is(APPLICATION_X_WWW_FORM_URLENCODED);
   }
 
-  private void readAvailableData() {
+  private void readAvailableData() throws IOException {
     try {
       while (decoder.hasNext()) {
         InterfaceHttpData data = decoder.next();
         HttpArchive.Param param;
         if (data instanceof Attribute) {
           Attribute attr = (Attribute) data;
-          try {
-            param = new HttpArchive.Param(attr.getName(), attr.getValue());
-          } catch (IOException e) {
-            throw Throwables.propagate(e);
-          }
+          String name = encodeAttribute(attr.getName(), attr.getCharset());
+          String value = encodeAttribute(attr.getValue(), attr.getCharset());
+          param = new HttpArchive.Param(name, value);
         } else if (data instanceof FileUpload) {
           FileUpload upload = (FileUpload) data;
-          param = new HttpArchive.Param(upload.getName(), upload.getFilename(), upload.getContentType());
+          String name = encodeAttribute(upload.getName(), upload.getCharset());
+          param = new HttpArchive.Param(name, upload.getFilename(), upload.getContentType());
           File destFile = new File(uploadLocation, String.format("%s/%s", startedDateTime, upload.getFilename()));
           try {
             checkState(destFile.getParentFile().mkdirs(), "Did not successfully create upload location %s", destFile);
             upload.renameTo(destFile);
-          } catch (IOException e) {
-            throw Throwables.propagate(e);
           } finally {
             decoder.removeHttpDataFromClean(upload);
           }
         } else {
-          throw new IllegalStateException("Unexpected data" + data.getClass());
+          throw new IOException("Unexpected data" + data.getClass());
         }
         params.add(param);
       }
@@ -156,6 +160,16 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
       LOG.debug("Reached end of chunk");
     }
   }
+
+  private String encodeAttribute(String value, Charset charset) {
+    checkNotNull(value);
+    try {
+      return URLEncoder.encode(value, charset.name());
+    } catch (UnsupportedEncodingException e) {
+      throw Throwables.propagate(e);
+    }
+  }
+
 
   @Override
   public void response(HttpObject httpObject) {
@@ -197,6 +211,7 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
       decoder.destroy();
     }
   }
+
   @Override
   public String toString() {
     Objects.ToStringHelper helper = Objects.toStringHelper(this);

@@ -32,6 +32,7 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager
 import org.apache.http.util.EntityUtils
 import org.eclipse.jetty.client.HttpClient
+import org.eclipse.jetty.client.util.StringContentProvider
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
@@ -316,6 +317,45 @@ class ProxyServerMockCaptureIntegTest extends Specification {
 
     cleanup:
     EntityUtils.consumeQuietly(response.getEntity())
+  }
+
+  def 'form url encoded fields are captured'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+
+    when:
+    def contentProvider = new StringContentProvider("field1=value1&field2=value2")
+    client.POST(getURI(BASE_PATH)).content(contentProvider, ContentType.APPLICATION_FORM_URLENCODED.mimeType).send()
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    captured.params == [new HttpArchive.Param('field1', 'value1'), new HttpArchive.Param('field2', 'value2')]
+  }
+
+  def 'escaped form url encoded fields are escaped when captured'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+
+    when:
+    def contentProvider = new StringContentProvider("field1=value1%25&field2=value2%25")
+    client.POST(getURI(BASE_PATH)).content(contentProvider, ContentType.APPLICATION_FORM_URLENCODED.mimeType).send()
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    captured.params == [new HttpArchive.Param('field1', 'value1%25'), new HttpArchive.Param('field2', 'value2%25')]
+  }
+
+  def 'UTF-8 escaped form url encoded fields are escaped when captured'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+
+    when:
+    def contentProvider = new StringContentProvider("field1=%E2%98%BA") // value == ☺
+    client.POST(getURI(BASE_PATH)).content(contentProvider, ContentType.APPLICATION_FORM_URLENCODED.mimeType).send()
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    captured.params == [new HttpArchive.Param('field1', '%E2%98%BA')]
   }
 
   private static class ProxyTestHttpServlet extends HttpServlet {
