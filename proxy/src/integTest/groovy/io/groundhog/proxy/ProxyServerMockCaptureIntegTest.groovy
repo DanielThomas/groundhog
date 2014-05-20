@@ -252,12 +252,12 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     def writer = mockWriter()
 
     when:
-    client.GET(getURI(BASE_PATH, "key1=value1&key2=value2"))
+    client.GET(getURI(BASE_PATH, 'key1=value1&key2=value2'))
 
     then:
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
     def capturedRequest = captured.request
-    capturedRequest.uri == BASE_PATH + "?key1=value1&key2=value2"
+    capturedRequest.uri == BASE_PATH + '?key1=value1&key2=value2'
   }
 
   def 'query string is captured as part of URI for POST request'() {
@@ -265,12 +265,24 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     def writer = mockWriter()
 
     when:
-    client.POST(getURI(BASE_PATH, "key1=value1&key2=value2")).send()
+    client.POST(getURI(BASE_PATH, 'key1=value1&key2=value2')).send()
 
     then:
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
     def capturedRequest = captured.request
-    capturedRequest.uri == BASE_PATH + "?key1=value1&key2=value2"
+    capturedRequest.uri == BASE_PATH + '?key1=value1&key2=value2'
+  }
+
+  def 'query strings are url encoded when captured'() {
+    CaptureRequest captured = null
+    def writer = mockWriter()
+
+    when:
+    client.newRequest(getURI()).param('field1', 'value1').param('field2', '☺').send()
+
+    then:
+    1 * writer.writeAsync({ captured = it } as CaptureRequest)
+    captured.request.uri == BASE_PATH + '?field1=value1&field2=%E2%98%BA'
   }
 
   def 'multipart text fields are captured'() {

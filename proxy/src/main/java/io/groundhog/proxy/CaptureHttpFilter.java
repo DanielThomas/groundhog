@@ -70,10 +70,7 @@ final class CaptureHttpFilter implements HttpFilters {
         if (captureController.isControlRequest(request)) {
           return captureController.handleControlRequest(request);
         }
-        // Duplicate the request, so the state can't be modified downstream
-        HttpRequest copiedRequest = new DefaultHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
-        copiedRequest.headers().set(request.headers());
-        captureDecoder.request(copiedRequest);
+        captureDecoder.request(request);
       } else {
         captureDecoder.request(httpObject);
       }

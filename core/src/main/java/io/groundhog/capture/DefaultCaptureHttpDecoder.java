@@ -40,6 +40,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -81,7 +82,7 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     checkNotNull(httpObject);
     if (httpObject instanceof HttpRequest) {
       startedDateTime = System.currentTimeMillis();
-      request = (HttpRequest) httpObject;
+      request = captureRequest((HttpRequest) httpObject);
     } else if (httpObject instanceof HttpContent) {
       HttpContent chunk = ((HttpContent) httpObject);
       HttpMethod method = request.getMethod();
@@ -170,16 +171,36 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     }
   }
 
+  private HttpRequest captureRequest(HttpRequest httpRequest) {
+    checkNotNull(httpRequest);
+    // Netty's codecs decode everything for us, so we need to re-encode everything so it hits the capture writer in the correct form
+    QueryStringDecoder decoder = new QueryStringDecoder(httpRequest.getUri());
+    QueryStringEncoder encoder = new QueryStringEncoder(decoder.path());
+    for (Map.Entry<String, List<String>> entry : decoder.parameters().entrySet()) {
+      for (String value : entry.getValue()) {
+        encoder.addParam(entry.getKey(), value);
+      }
+    }
+    HttpRequest copiedRequest = new DefaultHttpRequest(httpRequest.getProtocolVersion(), httpRequest.getMethod(), encoder.toString());
+    copiedRequest.headers().set(httpRequest.headers());
+    return copiedRequest;
+  }
 
   @Override
   public void response(HttpObject httpObject) {
     checkNotNull(httpObject);
     if (httpObject instanceof HttpResponse) {
-      response = (HttpResponse) httpObject;
+      response = captureResponse((HttpResponse) httpObject);
     } else if (httpObject instanceof LastHttpContent) {
       responseComplete = true;
     }
     writeIfComplete();
+  }
+
+  private HttpResponse captureResponse(HttpResponse httpResponse) {
+    checkNotNull(httpResponse);
+    // As it stands, we don't need the response content, so we don't need to keep a FullHttpResponse, but in future we might
+    return new DefaultHttpResponse(httpResponse.getProtocolVersion(), httpResponse.getStatus());
   }
 
   /**
