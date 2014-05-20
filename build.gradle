@@ -32,6 +32,7 @@ allprojects {
 
 subprojects {
   apply from: "$rootProject.rootDir/gradle/base.gradle"
+  apply from: "$rootProject.rootDir/gradle/test.gradle"
   apply from: "$rootProject.rootDir/gradle/integTest.gradle"
   apply from: "$rootProject.rootDir/gradle/idea-module.gradle"
 }

@@ -17,15 +17,19 @@
 
 package io.groundhog.proxy;
 
+import io.groundhog.capture.CaptureController;
+import io.groundhog.capture.CaptureHttpDecoder;
 import io.groundhog.capture.CaptureWriter;
+import io.groundhog.capture.DefaultCaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.HttpFilters;
-import org.littleshoot.proxy.HttpFiltersSource;
+import org.littleshoot.proxy.HttpFiltersSourceAdapter;
 
 import java.io.File;
 
@@ -36,52 +40,49 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class CaptureFilterSource implements HttpFiltersSource {
-  private final File uploadLocation;
+public class CaptureFilterSource extends HttpFiltersSourceAdapter {
   private final String protocol;
   private final String host;
   private final int port;
+  private final CaptureWriter captureWriter;
+  private final File uploadLocation;
 
-  private CaptureWriter captureWriter;
+  private Optional<CaptureHttpDecoder> captureDecoder = Optional.absent();
+  private CaptureController captureController;
 
   @Inject
-  CaptureFilterSource(CaptureWriter captureWriter,
-                      @Named("UploadLocation") File uploadLocation,
+  CaptureFilterSource(CaptureWriter captureWriter, CaptureController captureController,
                       @Named("target.scheme") String protocol,
                       @Named("target.host") String host,
-                      @Named("target.port") int port) {
+                      @Named("target.port") int port,
+                      @Named("uploadLocation") File uploadLocation) {
     this.captureWriter = checkNotNull(captureWriter);
-    this.uploadLocation = checkNotNull(uploadLocation);
+    this.captureController = checkNotNull(captureController);
     this.protocol = checkNotNull(protocol);
     this.host = checkNotNull(host);
     checkArgument(port > 0, "Port must be greater than zero");
     this.port = port;
+    this.uploadLocation = checkNotNull(uploadLocation);
   }
 
   @Override
   public HttpFilters filterRequest(HttpRequest originalRequest, ChannelHandlerContext ctx) {
     checkNotNull(originalRequest);
     checkNotNull(ctx);
-    return new CaptureHttpFilter(captureWriter, uploadLocation, protocol, host, port);
+    if (captureDecoder.isPresent()) {
+      return new CaptureHttpFilter(captureDecoder.get(), captureController, protocol, host, port);
+    } else {
+      return new CaptureHttpFilter(new DefaultCaptureHttpDecoder(captureWriter, uploadLocation), captureController, protocol, host, port);
+    }
   }
 
-  @Override
-  public int getMaximumRequestBufferSizeInBytes() {
-    return 0;
-  }
-
-  @Override
-  public int getMaximumResponseBufferSizeInBytes() {
-    return 0;
-  }
-
-  /**
-   * There appears to be a quirk of Spock mocking, which is affected by the scope of the mock. If we use a writer mocked
-   * at the specification level, we can't verify interactions in a when block, so we allow the writer to be set here by
-   * tests.
-   */
   @VisibleForTesting
-  void setCaptureWriter(CaptureWriter captureWriter) {
-    this.captureWriter = checkNotNull(captureWriter);
+  void setCaptureDecoder(CaptureHttpDecoder captureDecoder) {
+    this.captureDecoder = Optional.of(captureDecoder);
+  }
+
+  @VisibleForTesting
+  void setCaptureController(CaptureController captureController) {
+    this.captureController = checkNotNull(captureController);
   }
 }

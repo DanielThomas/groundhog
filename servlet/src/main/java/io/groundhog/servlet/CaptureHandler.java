@@ -17,12 +17,12 @@
 
 package io.groundhog.servlet;
 
-import io.groundhog.capture.CaptureRequest;
+import io.groundhog.capture.CaptureHttpDecoder;
 import io.groundhog.capture.CaptureWriter;
-import io.groundhog.capture.DefaultHttpCaptureDecoder;
-import io.groundhog.capture.HttpCaptureDecoder;
+import io.groundhog.capture.DefaultCaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.netty.handler.codec.http.LastHttpContent;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
@@ -47,11 +47,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class CaptureHandler extends HandlerWrapper {
   private static final Logger LOG = LoggerFactory.getLogger(CaptureHandler.class);
 
-  private CaptureWriter writer;
+  private CaptureWriter captureWriter;
 
   @Inject
-  CaptureHandler(CaptureWriter writer) {
-    this.writer = checkNotNull(writer);
+  CaptureHandler(CaptureWriter captureWriter) {
+    this.captureWriter = checkNotNull(captureWriter);
   }
 
   @Override
@@ -60,31 +60,28 @@ public final class CaptureHandler extends HandlerWrapper {
     checkNotNull(baseRequest);
     checkNotNull(request);
     checkNotNull(response);
-    HttpCaptureDecoder captureDecoder = new DefaultHttpCaptureDecoder(new File("/tmp"));
+    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter, new File("/tmp"));
     try {
-      try {
-        captureDecoder.request(CaptureValve.transformRequest(request));
-      } catch (Exception e) {
-        LOG.error("Error capturing request", e);
-      }
+      captureDecoder.request(CaptureValve.transformRequest(request));
+    } catch (Exception e) {
+      LOG.error("Error capturing request", e);
+    }
 
-      // Invoke the next valve without surrounding catch blocks, so we're not changing exception behaviour
-      super.handle(target, baseRequest, new CaptureServletRequestHttpWrapper(request, captureDecoder), response);
+    // Invoke the next valve without surrounding catch blocks, so we're not changing exception behaviour
+    super.handle(target, baseRequest, new CaptureServletRequestHttpWrapper(request, captureDecoder), response);
 
-      try {
-        captureDecoder.response(CaptureValve.transformResponse(request, response));
-        CaptureRequest captureRequest = captureDecoder.complete();
-        writer.writeAsync(captureRequest);
-      } catch (Exception e) {
-        LOG.error("Error capturing response", e);
-      }
-    } finally {
-      captureDecoder.destroy();
+    try {
+      // We're emulating the Netty codec, so signal to the decoder that the request has completed, because we've started to process a response
+      captureDecoder.request(LastHttpContent.EMPTY_LAST_CONTENT);
+      captureDecoder.response(CaptureValve.transformResponse(request, response));
+      captureDecoder.response(LastHttpContent.EMPTY_LAST_CONTENT);
+    } catch (Exception e) {
+      LOG.error("Error capturing response", e);
     }
   }
 
   @VisibleForTesting
   void setCaptureWriter(CaptureWriter writer) {
-    this.writer = checkNotNull(writer);
+    this.captureWriter = checkNotNull(writer);
   }
 }

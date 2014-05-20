@@ -15,20 +15,9 @@
  *
  */
 
-package io.groundhog.servlet
-
-import com.google.common.base.Charsets
-import io.groundhog.capture.CaptureHttpDecoder
-import spock.lang.Specification
-
 /**
- * Tests for {@link DecodingReader}.
+ * Groundhog project root package.
  */
-class DecodingReaderTest extends Specification {
-  def 'placeholder'() {
-    def reader = Mock(Reader)
-    def captureDecoder = Mock(CaptureHttpDecoder)
-    def decoder = new DecodingReader(reader, Charsets.UTF_8, captureDecoder)
-    decoder.setFailFast(true)
-  }
-}
+@ParametersAreNonnullByDefault package io.groundhog;
+
+import javax.annotation.ParametersAreNonnullByDefault;

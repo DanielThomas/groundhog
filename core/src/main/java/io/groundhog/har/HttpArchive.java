@@ -71,10 +71,6 @@ public class HttpArchive {
       this(mimeType, text, Collections.<Param>emptyList());
     }
 
-    public PostData(String mimeType, List<Param> params) {
-      this(mimeType, "", params);
-    }
-
     public PostData(String mimeType, String text, List<Param> params) {
       this.mimeType = checkNotNull(mimeType);
       this.text = checkNotNull(text);
@@ -135,6 +131,22 @@ public class HttpArchive {
 
     public String getComment() {
       return comment;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj instanceof Param) {
+        Param that = (Param) obj;
+        return Objects.equal(name, that.name) && Objects.equal(value, that.value)
+            && Objects.equal(fileName, that.fileName) && Objects.equal(contentType, that.contentType)
+            && Objects.equal(comment, that.comment);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(name, value, fileName, contentType, comment);
     }
 
     @Override

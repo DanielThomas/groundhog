@@ -17,7 +17,7 @@
 
 package io.groundhog.servlet;
 
-import io.groundhog.capture.HttpCaptureDecoder;
+import io.groundhog.capture.CaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
@@ -36,7 +36,7 @@ import java.nio.charset.Charset;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A {@link Reader} that decodes read bytes using a {@link HttpCaptureDecoder}.
+ * A {@link Reader} that decodes read bytes using a {@link io.groundhog.capture.CaptureHttpDecoder}.
  *
  * @author Danny Thomas
  * @since 1.0
@@ -44,13 +44,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class DecodingReader extends FilterReader implements FilterWrapper<Reader> {
   private static final Logger LOG = LoggerFactory.getLogger(DecodingReader.class);
 
-  private final HttpCaptureDecoder captureDecoder;
+  private final CaptureHttpDecoder captureDecoder;
   private final Charset charset;
 
   private byte[] singleByte = new byte[1];
   private boolean failFast;
 
-  public DecodingReader(Reader in, Charset charset, HttpCaptureDecoder captureDecoder) {
+  public DecodingReader(Reader in, Charset charset, CaptureHttpDecoder captureDecoder) {
     super(in);
     this.charset = checkNotNull(charset);
     this.captureDecoder = checkNotNull(captureDecoder);

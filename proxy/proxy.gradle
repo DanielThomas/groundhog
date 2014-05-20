@@ -26,5 +26,5 @@ dependencies {
   compile libraries.guice
 
   testCompile libraries.testlibs
-  integTestCompile libraries.jettytest
+  integTestCompile libraries.httptest
 }

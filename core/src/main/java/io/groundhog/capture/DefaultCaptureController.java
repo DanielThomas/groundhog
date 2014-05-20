@@ -28,6 +28,7 @@ import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -35,20 +36,27 @@ import java.util.List;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Quick and dirty handling of control requests in lieu of a proper command and control API.
- *
  * @author Danny Thomas
  * @since 1.0
  */
-public class CaptureHttpController {
-  private static final Logger LOG = LoggerFactory.getLogger(CaptureHttpController.class);
+public class DefaultCaptureController implements CaptureController {
+  private static final Logger LOG = LoggerFactory.getLogger(CaptureController.class);
 
-  public static boolean isControlRequest(HttpRequest request) {
+  private final CaptureWriter captureWriter;
+
+  @Inject
+  public DefaultCaptureController(CaptureWriter captureWriter) {
+    this.captureWriter = checkNotNull(captureWriter);
+  }
+
+  @Override
+  public boolean isControlRequest(HttpRequest request) {
     checkNotNull(request);
     return request.getUri().startsWith("/groundhog");
   }
 
-  public static FullHttpResponse handleControlRequest(HttpRequest request, CaptureWriter captureWriter) {
+  @Override
+  public FullHttpResponse handleControlRequest(HttpRequest request) {
     checkNotNull(request);
     checkNotNull(captureWriter);
 
@@ -76,7 +84,7 @@ public class CaptureHttpController {
           captureWriter.awaitTerminated();
           return statusResponse(Service.State.TERMINATED, "Stopped capture");
         } else {
-          return statusResponse(Service.State.FAILED, "Stopped capture");
+          return statusResponse(Service.State.FAILED, "Capture is not running");
         }
       }
       case "status": {

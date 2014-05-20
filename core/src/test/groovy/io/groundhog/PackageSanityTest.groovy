@@ -15,20 +15,12 @@
  *
  */
 
-package io.groundhog.servlet
+package io.groundhog;
 
-import com.google.common.base.Charsets
-import io.groundhog.capture.CaptureHttpDecoder
-import spock.lang.Specification
+import com.google.common.testing.AbstractPackageSanityTests;
 
 /**
- * Tests for {@link DecodingReader}.
+ * Package sanity tests for {@link io.groundhog}.
  */
-class DecodingReaderTest extends Specification {
-  def 'placeholder'() {
-    def reader = Mock(Reader)
-    def captureDecoder = Mock(CaptureHttpDecoder)
-    def decoder = new DecodingReader(reader, Charsets.UTF_8, captureDecoder)
-    decoder.setFailFast(true)
-  }
+class PackageSanityTest extends AbstractPackageSanityTests {
 }

@@ -17,18 +17,19 @@
 
 package io.groundhog.proxy;
 
-import io.groundhog.capture.*;
+import io.groundhog.capture.CaptureController;
+import io.groundhog.capture.CaptureHttpDecoder;
 
 import com.google.common.base.Throwables;
+import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
 import org.littleshoot.proxy.HttpFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import javax.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -41,18 +42,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class CaptureHttpFilter implements HttpFilters {
+final class CaptureHttpFilter implements HttpFilters {
   private static final Logger LOG = LoggerFactory.getLogger(CaptureHttpFilter.class);
 
-  private final HttpCaptureDecoder captureDecoder;
-  private final CaptureWriter captureWriter;
+  private final CaptureHttpDecoder captureDecoder;
+  private final CaptureController captureController;
   private final String protocol;
   private final String host;
   private final int port;
 
-  public CaptureHttpFilter(CaptureWriter captureWriter, File uploadLocation, String protocol, String host, int port) {
-    captureDecoder = new DefaultHttpCaptureDecoder(uploadLocation);
-    this.captureWriter = checkNotNull(captureWriter);
+  @Inject
+  CaptureHttpFilter(CaptureHttpDecoder captureDecoder, CaptureController captureController, String protocol, String host, int port) {
+    this.captureDecoder = checkNotNull(captureDecoder);
+    this.captureController = checkNotNull(captureController);
     this.protocol = checkNotNull(protocol);
     this.host = checkNotNull(host);
     checkArgument(port > 0, "Port must be greater than zero");
@@ -65,11 +67,13 @@ public class CaptureHttpFilter implements HttpFilters {
     try {
       if (httpObject instanceof HttpRequest) {
         HttpRequest request = (HttpRequest) httpObject;
-        if (CaptureHttpController.isControlRequest(request)) {
-          return CaptureHttpController.handleControlRequest(request, captureWriter);
+        if (captureController.isControlRequest(request)) {
+          return captureController.handleControlRequest(request);
         }
+        captureDecoder.request(request);
+      } else {
+        captureDecoder.request(httpObject);
       }
-      captureDecoder.request(httpObject);
     } catch (Exception e) {
       LOG.error("Failed to capture request", e);
     }
@@ -100,16 +104,6 @@ public class CaptureHttpFilter implements HttpFilters {
   @Override
   public HttpObject responsePost(HttpObject httpObject) {
     checkNotNull(httpObject);
-    if (httpObject instanceof LastHttpContent) {
-      try {
-        CaptureRequest captureRequest = captureDecoder.complete();
-        captureWriter.writeAsync(captureRequest);
-      } catch (Exception e) {
-        LOG.error("Failed to complete and write request", e);
-      } finally {
-        captureDecoder.destroy();
-      }
-    }
     return httpObject;
   }
 
@@ -132,7 +126,6 @@ public class CaptureHttpFilter implements HttpFilters {
 
       URL redirect = new URL(protocol, host, port, url.getFile());
       request.setUri(redirect.toExternalForm());
-
     } catch (MalformedURLException e) {
       LOG.error("A valid URL was not requested");
       Throwables.propagate(e);

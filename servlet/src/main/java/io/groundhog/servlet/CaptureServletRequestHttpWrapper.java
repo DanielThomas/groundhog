@@ -17,11 +17,10 @@
 
 package io.groundhog.servlet;
 
-import io.groundhog.capture.HttpCaptureDecoder;
+import io.groundhog.capture.CaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
-import org.apache.coyote.InputBuffer;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -40,11 +39,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public final class CaptureServletRequestHttpWrapper extends HttpServletRequestWrapper {
-  private final HttpCaptureDecoder captureDecoder;
+  private final CaptureHttpDecoder captureDecoder;
   private ServletInputStream inputStream;
   private BufferedReader reader;
 
-  public CaptureServletRequestHttpWrapper(HttpServletRequest request, HttpCaptureDecoder captureDecoder) {
+  public CaptureServletRequestHttpWrapper(HttpServletRequest request, CaptureHttpDecoder captureDecoder) {
     super(checkNotNull(request));
     this.captureDecoder = checkNotNull(captureDecoder);
   }

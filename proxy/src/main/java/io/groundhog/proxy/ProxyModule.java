@@ -1,10 +1,11 @@
 package io.groundhog.proxy;
 
-import io.groundhog.capture.CaptureWriter;
+import io.groundhog.capture.*;
 import io.groundhog.har.HarFileCaptureWriter;
 
 import com.google.common.base.Throwables;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provider;
 import com.google.inject.name.Names;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +35,10 @@ public class ProxyModule extends AbstractModule {
     File outputFile = new File(outputFilename);
     String uploadDirectoryName = "uploads";
     File uploadLocation = new File(outputFile.getParentFile(), uploadDirectoryName);
-    bind(File.class).annotatedWith(Names.named("UploadLocation")).toInstance(uploadLocation);
+    bind(File.class).annotatedWith(Names.named("uploadLocation")).toInstance(uploadLocation);
 
     CaptureWriter captureWriter = new HarFileCaptureWriter(outputFile, true, false, false);
     bind(CaptureWriter.class).toInstance(captureWriter);
+    bind(CaptureController.class).to(DefaultCaptureController.class);
   }
 }

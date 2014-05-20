@@ -57,10 +57,12 @@ public final class CaptureValve extends ValveBase implements Valve {
   }
 
   private final CaptureWriter captureWriter;
+  private final CaptureController captureController;
 
   @Inject
-  CaptureValve(CaptureWriter captureWriter) {
+  CaptureValve(CaptureWriter captureWriter, CaptureController captureController) {
     this.captureWriter = checkNotNull(captureWriter);
+    this.captureController = checkNotNull(captureController);
   }
 
   @Override
@@ -72,16 +74,15 @@ public final class CaptureValve extends ValveBase implements Valve {
   public void invoke(Request request, Response response) throws IOException, ServletException {
     checkNotNull(request);
     checkNotNull(response);
-    HttpCaptureDecoder captureDecoder = new DefaultHttpCaptureDecoder(new File("/tmp"));
+    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter, new File("/tmp"));
     wrapCoyoteInputBuffer(request, captureDecoder);
     try {
       try {
         HttpRequest httpRequest = transformRequest(request);
-        if (CaptureHttpController.isControlRequest(httpRequest)) {
+        if (captureController.isControlRequest(httpRequest)) {
           handleControlRequest(httpRequest, response);
           return;
         }
-
         captureDecoder.request(httpRequest);
       } catch (Exception e) {
         LOG.error("Error capturing request", e);
@@ -91,20 +92,20 @@ public final class CaptureValve extends ValveBase implements Valve {
       getNext().invoke(request, response);
 
       try {
+        // We're emulating the Netty codec, so signal to the decoder that the request has completed, because we've started to process a response
+        captureDecoder.request(LastHttpContent.EMPTY_LAST_CONTENT);
         captureDecoder.response(transformResponse(request, response));
-        CaptureRequest captureRequest = captureDecoder.complete();
-        captureWriter.writeAsync(captureRequest);
+        captureDecoder.response(LastHttpContent.EMPTY_LAST_CONTENT);
       } catch (Exception e) {
         LOG.error("Error capturing response", e);
       }
     } finally {
       unwrapCoyoteInputBuffer(request);
-      captureDecoder.destroy();
     }
   }
 
   private void handleControlRequest(HttpRequest httpRequest, Response response) throws IOException {
-    FullHttpResponse httpResponse = CaptureHttpController.handleControlRequest(httpRequest, captureWriter);
+    FullHttpResponse httpResponse = captureController.handleControlRequest(httpRequest);
     response.setStatus(httpResponse.getStatus().code());
     HttpHeaders headers = httpResponse.headers();
     for (String headerName : headers.names()) {
@@ -116,7 +117,7 @@ public final class CaptureValve extends ValveBase implements Valve {
     content.getBytes(0, response.getOutputStream(), content.capacity());
   }
 
-  private void wrapCoyoteInputBuffer(Request request, HttpCaptureDecoder captureDecoder) {
+  private void wrapCoyoteInputBuffer(Request request, CaptureHttpDecoder captureDecoder) {
     org.apache.coyote.Request coyoteRequest = request.getCoyoteRequest();
     InputBuffer inputBuffer = coyoteRequest.getInputBuffer();
     InputBuffer decodingInputBuffer = new DecodingInputBuffer(inputBuffer, captureDecoder);

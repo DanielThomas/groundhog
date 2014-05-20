@@ -15,20 +15,21 @@
  *
  */
 
-package io.groundhog.servlet
+package io.groundhog.proxy
 
-import com.google.common.base.Charsets
-import io.groundhog.capture.CaptureHttpDecoder
+import io.groundhog.capture.CaptureController
+import io.groundhog.capture.CaptureWriter
 import spock.lang.Specification
 
 /**
- * Tests for {@link DecodingReader}.
+ * Tests for {@link CaptureFilterSource}.
  */
-class DecodingReaderTest extends Specification {
-  def 'placeholder'() {
-    def reader = Mock(Reader)
-    def captureDecoder = Mock(CaptureHttpDecoder)
-    def decoder = new DecodingReader(reader, Charsets.UTF_8, captureDecoder)
-    decoder.setFailFast(true)
+class CaptureFilterSourceTest extends Specification {
+  def 'port number less than zero throws an IllegalArgumentException'() {
+    when:
+    new CaptureFilterSource(Mock(CaptureWriter), Mock(CaptureController), 'http', 'localhost', 0, Mock(File))
+
+    then:
+    thrown(IllegalArgumentException)
   }
 }
