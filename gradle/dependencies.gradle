@@ -27,24 +27,30 @@ versions.slf4j = '1.7.7'
 versions.spock = '0.7-groovy-2.0'
 
 configurations.all {
-  resolutionStrategy.eachDependency { details ->
-    switch (details.requested.name) {
-      case 'junit':
-      case 'junit-dep':
-        details.useTarget 'junit:junit:4.11'
-        break
-      case 'slf4j-api':
-        details.useVersion versions.slf4j
-        break
-      case 'log4j':
-        details.useTarget "org.slf4j:log4j-over-slf4j:$versions.slf4j"
-        break
-      case 'commons-logging':
-        details.useTarget "org.slf4j:jcl-over-slf4j:$versions.slf4j"
-        break
-      case 'groovy-all':
-        details.useVersion '2.2.2'
-        break
+  resolutionStrategy {
+    eachDependency { details ->
+      switch (details.requested.name) {
+        case 'junit':
+        case 'junit-dep':
+          details.useTarget 'junit:junit:4.11'
+          break
+        case 'slf4j-api':
+          details.useVersion versions.slf4j
+          break
+        case 'log4j':
+          details.useTarget "org.slf4j:log4j-over-slf4j:$versions.slf4j"
+          break
+        case 'commons-logging':
+          details.useTarget "org.slf4j:jcl-over-slf4j:$versions.slf4j"
+          break
+        case 'groovy-all':
+          details.useVersion '2.2.2'
+          break
+      }
+    }
+    def isCiServer = System.getenv().containsKey('HUDSON_HOME')
+    if (isCiServer) {
+      cacheChangingModulesFor 0, 'seconds'
     }
   }
 }
