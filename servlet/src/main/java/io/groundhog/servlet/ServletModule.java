@@ -19,6 +19,8 @@ package io.groundhog.servlet;
 
 import io.groundhog.capture.CaptureWriter;
 import io.groundhog.har.HarFileCaptureWriter;
+import io.groundhog.capture.CaptureController;
+import io.groundhog.capture.DefaultCaptureController;
 
 import com.google.inject.AbstractModule;
 
@@ -58,5 +60,6 @@ public final class ServletModule extends AbstractModule {
     File outputLocation = new File("/tmp");
     CaptureWriter captureWriter = new HarFileCaptureWriter(outputLocation, true, false, false, false);
     bind(CaptureWriter.class).toInstance(captureWriter);
+    bind(CaptureController.class).to(DefaultCaptureController.class);
   }
 }
