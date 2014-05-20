@@ -22,13 +22,13 @@ apply from: 'gradle/idea-project.gradle'
 allprojects {
   group 'io.groundhog'
   repositories {
-    mavenCentral()
     maven {
       url 'https://maven.blackboard.com/content/repositories/releases/'
     }
     maven {
       url 'https://maven.blackboard.com/content/repositories/snapshots/'
     }
+    mavenCentral()
   }
   apply from: "$rootProject.rootDir/gradle/dependencies.gradle"
 }
