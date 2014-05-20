@@ -58,5 +58,6 @@ public final class ServletModule extends AbstractModule {
     File outputLocation = new File("/tmp");
     CaptureWriter captureWriter = new HarFileCaptureWriter(outputLocation, true, false, false, false);
     bind(CaptureWriter.class).toInstance(captureWriter);
+    bind(CaptureController.class).to(DefaultCaptureController.class);
   }
 }
