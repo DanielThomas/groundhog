@@ -17,11 +17,13 @@
 
 package io.groundhog.replay;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +56,6 @@ public class ReplayHandler extends ChannelDuplexHandler {
 
   private void initPipeline(ChannelPipeline p, boolean useSSL) throws Exception {
     p.addLast("bytesRead", new BytesReadHandler());
-
     if (useSSL) {
       SSLContext context = SSLContext.getInstance("TLS");
       context.init(null, null, null);
@@ -62,15 +63,10 @@ public class ReplayHandler extends ChannelDuplexHandler {
       engine.setUseClientMode(true);
       p.addLast("ssl", new SslHandler(engine));
     }
-
     p.addLast("codec", new HttpClientCodec());
-
     p.addLast("inflater", new HttpContentDecompressor());
-
     p.addLast("chunkedWriter", new ChunkedWriteHandler());
-
     p.addLast("ua", new UserAgentHandler());
-
     p.addLast("replay", this);
   }
 
@@ -86,7 +82,6 @@ public class ReplayHandler extends ChannelDuplexHandler {
     } else if (msg instanceof HttpRequest) {
       throw new IllegalStateException("A request was handled that did not extend ReplayHttpRequest: " + msg.getClass());
     }
-
     super.write(ctx, msg, promise);
   }
 
@@ -98,8 +93,33 @@ public class ReplayHandler extends ChannelDuplexHandler {
       response = (HttpResponse) msg;
     } else if (msg instanceof LastHttpContent) {
       long ended = System.currentTimeMillis();
-      resultListener.success(request, response, expectedResponse, bytesRead.get(), started, ended, ((ReplayLastHttpContent)msg).getDocument());
+      Optional<Document> document = ((ReplayLastHttpContent) msg).getDocument();
+      Optional<String> failure = getFailure(response, expectedResponse);
+      if (failure.isPresent()) {
+        resultListener.failure(failure.get(), request, response, expectedResponse, bytesRead.get(), started, ended, document);
+      } else {
+        resultListener.success(request, response, expectedResponse, bytesRead.get(), started, ended, document);
+      }
     }
+  }
+
+  /**
+   * Quick and dirty failure detection. Will be abstracted in future along with the POST and DWR logic, providing the
+   * expected response and document.
+   */
+  private Optional<String> getFailure(HttpResponse response, HttpResponse expectedResponse) {
+    HttpResponseStatus status = response.getStatus();
+    HttpResponseStatus expectedStatus = expectedResponse.getStatus();
+    HttpHeaders headers = response.headers();
+    if (expectedStatus != status) {
+      return Optional.of("Expected status " + expectedStatus + " but was " + status);
+    } else {
+      String errorHeader = "X-Blackboard-errorid";
+      if (headers.contains(errorHeader)) {
+        return Optional.of("Found " + errorHeader + " header with value " + headers.get(errorHeader));
+      }
+    }
+    return Optional.absent();
   }
 
   @Override

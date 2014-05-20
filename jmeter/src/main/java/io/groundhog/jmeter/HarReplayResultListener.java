@@ -56,30 +56,12 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
   @Override
   public void success(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
                       long start, long end, Optional<Document> document) {
-    SampleResult result = SampleResult.createTestSample(start, end);
-    HttpResponseStatus actualStatus = response.getStatus();
+    queueResult(request, response, expectedResponse, bytesRead, start, end, document, Optional.<String>absent());
+  }
 
-    HttpResponseStatus expectedStatus = expectedResponse.getStatus();
-    boolean success = expectedStatus.equals(actualStatus);
-    result.setSuccessful(success);
-    result.setSampleLabel(getLabel(request, response, expectedResponse, document));
-    try {
-      result.setURL(new URL(scheme.getScheme(), hostAndPort.getHostText(), hostAndPort.getPortOrDefault(scheme.getDefaultPort()), request.getUri()));
-    } catch (MalformedURLException e) {
-      throw Throwables.propagate(e);
-    }
-
-    Joiner.MapJoiner joiner = Joiner.on('\n').withKeyValueSeparator(": ");
-    String requestHeaders = joiner.join(request.headers());
-    String responseHeaders = joiner.join(response.headers());
-
-    result.setRequestHeaders(checkNotNull(requestHeaders));
-    HttpResponseStatus status = response.getStatus();
-    result.setResponseCode(String.valueOf(status.code()));
-    result.setResponseMessage(status.reasonPhrase());
-    result.setResponseHeaders(checkNotNull(responseHeaders));
-    result.setBytes(bytesRead);
-    resultQueue.add(result);
+  @Override
+  public void failure(String failureReason, HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead, long start, long end, Optional<Document> document) {
+    queueResult(request, response, expectedResponse, bytesRead, start, end, document, Optional.of(failureReason));
   }
 
   @Override
@@ -98,5 +80,32 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
         result.setSamplerData(stackTrace.toString());
       }
     }
+  }
+
+  private void queueResult(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
+                           long start, long end, Optional<Document> document, Optional<String> failureReason) {
+    SampleResult result = SampleResult.createTestSample(start, end);
+    if (failureReason.isPresent()) {
+      result.setSuccessful(false);
+      result.setSamplerData(failureReason.get());
+    }
+    result.setSampleLabel(getLabel(request, response, expectedResponse, document));
+    try {
+      result.setURL(new URL(scheme.getScheme(), hostAndPort.getHostText(), hostAndPort.getPortOrDefault(scheme.getDefaultPort()), request.getUri()));
+    } catch (MalformedURLException e) {
+      throw Throwables.propagate(e);
+    }
+
+    Joiner.MapJoiner joiner = Joiner.on('\n').withKeyValueSeparator(": ");
+    String requestHeaders = joiner.join(request.headers());
+    String responseHeaders = joiner.join(response.headers());
+
+    result.setRequestHeaders(checkNotNull(requestHeaders));
+    HttpResponseStatus status = response.getStatus();
+    result.setResponseCode(String.valueOf(status.code()));
+    result.setResponseMessage(status.reasonPhrase());
+    result.setResponseHeaders(checkNotNull(responseHeaders));
+    result.setBytes(bytesRead);
+    resultQueue.add(result);
   }
 }
