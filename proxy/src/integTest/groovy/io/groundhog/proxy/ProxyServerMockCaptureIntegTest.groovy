@@ -134,6 +134,17 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     writer
   }
 
+  def 'starting a proxy an already listening port causes a RuntimeException to be thrown'() {
+    def newProxy = new ProxyServer(Mock(CaptureWriter), filterSource, LOCALHOST, proxyPort)
+
+    when:
+    newProxy.startAsync()
+    newProxy.awaitRunning()
+
+    then:
+    thrown(RuntimeException)
+  }
+
   def 'control request reach the controller'() {
     def controller = Mock(CaptureController)
     filterSource.setCaptureController(controller)

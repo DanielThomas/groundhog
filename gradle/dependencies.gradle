@@ -81,7 +81,7 @@ libraries.httptest = [
 
 libraries.jmeter = 'org.apache.jmeter:ApacheJMeter_components:2.11'
 
-libraries.littleproxy = dependencies.create('org.littleshoot:littleproxy:1.0.0-beta7') {
+libraries.littleproxy = dependencies.create('org.littleshoot:littleproxy:1.0.0-beta8-SNAPSHOT') {
   exclude module: 'slf4j-log4j12'
 }
 
