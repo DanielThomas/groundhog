@@ -31,6 +31,20 @@ public class LoggingResultListener extends AbstractReplayResultListener implemen
   }
 
   @Override
+  public void failure(String failureReason, HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead, long start, long end, Optional<Document> document) {
+    String label = getLabel(request, response, expectedResponse, document);
+    LOG.info("FAILURE: {}: {}: \"{} {} {}\" {} {} {}",
+        checkNotNull(failureReason),
+        checkNotNull(label),
+        checkNotNull(request.getMethod()),
+        checkNotNull(request.getUri()),
+        checkNotNull(request.getProtocolVersion()),
+        response.getStatus().code(),
+        end - start,
+        bytesRead);
+  }
+
+  @Override
   public void failure(HttpRequest request, Optional<Throwable> cause) {
     String label = getLabel(request);
     if (cause.isPresent()) {

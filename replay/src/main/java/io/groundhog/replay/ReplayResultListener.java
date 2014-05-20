@@ -13,5 +13,8 @@ public interface ReplayResultListener {
   void success(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
                       long start, long end, Optional<Document> document);
 
+  void failure(String failureReason, HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
+               long start, long end, Optional<Document> document);
+
   void failure(HttpRequest request, Optional<Throwable> cause);
 }
