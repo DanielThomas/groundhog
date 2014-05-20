@@ -17,6 +17,8 @@
 
 package io.groundhog.replay;
 
+import io.groundhog.base.Services;
+
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.slf4j.Logger;
@@ -34,20 +36,7 @@ public class Replay {
     Injector injector = Guice.createInjector(new ReplayModule());
 
     final ReplayClient client = injector.getInstance(ReplayClient.class);
-
-    // TODO move this logic to a core class
-    Thread shutdownThread = (new Thread(new Runnable() {
-      public void run() {
-        if (client.isRunning()) {
-          LOG.info("Forced shutdown requested");
-          client.stopAsync();
-          client.awaitTerminated();
-        }
-      }
-    }));
-    shutdownThread.setName(Replay.class.getSimpleName() + "-shutdown");
-    Runtime.getRuntime().addShutdownHook(shutdownThread);
-
+    Services.addShutdownHook(client);
     client.startAsync();
     client.awaitTerminated();
   }
