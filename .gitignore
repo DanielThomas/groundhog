@@ -1,8 +1,9 @@
 .gradle
 build/
-lib/
 out/
 .idea
 *.iml
 *.ipr
 *.iws
+# Native library path created when running proxy
+lib/bin/
