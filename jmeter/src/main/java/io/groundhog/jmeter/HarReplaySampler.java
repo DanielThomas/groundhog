@@ -7,6 +7,7 @@ import io.groundhog.replay.ReplayResultListener;
 import com.google.common.net.HostAndPort;
 import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
+import org.apache.jmeter.samplers.Interruptible;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.ThreadListener;
@@ -25,7 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class HarReplaySampler extends AbstractSampler implements TestBean, ThreadListener {
+public class HarReplaySampler extends AbstractSampler implements TestBean, ThreadListener, Interruptible {
   private static final Logger LOG = LoggingManager.getLoggerForClass();
 
   private final BlockingQueue<SampleResult> results = new LinkedBlockingQueue<>();
@@ -63,6 +64,12 @@ public class HarReplaySampler extends AbstractSampler implements TestBean, Threa
       }
     }
     return null;
+  }
+
+  @Override
+  public boolean interrupt() {
+    threadFinished();
+    return true;
   }
 
   @Override

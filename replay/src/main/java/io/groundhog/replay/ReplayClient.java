@@ -89,9 +89,8 @@ public final class ReplayClient extends AbstractExecutionThreadService {
       DelayedUserAgentRequest delayedRequest = new DelayedUserAgentRequest(userAgentRequest, startedDateTime, timeStartedNanos, firstRequestTime);
       long delayMillis = delayedRequest.getDelay(TimeUnit.MILLISECONDS);
       if (DELAY_LIMIT_MS < delayMillis) {
-        long sleepMillis = delayMillis - DELAY_LIMIT_MS;
-        LOG.info("Reached read-ahead limit of {}ms. Request delay {}ms, sleeping for {}ms", DELAY_LIMIT_MS, delayMillis, sleepMillis);
-        Thread.sleep(sleepMillis);
+        LOG.info("Reached read-ahead limit of {}ms (current request delay {}ms). Sleeping for {}ms", DELAY_LIMIT_MS, delayMillis, DELAY_LIMIT_MS);
+        Thread.sleep(DELAY_LIMIT_MS);
       }
       if (dispatcher.isRunning()) {
         dispatcher.queue(delayedRequest);
