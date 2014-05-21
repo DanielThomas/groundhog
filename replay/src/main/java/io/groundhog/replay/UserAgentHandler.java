@@ -17,12 +17,13 @@
 
 package io.groundhog.replay;
 
+import io.groundhog.har.HttpArchive;
+
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.groundhog.har.HttpArchive;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
@@ -124,7 +125,9 @@ public class UserAgentHandler extends ChannelDuplexHandler {
         // FIXME use correct encoding. See org.jsoup.helper.DataUtil.parseByteData()
         String decodedContent = content.toString(Charsets.UTF_8);
         // TODO look into incrementally parsing the document to avoid needing to hold onto the content
-        document = Jsoup.parse(decodedContent);
+        if (!decodedContent.isEmpty()) {
+          document = Jsoup.parse(decodedContent);
+        }
         content.release();
       }
     }
