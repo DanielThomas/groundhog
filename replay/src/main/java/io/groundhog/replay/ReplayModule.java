@@ -1,14 +1,10 @@
 package io.groundhog.replay;
 
-import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
 
 /**
  * @author Michael Olague
