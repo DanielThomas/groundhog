@@ -93,9 +93,11 @@ public final class ReplayClient extends AbstractExecutionThreadService {
         LOG.info("Reached read-ahead limit of {}ms. Request delay {}ms, sleeping for {}ms", DELAY_LIMIT_MS, delayMillis, sleepMillis);
         Thread.sleep(sleepMillis);
       }
-      dispatcher.queue(delayedRequest);
+      if (dispatcher.isRunning()) {
+        dispatcher.queue(delayedRequest);
+      }
       if (requestReader.isLastRequest(userAgentRequest)) {
-        LOG.info("Performing graceful shutdown of dispatcher");
+        LOG.info("Last request read, performing graceful shutdown of dispatcher");
         dispatcher.stopAsync();
         dispatcher.awaitTerminated();
         break;
