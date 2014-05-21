@@ -200,7 +200,9 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
   private HttpResponse captureResponse(HttpResponse httpResponse) {
     checkNotNull(httpResponse);
     // As it stands, we don't need the response content, so we don't need to keep a FullHttpResponse, but in future we might
-    return new DefaultHttpResponse(httpResponse.getProtocolVersion(), httpResponse.getStatus());
+    HttpResponse response = new DefaultHttpResponse(httpResponse.getProtocolVersion(), httpResponse.getStatus());
+    response.headers().set(httpResponse.headers());
+    return response;
   }
 
   /**
