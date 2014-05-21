@@ -48,7 +48,7 @@ public class LoggingResultListener extends AbstractReplayResultListener implemen
   public void failure(HttpRequest request, Optional<Throwable> cause) {
     String label = getLabel(request);
     if (cause.isPresent()) {
-      Optional<String> errorMessage = getErrorMessage(cause.get());
+      Optional<String> errorMessage = getMessageForKnownException(cause.get());
       if (errorMessage.isPresent()) {
         LOG.error("FAILURE: {}: {}", label, errorMessage.get());
       } else {

@@ -111,7 +111,7 @@ public class ReplayHandler extends ChannelDuplexHandler {
     HttpResponseStatus status = response.getStatus();
     HttpResponseStatus expectedStatus = expectedResponse.getStatus();
     HttpHeaders headers = response.headers();
-    if (expectedStatus != status) {
+    if (!expectedStatus.equals(status)) {
       return Optional.of("Expected status " + expectedStatus + " but was " + status);
     } else {
       String errorHeader = "X-Blackboard-errorid";

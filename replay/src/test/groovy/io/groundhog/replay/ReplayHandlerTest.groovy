@@ -32,6 +32,24 @@ class ReplayHandlerTest extends Specification {
   def listener = Mock(ReplayResultListener)
   def handler = new ReplayHandler(Mock(ChannelPipeline), listener, false)
 
+  def 'a response with a new instance of an equal response status is successful'() {
+    given:
+    def request = Mock(ReplayHttpRequest)
+    def expectedResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+    request.expectedResponse >> expectedResponse
+    def response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, new HttpResponseStatus(200, "OK", true)) // Create a new instance to ensure equals, not identity comparison is used
+
+    when:
+    def context = Mock(ChannelHandlerContext)
+    handler.write(context, request, Mock(ChannelPromise))
+    handler.channelRead(context, response)
+    handler.channelRead(context, Mock(ReplayLastHttpContent))
+
+    then:
+    //noinspection GroovyAssignabilityCheck
+    1 * listener.success( _, _, _, _, _, _, _)
+  }
+
   def 'a response with a different status to expected causes a failure notification'() {
     given:
     def request = Mock(ReplayHttpRequest)

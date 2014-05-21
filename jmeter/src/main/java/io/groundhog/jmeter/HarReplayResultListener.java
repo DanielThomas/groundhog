@@ -69,15 +69,16 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
     SampleResult result = SampleResult.createTestSample(0);
     result.setSuccessful(false);
     result.setSampleLabel(getLabel(request));
+    result.setResponseCode("A failure occurred");
     if (cause.isPresent()) {
-      Optional<String> errorMessage = getErrorMessage(cause.get());
-      if (errorMessage.isPresent()) {
-        result.setSamplerData(errorMessage.get());
+      Optional<String> knownErrorMessage = getMessageForKnownException(cause.get());
+      if (knownErrorMessage.isPresent()) {
+        result.setResponseMessage(knownErrorMessage.get());
       } else {
         StringWriter stackTrace = new StringWriter();
         //noinspection ThrowableResultOfMethodCallIgnored
         cause.get().printStackTrace(new PrintWriter(stackTrace));
-        result.setSamplerData(stackTrace.toString());
+        result.setResponseMessage(stackTrace.toString());
       }
     }
   }
@@ -85,11 +86,24 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
   private void queueResult(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
                            long start, long end, Optional<Document> document, Optional<String> failureReason) {
     SampleResult result = SampleResult.createTestSample(start, end);
-    if (failureReason.isPresent()) {
-      result.setSuccessful(false);
-      result.setSamplerData(failureReason.get());
+    result.setSamplerData(request.toString());
+    boolean hasFailure = failureReason.isPresent();
+    result.setSuccessful(!hasFailure);
+    if (hasFailure) {
+      result.setResponseCode("A failure occurred");
+      result.setResponseMessage(failureReason.get());
+    } else {
+      HttpResponseStatus status = response.getStatus();
+      result.setResponseCode(String.valueOf(status.code()));
+      result.setResponseMessage(status.reasonPhrase());
     }
     result.setSampleLabel(getLabel(request, response, expectedResponse, document));
+    if (document.isPresent()) {
+      Document responseData = document.get();
+      result.setResponseData(responseData.outerHtml(), responseData.outputSettings().charset().name());
+    } else {
+      result.setSamplerData("No data received");
+    }
     try {
       result.setURL(new URL(scheme.getScheme(), hostAndPort.getHostText(), hostAndPort.getPortOrDefault(scheme.getDefaultPort()), request.getUri()));
     } catch (MalformedURLException e) {
@@ -101,9 +115,6 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
     String responseHeaders = joiner.join(response.headers());
 
     result.setRequestHeaders(checkNotNull(requestHeaders));
-    HttpResponseStatus status = response.getStatus();
-    result.setResponseCode(String.valueOf(status.code()));
-    result.setResponseMessage(status.reasonPhrase());
     result.setResponseHeaders(checkNotNull(responseHeaders));
     result.setBytes(bytesRead);
     resultQueue.add(result);

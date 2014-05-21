@@ -36,7 +36,7 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
   public static final String UNTITLED_PAGE_LABEL = "Untitled Page";
   private static final MediaType APPLICATION_WOFF = MediaType.create("application", "x-font-woff");
 
-  protected static Optional<String> getErrorMessage(Throwable cause) {
+  protected static Optional<String> getMessageForKnownException(Throwable cause) {
     //noinspection ThrowableResultOfMethodCallIgnored
     checkNotNull(cause);
     if (cause instanceof ClosedChannelException) {
