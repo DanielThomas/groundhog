@@ -34,8 +34,10 @@ public class ProxyModule extends AbstractModule {
       Optional<File> configFile = findConfigInParent(parentDir, PARENT_LIMIT);
       File propertiesFile;
       if (!configFile.isPresent()) {
-        // Attempt a fallback to the developer location. If launching from an IDE, be sure your working directory is proxy/
-        propertiesFile = new File("src/dist", PROPERTIES_FILENAME);
+        propertiesFile = new File("src/dist", PROPERTIES_FILENAME); // Gradle application run task
+        if (!propertiesFile.exists()) {
+          propertiesFile = new File("proxy/src/dist", PROPERTIES_FILENAME); // IntelliJ launch
+        }
         LOG.warn("Could not locate {} in current or parent directories up to {} levels deep. Falling back to developer config {}",
             PROPERTIES_FILENAME, PARENT_LIMIT, propertiesFile);
       } else {
