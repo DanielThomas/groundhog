@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.DelayQueue;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,10 +40,10 @@ import static com.google.common.base.Preconditions.checkState;
  * @author Danny Thomas
  * @since 1.0
  */
-public class DefaultRequestDispatcher extends AbstractExecutionThreadService implements RequestDispatcher{
+public class DefaultRequestDispatcher extends AbstractExecutionThreadService implements RequestDispatcher {
   private static final Logger LOG = LoggerFactory.getLogger(RequestDispatcher.class);
 
-  private static final int SKEW_THRESHOLD = 100;
+  private static final int SKEW_THRESHOLD_MILLIS = 100;
   private static final int CHANNEL_WAIT_DURATION = 5000;
 
   private final Bootstrap bootstrap;
@@ -84,10 +83,8 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
     long startTime = System.nanoTime();
     LOG.info("Running request replay");
     while (isRunning() || !queue.isEmpty()) {
-      DelayedUserAgentRequest delayedRequest = queue.poll();
-      if (null == delayedRequest) {
-        LOG.debug("Request queue poll timeout, next request: {}", queue.peek());
-      } else {
+      DelayedUserAgentRequest delayedRequest = queue.poll(SKEW_THRESHOLD_MILLIS, TimeUnit.MILLISECONDS);
+      if (null != delayedRequest) {
         long actualTime = System.nanoTime() - startTime;
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
 
@@ -102,7 +99,7 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
 
   private void checkSkew(long actualTime, long expectedTime) {
     long skew = actualTime - expectedTime;
-    if (Math.abs(skew) > SKEW_THRESHOLD) {
+    if (Math.abs(skew) > SKEW_THRESHOLD_MILLIS) {
       String message = skew > 0 ? "Dispatcher is behind recorded time by {}ms" : "Dispatcher is ahead of recorded time by {}ms";
       LOG.warn(message, skew);
     }

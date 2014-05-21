@@ -178,7 +178,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
       if (setSessionCookie.isPresent()) {
         HashCode newHash = getCookieValueHash(setSessionCookie.get());
         if (!currentHash.equals(newHash)) {
-          LOG.debug("Detected user agent cookie hash change in replay data: {} -> {}", currentHash, newHash);
+          LOG.info("Detected user agent cookie hash change in replay data: {} -> {}", currentHash, newHash);
           UA.put(newHash, UA.getUnchecked(currentHash));
           UA.invalidate(currentHash);
           currentHash = newHash;
@@ -187,11 +187,9 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
       cacheKey = Optional.of(currentHash);
     } else if (setSessionCookie.isPresent()) {
       HashCode newUserAgent = getCookieValueHash(setSessionCookie.get());
-      LOG.debug("Detected new user agent {}", newUserAgent);
+      LOG.info("Detected new user agent {}", newUserAgent);
       cacheKey = Optional.of(newUserAgent);
     }
-
-    LOG.debug("Generated {} for session {}, set session {}", cacheKey, sessionCookie, setSessionCookie);
     return cacheKey.isPresent() ? UA.getUnchecked(cacheKey.get()) : NON_PERSISTENT_UA;
   }
 
