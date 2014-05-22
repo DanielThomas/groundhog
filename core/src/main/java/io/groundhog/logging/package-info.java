@@ -15,22 +15,7 @@
  *
  */
 
-package io.groundhog.base
-
-import org.slf4j.LoggerFactory
-import spock.lang.Specification
-
 /**
- * Test to ensure that the {@link io.groundhog.logging.AssertAppender} is correctly configured for this project.
+ * Logging utility classes.
  */
-class AssertAppenderIntegTest extends Specification {
-  def 'logging an error results in a AssertionError'() {
-    def logger = LoggerFactory.getLogger(AssertAppenderIntegTest)
-
-    when:
-    logger.error('An error')
-
-    then:
-    thrown(AssertionError)
-  }
-}
+package io.groundhog.logging;

@@ -19,11 +19,11 @@ package io.groundhog.base
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.spi.LoggingEvent
-import com.google.common.base.VerifyException
+import io.groundhog.logging.AssertAppender
 import spock.lang.Specification
 
 /**
- * Tests for {@link AssertAppender}.
+ * Tests for {@link io.groundhog.logging.AssertAppender}.
  */
 class AssertAppenderTest extends Specification {
   def 'appending an error level event results in a AssertionError'() {

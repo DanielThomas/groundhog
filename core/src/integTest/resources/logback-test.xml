@@ -16,7 +16,7 @@
   -->
 
 <configuration>
-  <appender name="VERIFY" class="io.groundhog.base.AssertAppender"/>
+  <appender name="VERIFY" class="io.groundhog.logging.AssertAppender"/>
 
   <root level="info">
     <appender-ref ref="VERIFY" />
