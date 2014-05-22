@@ -24,6 +24,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.jsoup.nodes.Document;
 
 import javax.inject.Inject;
@@ -32,6 +33,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -47,13 +49,14 @@ public final class ReplayHandler extends ChannelDuplexHandler {
   private HttpResponse expectedResponse;
   private long started;
   private final AtomicInteger bytesRead = new AtomicInteger();
+  private final int socketTimeout;
 
   @Inject
-  ReplayHandler(@Assisted ChannelPipeline pipeline, UserAgentHandler userAgentHandler, ReplayResultListener resultListener,
-                @Named("usessl") boolean useSSL) throws Exception {
+  ReplayHandler(@Assisted ChannelPipeline pipeline, UserAgentHandler userAgentHandler, ReplayResultListener resultListener, @Named("usessl") boolean useSSL, @Named("socketTimeout")int socketTimeout) throws Exception {
     checkNotNull(pipeline);
     this.userAgentHandler = checkNotNull(userAgentHandler);
     this.resultListener = checkNotNull(resultListener);
+    this.socketTimeout = socketTimeout;
     initPipeline(pipeline, useSSL);
   }
 
@@ -69,7 +72,8 @@ public final class ReplayHandler extends ChannelDuplexHandler {
     p.addLast("codec", new HttpClientCodec());
     p.addLast("inflater", new HttpContentDecompressor());
     p.addLast("chunkedWriter", new ChunkedWriteHandler());
-    p.addLast("ua", userAgentHandler);
+    p.addLast("readTimeoutHandler", new ReadTimeoutHandler(this.socketTimeout));
+    p.addLast("ua", new UserAgentHandler());
     p.addLast("replay", this);
   }
 
