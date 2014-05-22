@@ -55,7 +55,7 @@ public class ProxyModule extends AbstractModule {
     checkArgument(outputLocation.isDirectory(), "output.location must be a directory and must exist");
 
     String uploadDirectoryName = "uploads";
-    File uploadLocation = new File(outputLocation.getParentFile(), uploadDirectoryName);
+    File uploadLocation = new File(outputLocation, uploadDirectoryName);
     bind(File.class).annotatedWith(Names.named("uploadLocation")).toInstance(uploadLocation);
     String outputCompression = properties.getProperty("output.compression");
 
