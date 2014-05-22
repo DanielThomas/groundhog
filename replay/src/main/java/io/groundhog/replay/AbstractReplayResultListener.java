@@ -20,7 +20,10 @@ package io.groundhog.replay;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.net.MediaType;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import org.jsoup.nodes.Document;
 
 import java.nio.channels.ClosedChannelException;
@@ -34,7 +37,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class AbstractReplayResultListener implements ReplayResultListener {
   public static final String TRANSACTION_LABEL_HEADER = "X-Transaction-Label";
   public static final String UNTITLED_PAGE_LABEL = "Untitled Page";
-  private static final MediaType APPLICATION_WOFF = MediaType.create("application", "x-font-woff");
+
+  private static final String APPLICATION = "application";
+  private static final String TEXT = "text";
+  private static final String JAVASCRIPT = "javascript";
+  private static final String JSON = "json";
+  private static final String XML = "xml";
+  private static final MediaType APPLICATION_WOFF = MediaType.create(APPLICATION, "x-font-woff");
+  private static final MediaType ANY_HTML = MediaType.create(TEXT, "html");
+  private static final MediaType APPLICATION_JAVASCRIPT = MediaType.create(APPLICATION, JAVASCRIPT);
+  private static final MediaType TEXT_JAVASCRIPT = MediaType.create(TEXT, JAVASCRIPT);
+  private static final MediaType TEXT_JSON = MediaType.create(TEXT, JSON);
+  private static final MediaType APPLICATION_JSON = MediaType.create(APPLICATION, JSON);
+  private static final MediaType TEXT_XML = MediaType.create(TEXT, XML);
+  private static final MediaType APPLICATION_XML = MediaType.create(APPLICATION, XML);
 
   protected static Optional<String> getMessageForKnownException(Throwable cause) {
     //noinspection ThrowableResultOfMethodCallIgnored
@@ -69,50 +85,46 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
     StringBuilder label = new StringBuilder();
     String headerLabel = request.headers().get(TRANSACTION_LABEL_HEADER);
     if (null == headerLabel) {
-      label.append(getResourceType(response));
-      label.append(": ");
-      if (document.isPresent()) {
-        String title = document.get().title();
-        label.append(title.isEmpty() ? UNTITLED_PAGE_LABEL : title);
-        label.append(" - ");
-      }
-      HttpMethod method = request.getMethod();
-      if (HttpMethod.GET != method) {
-        label.append(method.name());
-        label.append(" ");
-      }
       label.append(request.getUri());
-      HttpResponseStatus status = expectedResponse.getStatus();
-      if (HttpResponseStatus.OK != status) {
-        label.append(" : ");
-        label.append(status);
+      String contentType = Strings.nullToEmpty(response.headers().get(HttpHeaders.Names.CONTENT_TYPE));
+      label.append(" (");
+      label.append(response.getStatus());
+      if (!contentType.isEmpty()) {
+        label.append(", ");
+        MediaType type = MediaType.parse(contentType);
+        label.append(getMediaTypeLabel(type));
+        if (document.isPresent()) {
+          String title = document.get().title();
+          label.append(": ");
+          label.append(title.isEmpty() ? UNTITLED_PAGE_LABEL : title);
+        }
       }
+      label.append(")");
     } else {
       label.append(headerLabel);
     }
     return label.toString();
   }
 
-  protected static String getResourceType(HttpResponse response) {
-    checkNotNull(response);
-    String contentType = Strings.nullToEmpty(response.headers().get(HttpHeaders.Names.CONTENT_TYPE));
-    if (!contentType.isEmpty()) {
-      MediaType type = MediaType.parse(contentType);
-      if (type.is(MediaType.HTML_UTF_8)) {
-        return "Page";
-      } else if (type.is(MediaType.ANY_AUDIO_TYPE)) {
-        return "Audio";
-      } else if (type.is(MediaType.ANY_IMAGE_TYPE)) {
-        return "Image";
-      } else if (type.is(MediaType.ANY_VIDEO_TYPE)) {
-        return "Video";
-      } else if (type.is(MediaType.JAVASCRIPT_UTF_8) || type.is(MediaType.TEXT_JAVASCRIPT_UTF_8)) {
-        return "Script";
-      } else if (type.is(MediaType.CSS_UTF_8)) {
-        return "Stylesheet";
-      } else if (type.is(APPLICATION_WOFF)) {
-        return "Font";
-      }
+  protected static String getMediaTypeLabel(MediaType type) {
+    if (type.is(ANY_HTML)) {
+      return "Page";
+    } else if (type.is(MediaType.ANY_AUDIO_TYPE)) {
+      return "Audio";
+    } else if (type.is(MediaType.ANY_IMAGE_TYPE)) {
+      return "Image";
+    } else if (type.is(MediaType.ANY_VIDEO_TYPE)) {
+      return "Video";
+    } else if (type.is(TEXT_JAVASCRIPT) || type.is(APPLICATION_JAVASCRIPT)) {
+      return "JavaScript";
+    } else if (type.is(TEXT_JSON) || type.is(APPLICATION_JSON)) {
+      return "JSON";
+    } else if (type.is(TEXT_XML) || type.is(APPLICATION_XML)) {
+      return "XML";
+    } else if (type.is(MediaType.CSS_UTF_8)) {
+      return "Stylesheet";
+    } else if (type.is(APPLICATION_WOFF)) {
+      return "Font";
     }
     return "Other";
   }
