@@ -44,7 +44,8 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
   private static final String JSON = "json";
   private static final String XML = "xml";
   private static final MediaType APPLICATION_WOFF = MediaType.create(APPLICATION, "x-font-woff");
-  private static final MediaType ANY_HTML = MediaType.create(TEXT, "html");
+  private static final MediaType TEXT_HTML = MediaType.create(TEXT, "html");
+  private static final MediaType TEXT_CSS = MediaType.create(TEXT, "css");
   private static final MediaType APPLICATION_JAVASCRIPT = MediaType.create(APPLICATION, JAVASCRIPT);
   private static final MediaType TEXT_JAVASCRIPT = MediaType.create(TEXT, JAVASCRIPT);
   private static final MediaType TEXT_JSON = MediaType.create(TEXT, JSON);
@@ -107,7 +108,7 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
   }
 
   protected static String getMediaTypeLabel(MediaType type) {
-    if (type.is(ANY_HTML)) {
+    if (type.is(TEXT_HTML)) {
       return "Page";
     } else if (type.is(MediaType.ANY_AUDIO_TYPE)) {
       return "Audio";
@@ -121,7 +122,7 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
       return "JSON";
     } else if (type.is(TEXT_XML) || type.is(APPLICATION_XML)) {
       return "XML";
-    } else if (type.is(MediaType.CSS_UTF_8)) {
+    } else if (type.is(TEXT_CSS)) {
       return "Stylesheet";
     } else if (type.is(APPLICATION_WOFF)) {
       return "Font";
