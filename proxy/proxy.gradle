@@ -21,9 +21,7 @@ mainClassName = 'io.groundhog.proxy.Proxy'
 applicationName = archivesBaseName
 
 dependencies {
-  compile libraries.logback
   compile libraries.littleproxy
-  compile libraries.guice
 
   testCompile libraries.testlibs
   integTestCompile libraries.httptest

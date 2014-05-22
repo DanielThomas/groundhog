@@ -17,7 +17,7 @@
 
 dependencies {
   compile libraries.guava
-  compile libraries.inject
+  compile libraries.guice
   compile libraries.logback
   compile libraries.jsr305
 

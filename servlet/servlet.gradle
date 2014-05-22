@@ -25,9 +25,6 @@ ext {
 }
 
 dependencies {
-  compile libraries.guice
-  compile libraries.logback
-
   providedCompile "org.apache.tomcat:tomcat-catalina:$versions.tomcat"
   providedCompile "org.apache.tomcat:tomcat-coyote:$versions.tomcat"
   providedCompile libraries.jettyserver
