@@ -6,4 +6,4 @@ out/
 *.ipr
 *.iws
 # Native library path created when running proxy
-lib/bin/
+**/lib/bin/
