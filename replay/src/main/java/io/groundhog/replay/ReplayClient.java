@@ -104,7 +104,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
 
   @Override
   protected void startUp() throws Exception {
-    log.info("Starting dispatcher");
+    log.info("Starting request dispatcher");
     dispatcher.startAsync();
     dispatcher.awaitRunning();
   }

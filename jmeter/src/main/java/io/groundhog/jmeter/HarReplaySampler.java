@@ -42,10 +42,12 @@ public class HarReplaySampler extends AbstractSampler implements TestBean, Threa
   @Override
   public SampleResult sample(Entry entry) {
     if (null == client) {
-      LOG.info("Creating replay client for filename " + filename);
-      Module jmeterModule = new JMeterModule(new File(filename), results, scheme, HostAndPort.fromParts(host, port));
+      HostAndPort hostAndPort = HostAndPort.fromParts(host, port);
+      Module jmeterModule = new JMeterModule(new File(filename), results, scheme, hostAndPort);
       Injector injector = Guice.createInjector(new JMeterSlf4jModule(), jmeterModule);
       client = injector.getInstance(ReplayClient.class);
+
+      LOG.info("Starting replay for " + filename + " using " + scheme.getScheme() + " against " + hostAndPort);
       client.startAsync();
       client.awaitRunning();
     }

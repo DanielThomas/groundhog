@@ -69,26 +69,24 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
 
   public void queue(DelayedUserAgentRequest request) throws InterruptedException {
     checkNotNull(request);
-    checkState(isRunning(), "The dispatcher is not running");
+    checkState(isRunning(), "This dispatcher is not running");
     queue.put(request);
   }
 
   @Override
   protected void startUp() throws Exception {
-    log.info("Dispatcher starting up");
+    log.info("Request dispatcher starting up");
   }
 
   @Override
   protected void run() throws Exception {
     long startTime = System.nanoTime();
-    log.info("Running request replay");
+    log.info("Running request replay, with skew threshold of {}ms", SKEW_THRESHOLD_MILLIS);
     while (isRunning() || !queue.isEmpty()) {
       DelayedUserAgentRequest delayedRequest = queue.poll(SKEW_THRESHOLD_MILLIS, TimeUnit.MILLISECONDS);
       if (null != delayedRequest) {
         long actualTime = System.nanoTime() - startTime;
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
-
-        log.debug("Adding request to channel {}", delayedRequest);
         ChannelFuture future = bootstrap.connect(hostAndPort.getHostText(), hostAndPort.getPort());
         UserAgentRequest request = delayedRequest.getRequest();
         future.addListener(new UserAgentChannelWriter(request, resultListener));
@@ -107,7 +105,7 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
 
   @Override
   protected void shutDown() throws Exception {
-    log.info("Dispatcher shutting down");
+    log.info("Request dispatcher shutting down");
     while (!channelGroup.isEmpty()) {
       log.info("Waiting for in flight channels to complete...");
       Thread.sleep(CHANNEL_WAIT_DURATION);
