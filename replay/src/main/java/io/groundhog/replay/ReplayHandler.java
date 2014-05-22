@@ -24,8 +24,6 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -38,8 +36,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public class ReplayHandler extends ChannelDuplexHandler {
-  private static final Logger LOG = LoggerFactory.getLogger(ReplayHandler.class);
-
   private final ReplayResultListener resultListener;
 
   private ReplayHttpRequest request;
@@ -127,7 +123,8 @@ public class ReplayHandler extends ChannelDuplexHandler {
     checkNotNull(ctx);
     //noinspection ThrowableResultOfMethodCallIgnored
     checkNotNull(cause);
-    LOG.error("Caught exception in handler", cause);
+    HttpRequest failedRequest = null == request ? new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "No HTTP request written") : request;
+    resultListener.failure(failedRequest, Optional.of(cause));
     ctx.close();
   }
 

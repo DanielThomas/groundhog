@@ -81,6 +81,7 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
         result.setResponseMessage(stackTrace.toString());
       }
     }
+    resultQueue.add(result);
   }
 
   private void queueResult(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
