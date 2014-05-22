@@ -15,22 +15,22 @@
  *
  */
 
-package io.groundhog.base
+package io.groundhog.jmeter;
 
-import org.slf4j.LoggerFactory
-import spock.lang.Specification
+import com.google.inject.AbstractModule;
+
+import static com.google.inject.matcher.Matchers.any;
 
 /**
- * Test to ensure that the {@link io.groundhog.logging.AssertAppender} is correctly configured for this project.
+ * Guice module that binds SLF4J {@link org.slf4j.Logger}s with JMeter compatible loggers.
+ *
+ * @author Danny Thomas
+ * @see io.groundhog.logging.Slf4jModule
+ * @since 1.0
  */
-class AssertAppenderIntegTest extends Specification {
-  def 'logging an error results in a AssertionError'() {
-    def logger = LoggerFactory.getLogger(AssertAppenderIntegTest)
-
-    when:
-    logger.error('An error')
-
-    then:
-    thrown(AssertionError)
+public class JMeterSlf4jModule extends AbstractModule {
+  @Override
+  protected void configure() {
+    bindListener(any(), new JMeterSlf4jInjectionTypeListener());
   }
 }

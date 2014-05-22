@@ -15,22 +15,23 @@
  *
  */
 
-package io.groundhog.base
+package io.groundhog.logging;
 
-import org.slf4j.LoggerFactory
-import spock.lang.Specification
+import com.google.inject.AbstractModule;
+
+import static com.google.inject.matcher.Matchers.any;
 
 /**
- * Test to ensure that the {@link io.groundhog.logging.AssertAppender} is correctly configured for this project.
+ * Module to install which enables automatic injection of slf4j loggers into Guice-managed objects (by field injection
+ * only).
+ * <p/>
+ * From https://github.com/dhanji/sitebricks/tree/master/slf4j/src/main/java/com/google/sitebricks/slf4j/.
+ *
+ * @author dhanji@gmail.com (Dhanji R. Prasanna)
  */
-class AssertAppenderIntegTest extends Specification {
-  def 'logging an error results in a AssertionError'() {
-    def logger = LoggerFactory.getLogger(AssertAppenderIntegTest)
-
-    when:
-    logger.error('An error')
-
-    then:
-    thrown(AssertionError)
+public class Slf4jModule extends AbstractModule {
+  @Override
+  protected void configure() {
+    bindListener(any(), new Slf4jInjectionTypeListener());
   }
 }

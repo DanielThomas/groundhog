@@ -40,7 +40,8 @@ plugins.withType(org.gradle.plugins.ide.eclipse.EclipsePlugin) {
 
 // These tasks allow integTest tests and resources to be provided to every project by :core
 def coreProject = project(':core')
-if (coreProject != project) {
+def jmeterProject = project(':jmeter')
+if (coreProject != project && jmeterProject != project) {
   task copyCoreIntegTestClasses(type: Copy) {
     description 'Copy core project integTest classes to the current project'
     from coreProject.sourceSets.integTest.output.classesDir

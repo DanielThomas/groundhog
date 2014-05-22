@@ -15,22 +15,26 @@
  *
  */
 
-package io.groundhog.base
+package io.groundhog.logging
 
-import org.slf4j.LoggerFactory
-import spock.lang.Specification
+import com.google.common.base.Predicate;
+import com.google.common.testing.AbstractPackageSanityTests
+
+import javax.annotation.Nullable;
 
 /**
- * Test to ensure that the {@link io.groundhog.logging.AssertAppender} is correctly configured for this project.
+ * Package sanity tests for {@link io.groundhog.logging}.
+ *
+ * @author Danny Thomas
+ * @since 1.0
  */
-class AssertAppenderIntegTest extends Specification {
-  def 'logging an error results in a AssertionError'() {
-    def logger = LoggerFactory.getLogger(AssertAppenderIntegTest)
-
-    when:
-    logger.error('An error')
-
-    then:
-    thrown(AssertionError)
+class PackageSanityTest extends AbstractPackageSanityTests {
+  PackageSanityTest() {
+    ignoreClasses(new Predicate<Class<?>>() {
+      @Override
+      boolean apply(@Nullable Class<?> input) {
+        input.isAssignableFrom(Slf4jInjectionTypeListener.class)
+      }
+    })
   }
 }

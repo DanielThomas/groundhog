@@ -17,6 +17,12 @@
 
 apply plugin: 'fatjar'
 
+configurations {
+  // Exclude logback. JMeter configures a NOP logger, and it'll complain that there are duplicate bindings
+  // We bind a JMeter compatible logger using JMeterSlf4jModule
+  all*.exclude group: 'ch.qos.logback'
+}
+
 dependencies {
   compile project(':replay')
   compile libraries.jmeter, {
