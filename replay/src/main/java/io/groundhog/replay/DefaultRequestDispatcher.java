@@ -17,6 +17,10 @@
 
 package io.groundhog.replay;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.hash.HashCode;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.Service;
@@ -49,6 +53,7 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
   private final DelayQueue<DelayedUserAgentRequest> queue;
   private final HostAndPort hostAndPort;
   private final ReplayResultListener resultListener;
+  private final LoadingCache<HashCode, UserAgent> userAgentCache;
 
   private Logger log = LoggerFactory.getLogger(RequestDispatcher.class);
 
@@ -60,6 +65,14 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
 
     channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     queue = new DelayQueue<>();
+
+    CacheLoader<HashCode, UserAgent> loader = new CacheLoader<HashCode, UserAgent>() {
+      @Override
+      public UserAgent load(HashCode key) throws Exception {
+        return new DefaultUserAgent(key);
+      }
+    };
+    userAgentCache = CacheBuilder.newBuilder().build(loader);
   }
 
   public Service clearQueue() {
@@ -89,7 +102,7 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
         ChannelFuture future = bootstrap.connect(hostAndPort.getHostText(), hostAndPort.getPort());
         UserAgentRequest request = delayedRequest.getRequest();
-        future.addListener(new UserAgentChannelWriter(request, resultListener, log));
+        future.addListener(new UserAgentChannelWriter(request, resultListener, userAgentCache, log));
         channelGroup.add(future.channel());
       }
     }

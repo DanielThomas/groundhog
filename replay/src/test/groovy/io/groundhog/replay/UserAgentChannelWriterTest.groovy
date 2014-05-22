@@ -17,10 +17,12 @@
 
 package io.groundhog.replay
 
+import com.google.common.cache.LoadingCache
 import io.netty.handler.codec.http.DefaultHttpRequest
 import io.netty.handler.codec.http.HttpHeaders
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.HttpVersion
+import org.slf4j.Logger
 import spock.lang.Specification
 
 /**
@@ -31,7 +33,7 @@ class UserAgentChannelWriterTest extends Specification {
     def uaRequest = Mock(UserAgentRequest)
     uaRequest.headers() >> HttpHeaders.EMPTY_HEADERS
     def listener = Mock(ReplayResultListener)
-    def writer = new UserAgentChannelWriter(uaRequest, listener)
+    def writer = new UserAgentChannelWriter(uaRequest, listener, Mock(LoadingCache), Mock(Logger))
     def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/")
     request.headers().add(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE)
 

@@ -24,8 +24,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.FluentIterable;
 import com.google.common.hash.HashCode;
@@ -38,7 +36,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -87,20 +84,14 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
   };
 
   private static final String GZIP_OR_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
-  private static final LoadingCache<HashCode, UserAgent> UA;
   private static final UserAgent NON_PERSISTENT_UA;
   private static final String HOST;
+
+  private final LoadingCache<HashCode, UserAgent> userAgentCache;
 
   private Logger log;
 
   static {
-    CacheLoader<HashCode, UserAgent> loader = new CacheLoader<HashCode, UserAgent>() {
-      @Override
-      public UserAgent load(HashCode key) throws Exception {
-        return new DefaultUserAgent(key);
-      }
-    };
-    UA = CacheBuilder.newBuilder().build(loader);
     NON_PERSISTENT_UA = new DefaultUserAgent();
     String localHostName;
     try {
@@ -114,9 +105,11 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
   private final UserAgentRequest uaRequest;
   private final ReplayResultListener resultListener;
 
-  public UserAgentChannelWriter(UserAgentRequest uaRequest, ReplayResultListener resultListener, Logger log) {
+  public UserAgentChannelWriter(UserAgentRequest uaRequest, ReplayResultListener resultListener,
+                                LoadingCache<HashCode, UserAgent> userAgentCache, Logger log) {
     this.uaRequest = checkNotNull(uaRequest);
     this.resultListener = checkNotNull(resultListener);
+    this.userAgentCache = checkNotNull(userAgentCache);
     this.log = checkNotNull(log);
   }
 
@@ -195,8 +188,8 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
         HashCode newHash = getCookieValueHash(setSessionCookie.get());
         if (!currentHash.equals(newHash)) {
           log.info("Detected user agent cookie hash change in replay data: {} -> {}", currentHash, newHash);
-          UA.put(newHash, UA.getUnchecked(currentHash));
-          UA.invalidate(currentHash);
+          userAgentCache.put(newHash, userAgentCache.getUnchecked(currentHash));
+          userAgentCache.invalidate(currentHash);
           currentHash = newHash;
         }
       }
@@ -206,7 +199,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
       log.info("Detected new user agent {}", newUserAgent);
       cacheKey = Optional.of(newUserAgent);
     }
-    return cacheKey.isPresent() ? UA.getUnchecked(cacheKey.get()) : NON_PERSISTENT_UA;
+    return cacheKey.isPresent() ? userAgentCache.getUnchecked(cacheKey.get()) : NON_PERSISTENT_UA;
   }
 
   private Optional<Cookie> getSessionCookie() {
