@@ -14,13 +14,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public class LoggingResultListener extends AbstractReplayResultListener implements ReplayResultListener {
-  private static final Logger LOG = LoggerFactory.getLogger(LoggingResultListener.class);
+  private Logger log = LoggerFactory.getLogger(LoggingResultListener.class);
 
   @Override
   public void success(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
                       long start, long end, Optional<Document> document) {
     String label = getLabel(request, response, expectedResponse, document);
-    LOG.info("SUCCESS: {}: \"{} {} {}\" {} {} {}",
+    log.info("SUCCESS: {}: \"{} {} {}\" {} {} {}",
         checkNotNull(label),
         checkNotNull(request.getMethod()),
         checkNotNull(request.getUri()),
@@ -33,7 +33,7 @@ public class LoggingResultListener extends AbstractReplayResultListener implemen
   @Override
   public void failure(String failureReason, HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead, long start, long end, Optional<Document> document) {
     String label = getLabel(request, response, expectedResponse, document);
-    LOG.info("FAILURE: {}: {}: \"{} {} {}\" {} {} {}",
+    log.info("FAILURE: {}: {}: \"{} {} {}\" {} {} {}",
         checkNotNull(failureReason),
         checkNotNull(label),
         checkNotNull(request.getMethod()),
@@ -50,12 +50,12 @@ public class LoggingResultListener extends AbstractReplayResultListener implemen
     if (cause.isPresent()) {
       Optional<String> errorMessage = getMessageForKnownException(cause.get());
       if (errorMessage.isPresent()) {
-        LOG.error("FAILURE: {}: {}", label, errorMessage.get());
+        log.error("FAILURE: {}: {}", label, errorMessage.get());
       } else {
-        LOG.error("FAILURE: {}", label, cause.get());
+        log.error("FAILURE: {}", label, cause.get());
       }
     } else {
-      LOG.error("FAILURE: {}", label);
+      log.error("FAILURE: {}", label);
     }
   }
 }

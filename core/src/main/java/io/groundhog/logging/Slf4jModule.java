@@ -15,26 +15,23 @@
  *
  */
 
-package io.groundhog.logging
+package io.groundhog.logging;
 
-import com.google.common.base.Predicate;
-import com.google.common.testing.AbstractPackageSanityTests
+import com.google.inject.AbstractModule;
 
-import javax.annotation.Nullable;
+import static com.google.inject.matcher.Matchers.any;
 
 /**
- * Package sanity tests for {@link io.groundhog.logging}.
+ * Module to install which enables automatic injection of slf4j loggers into Guice-managed objects (by field injection
+ * only).
+ * <p/>
+ * From https://github.com/dhanji/sitebricks/tree/master/slf4j/src/main/java/com/google/sitebricks/slf4j/.
  *
- * @author Danny Thomas
- * @since 1.0
+ * @author dhanji@gmail.com (Dhanji R. Prasanna)
  */
-class PackageSanityTest extends AbstractPackageSanityTests {
-  PackageSanityTest() {
-    ignoreClasses(new Predicate<Class<?>>() {
-      @Override
-      boolean apply(@Nullable Class<?> input) {
-        input.isAssignableFrom(Slf4jInjectionTypeListener.class)
-      }
-    })
+public class Slf4jModule extends AbstractModule {
+  @Override
+  protected void configure() {
+    bindListener(any(), new Slf4jInjectionTypeListener());
   }
 }

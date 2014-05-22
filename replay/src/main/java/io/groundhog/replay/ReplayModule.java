@@ -3,6 +3,7 @@ package io.groundhog.replay;
 import com.google.common.net.HostAndPort;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
+import io.netty.bootstrap.Bootstrap;
 
 import java.io.File;
 
@@ -29,6 +30,7 @@ public class ReplayModule extends AbstractModule {
     int port = 8080;
     File recordingFile = new File("out/recording.har");
 
+    bind(Bootstrap.class).toInstance(new Bootstrap());
     bind(ReplayResultListener.class).to(LoggingResultListener.class);
     bind(HostAndPort.class).annotatedWith(Names.named("target")).toInstance(HostAndPort.fromParts(hostname, port));
     bind(boolean.class).annotatedWith(Names.named("usessl")).toInstance(false);

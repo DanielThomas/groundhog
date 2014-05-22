@@ -18,7 +18,6 @@
 package io.groundhog.replay;
 
 import com.google.common.base.Throwables;
-import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -42,8 +41,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public final class ReplayClient extends AbstractExecutionThreadService {
-  private static final Logger LOG = LoggerFactory.getLogger(ReplayClient.class);
-
   // The maximum delay for a request before the service pauses reading requests, to prevent excessive number of objects in the dispatcher queue
   private static final int DELAY_LIMIT_MS = 10000;
 
@@ -51,14 +48,16 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private final RequestReader requestReader;
   private final RequestDispatcher dispatcher;
 
+  private Logger log = LoggerFactory.getLogger(ReplayClient.class);
+
   @Inject
-  public ReplayClient(File recordingFile, @Named("target") HostAndPort hostAndPort, @Named("usessl") final boolean useSSL, final ReplayResultListener resultListener) {
+  ReplayClient(Bootstrap bootstrap, File recordingFile, RequestDispatcher dispatcher, @Named("usessl") final boolean useSSL, final ReplayResultListener resultListener) {
     checkNotNull(recordingFile);
+    this.dispatcher = checkNotNull(dispatcher);
     checkNotNull(resultListener);
 
     group = new NioEventLoopGroup();
 
-    Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
@@ -72,7 +71,6 @@ public final class ReplayClient extends AbstractExecutionThreadService {
     } catch (IOException e) {
       throw Throwables.propagate(e);
     }
-    dispatcher = new DefaultRequestDispatcher(bootstrap, hostAndPort, resultListener);
   }
 
   @Override
@@ -80,7 +78,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
     UserAgentRequest firstRequest = requestReader.readRequest();
     long firstRequestTime = firstRequest.getStartedDateTime();
     long timeStartedNanos = System.nanoTime();
-    LOG.debug("Starting replay, first request time (millis) {}, time started (nanos) {}", firstRequestTime, timeStartedNanos);
+    log.debug("Starting replay, first request time (millis) {}, time started (nanos) {}", firstRequestTime, timeStartedNanos);
     dispatcher.queue(new DelayedUserAgentRequest(firstRequest, firstRequestTime, timeStartedNanos, firstRequestTime));
 
     while (isRunning()) {
@@ -89,14 +87,14 @@ public final class ReplayClient extends AbstractExecutionThreadService {
       DelayedUserAgentRequest delayedRequest = new DelayedUserAgentRequest(userAgentRequest, startedDateTime, timeStartedNanos, firstRequestTime);
       long delayMillis = delayedRequest.getDelay(TimeUnit.MILLISECONDS);
       if (DELAY_LIMIT_MS < delayMillis) {
-        LOG.info("Reached read-ahead limit of {}ms (current request delay {}ms). Sleeping for {}ms", DELAY_LIMIT_MS, delayMillis, DELAY_LIMIT_MS);
+        log.info("Reached read-ahead limit of {}ms (current request delay {}ms). Sleeping for {}ms", DELAY_LIMIT_MS, delayMillis, DELAY_LIMIT_MS);
         Thread.sleep(DELAY_LIMIT_MS);
       }
       if (dispatcher.isRunning()) {
         dispatcher.queue(delayedRequest);
       }
       if (requestReader.isLastRequest(userAgentRequest)) {
-        LOG.info("Last request read, performing graceful shutdown of dispatcher");
+        log.info("Last request read, performing graceful shutdown of dispatcher");
         dispatcher.stopAsync();
         dispatcher.awaitTerminated();
         break;
@@ -106,14 +104,14 @@ public final class ReplayClient extends AbstractExecutionThreadService {
 
   @Override
   protected void startUp() throws Exception {
-    LOG.info("Starting dispatcher");
+    log.info("Starting dispatcher");
     dispatcher.startAsync();
     dispatcher.awaitRunning();
   }
 
   @Override
   protected void triggerShutdown() {
-    LOG.info("Forced shutdown requested, clearing dispatcher queue and shutting down dispatcher");
+    log.info("Forced shutdown requested, clearing dispatcher queue and shutting down dispatcher");
     dispatcher.clearQueue();
     dispatcher.stopAsync();
     dispatcher.awaitTerminated();

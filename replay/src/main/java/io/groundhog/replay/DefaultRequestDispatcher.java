@@ -41,8 +41,6 @@ import static com.google.common.base.Preconditions.checkState;
  * @since 1.0
  */
 public class DefaultRequestDispatcher extends AbstractExecutionThreadService implements RequestDispatcher {
-  private static final Logger LOG = LoggerFactory.getLogger(RequestDispatcher.class);
-
   private static final int SKEW_THRESHOLD_MILLIS = 100;
   private static final int CHANNEL_WAIT_DURATION = 5000;
 
@@ -51,6 +49,8 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
   private final DelayQueue<DelayedUserAgentRequest> queue;
   private final HostAndPort hostAndPort;
   private final ReplayResultListener resultListener;
+
+  private Logger log = LoggerFactory.getLogger(RequestDispatcher.class);
 
   @Inject
   DefaultRequestDispatcher(Bootstrap bootstrap, @Named("target") HostAndPort hostAndPort, ReplayResultListener resultListener) {
@@ -75,20 +75,20 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
 
   @Override
   protected void startUp() throws Exception {
-    LOG.info("Dispatcher starting up");
+    log.info("Dispatcher starting up");
   }
 
   @Override
   protected void run() throws Exception {
     long startTime = System.nanoTime();
-    LOG.info("Running request replay");
+    log.info("Running request replay");
     while (isRunning() || !queue.isEmpty()) {
       DelayedUserAgentRequest delayedRequest = queue.poll(SKEW_THRESHOLD_MILLIS, TimeUnit.MILLISECONDS);
       if (null != delayedRequest) {
         long actualTime = System.nanoTime() - startTime;
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
 
-        LOG.debug("Adding request to channel {}", delayedRequest);
+        log.debug("Adding request to channel {}", delayedRequest);
         ChannelFuture future = bootstrap.connect(hostAndPort.getHostText(), hostAndPort.getPort());
         UserAgentRequest request = delayedRequest.getRequest();
         future.addListener(new UserAgentChannelWriter(request, resultListener));
@@ -101,15 +101,15 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
     long skew = actualTime - expectedTime;
     if (Math.abs(skew) > SKEW_THRESHOLD_MILLIS) {
       String message = skew > 0 ? "Dispatcher is behind recorded time by {}ms" : "Dispatcher is ahead of recorded time by {}ms";
-      LOG.warn(message, skew);
+      log.warn(message, skew);
     }
   }
 
   @Override
   protected void shutDown() throws Exception {
-    LOG.info("Dispatcher shutting down");
+    log.info("Dispatcher shutting down");
     while (!channelGroup.isEmpty()) {
-      LOG.info("Waiting for in flight channels to complete...");
+      log.info("Waiting for in flight channels to complete...");
       Thread.sleep(CHANNEL_WAIT_DURATION);
     }
     checkState(queue.isEmpty(), "The request queue should have been drained before shutdown");

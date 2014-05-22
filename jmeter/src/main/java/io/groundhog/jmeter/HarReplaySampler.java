@@ -2,9 +2,11 @@ package io.groundhog.jmeter;
 
 import io.groundhog.base.URIScheme;
 import io.groundhog.replay.ReplayClient;
-import io.groundhog.replay.ReplayResultListener;
 
 import com.google.common.net.HostAndPort;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
 import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.Interruptible;
@@ -41,8 +43,9 @@ public class HarReplaySampler extends AbstractSampler implements TestBean, Threa
   public SampleResult sample(Entry entry) {
     if (null == client) {
       LOG.info("Creating replay client for filename " + filename);
-      ReplayResultListener resultListener = new HarReplayResultListener(results, scheme, HostAndPort.fromParts(host, port));
-      client = new ReplayClient(new File(filename), HostAndPort.fromParts(host, port), URIScheme.HTTPS == scheme, resultListener);
+      Module jmeterModule = new JMeterModule(new File(filename), results, scheme, HostAndPort.fromParts(host, port));
+      Injector injector = Guice.createInjector(new JMeterSlf4jModule(), jmeterModule);
+      client = injector.getInstance(ReplayClient.class);
       client.startAsync();
       client.awaitRunning();
     }

@@ -15,26 +15,22 @@
  *
  */
 
-package io.groundhog.logging
+package io.groundhog.jmeter;
 
-import com.google.common.base.Predicate;
-import com.google.common.testing.AbstractPackageSanityTests
+import com.google.inject.AbstractModule;
 
-import javax.annotation.Nullable;
+import static com.google.inject.matcher.Matchers.any;
 
 /**
- * Package sanity tests for {@link io.groundhog.logging}.
+ * Guice module that binds SLF4J {@link org.slf4j.Logger}s with JMeter compatible loggers.
  *
  * @author Danny Thomas
+ * @see io.groundhog.logging.Slf4jModule
  * @since 1.0
  */
-class PackageSanityTest extends AbstractPackageSanityTests {
-  PackageSanityTest() {
-    ignoreClasses(new Predicate<Class<?>>() {
-      @Override
-      boolean apply(@Nullable Class<?> input) {
-        input.isAssignableFrom(Slf4jInjectionTypeListener.class)
-      }
-    })
+public class JMeterSlf4jModule extends AbstractModule {
+  @Override
+  protected void configure() {
+    bindListener(any(), new JMeterSlf4jInjectionTypeListener());
   }
 }

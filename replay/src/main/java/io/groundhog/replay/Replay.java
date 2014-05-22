@@ -18,6 +18,7 @@
 package io.groundhog.replay;
 
 import io.groundhog.base.Services;
+import io.groundhog.logging.Slf4jModule;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -30,11 +31,8 @@ import org.slf4j.LoggerFactory;
  * @since 1.0
  */
 public class Replay {
-  private static final Logger LOG = LoggerFactory.getLogger(Replay.class);
-
   public static void main(String[] args) throws Exception {
-    Injector injector = Guice.createInjector(new ReplayModule());
-
+    Injector injector = Guice.createInjector(new Slf4jModule(), new ReplayModule());
     final ReplayClient client = injector.getInstance(ReplayClient.class);
     Services.addShutdownHook(client);
     client.startAsync();
