@@ -42,6 +42,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -57,8 +59,6 @@ import static com.google.common.base.Preconditions.*;
  * @since 1.0
  */
 public class UserAgentChannelWriter implements ChannelFutureListener {
-  private static final Logger LOG = LoggerFactory.getLogger(UserAgentRequest.class);
-
   private static final String CONTAINER_SESSION_COOKIE_NAME = "JSESSIONID";
   private static final String APPLICATION_SESSION_COOKIE_NAME = "session_id";
 
@@ -86,8 +86,12 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
     }
   };
 
+  private static final String GZIP_OR_DEFLATE = HttpHeaders.Values.GZIP + "," + HttpHeaders.Values.DEFLATE;
   private static final LoadingCache<HashCode, UserAgent> UA;
   private static final UserAgent NON_PERSISTENT_UA;
+  private static final String HOST;
+
+  private Logger log;
 
   static {
     CacheLoader<HashCode, UserAgent> loader = new CacheLoader<HashCode, UserAgent>() {
@@ -98,48 +102,60 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
     };
     UA = CacheBuilder.newBuilder().build(loader);
     NON_PERSISTENT_UA = new DefaultUserAgent();
+    String localHostName;
+    try {
+      localHostName = InetAddress.getLocalHost().getHostName();
+    } catch (UnknownHostException e) {
+      localHostName = "localhost";
+    }
+    HOST = localHostName;
   }
 
   private final UserAgentRequest uaRequest;
   private final ReplayResultListener resultListener;
 
-  public UserAgentChannelWriter(UserAgentRequest uaRequest, ReplayResultListener resultListener) {
+  public UserAgentChannelWriter(UserAgentRequest uaRequest, ReplayResultListener resultListener, Logger log) {
     this.uaRequest = checkNotNull(uaRequest);
     this.resultListener = checkNotNull(resultListener);
+    this.log = checkNotNull(log);
   }
 
   @Override
   public void operationComplete(ChannelFuture future) throws Exception {
     checkNotNull(future);
-    HttpRequest request = copyRequest(uaRequest);
-    UserAgent userAgent = getUserAgent();
-    HttpPostRequestEncoder encoder = null;
-    Optional<HttpArchive.PostData> postData = uaRequest.getPostData();
-    if (postData.isPresent()) {
-      String mimeType = postData.get().getMimeType();
-      if (MediaType.parse(mimeType).is(MediaType.ANY_TEXT_TYPE)) {
-        request = createTextPlainRequest(request, userAgent);
-      } else {
-        encoder = new HttpPostRequestEncoder(request, mimeType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA));
-        request = preparePostRequest(request, userAgent, encoder);
+    try {
+      HttpRequest request = copyRequest(uaRequest);
+      UserAgent userAgent = getUserAgent();
+      HttpPostRequestEncoder encoder = null;
+      Optional<HttpArchive.PostData> postData = uaRequest.getPostData();
+      if (postData.isPresent()) {
+        String mimeType = postData.get().getMimeType();
+        if (MediaType.parse(mimeType).is(MediaType.ANY_TEXT_TYPE)) {
+          request = createTextPlainRequest(request, userAgent);
+        } else {
+          encoder = new HttpPostRequestEncoder(request, mimeType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA));
+          request = preparePostRequest(request, userAgent, encoder);
+        }
       }
-    }
 
-    HttpResponse expectedResponse = uaRequest.getExpectedResponse().get();
-    boolean blocking = getSetSessionCookie(expectedResponse).isPresent();
-    if (request instanceof FullHttpRequest) {
-      request = new ReplayFullHttpRequest((FullHttpRequest) request, expectedResponse, userAgent, blocking);
-    } else {
-      request = new ReplayHttpRequest(request, expectedResponse, userAgent, blocking);
-    }
+      HttpResponse expectedResponse = uaRequest.getExpectedResponse().get();
+      boolean blocking = getSetSessionCookie(expectedResponse).isPresent();
+      if (request instanceof FullHttpRequest) {
+        request = new ReplayFullHttpRequest((FullHttpRequest) request, expectedResponse, userAgent, blocking);
+      } else {
+        request = new ReplayHttpRequest(request, expectedResponse, userAgent, blocking);
+      }
 
-    ChannelWriteFailureListener failureListener = new ChannelWriteFailureListener(request);
-    Channel channel = future.channel();
-    channel.write(request).addListener(failureListener);
-    if (null != encoder && encoder.isChunked()) {
-      channel.writeAndFlush(encoder).addListener(failureListener);
-    } else {
-      channel.flush();
+      ChannelWriteFailureListener failureListener = new ChannelWriteFailureListener(request);
+      Channel channel = future.channel();
+      channel.write(request).addListener(failureListener);
+      if (null != encoder && encoder.isChunked()) {
+        channel.writeAndFlush(encoder).addListener(failureListener);
+      } else {
+        channel.flush();
+      }
+    } catch (Exception e) {
+      resultListener.failure(uaRequest, Optional.<Throwable>of(e));
     }
   }
 
@@ -178,7 +194,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
       if (setSessionCookie.isPresent()) {
         HashCode newHash = getCookieValueHash(setSessionCookie.get());
         if (!currentHash.equals(newHash)) {
-          LOG.info("Detected user agent cookie hash change in replay data: {} -> {}", currentHash, newHash);
+          log.info("Detected user agent cookie hash change in replay data: {} -> {}", currentHash, newHash);
           UA.put(newHash, UA.getUnchecked(currentHash));
           UA.invalidate(currentHash);
           currentHash = newHash;
@@ -187,7 +203,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
       cacheKey = Optional.of(currentHash);
     } else if (setSessionCookie.isPresent()) {
       HashCode newUserAgent = getCookieValueHash(setSessionCookie.get());
-      LOG.info("Detected new user agent {}", newUserAgent);
+      log.info("Detected new user agent {}", newUserAgent);
       cacheKey = Optional.of(newUserAgent);
     }
     return cacheKey.isPresent() ? UA.getUnchecked(cacheKey.get()) : NON_PERSISTENT_UA;
@@ -221,7 +237,7 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
       Optional<HttpArchive.Param> override = userAgent.getOverrideParam(name);
       if (override.isPresent()) {
         HttpArchive.Param overrideParam = override.get();
-        LOG.debug("Overriding {} with {}", param, overrideParam);
+        log.debug("Overriding {} with {}", param, overrideParam);
         it.set(overrideParam);
       }
     }
@@ -232,13 +248,15 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
     HttpHeaders headers = request.headers();
     headers.add(uaRequest.headers());
 
-    headers.remove(HttpHeaders.Names.CONNECTION);
-    headers.remove(HttpHeaders.Names.COOKIE);
     headers.remove(HttpHeaders.Names.HOST);
+    headers.remove(HttpHeaders.Names.CONNECTION);
+    headers.remove(HttpHeaders.Names.ACCEPT_ENCODING);
+    headers.remove(HttpHeaders.Names.COOKIE);
     headers.remove(HttpHeaders.Names.VIA);
 
+    headers.add(HttpHeaders.Names.HOST, HOST);
     headers.add(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
-    headers.add(HttpHeaders.Names.HOST, "localhost");
+    headers.add(HttpHeaders.Names.ACCEPT_ENCODING, GZIP_OR_DEFLATE);
   }
 
   /**
@@ -254,10 +272,10 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
         if (cookie.isPresent()) {
           return text.replaceFirst("httpSessionId=.*", "httpSessionId=" + cookie.get().getValue());
         } else {
-          LOG.warn("Could not update DWR request content. No container session cookie found for session {}", userAgent);
+          log.warn("Could not update DWR request content. No container session cookie found for session {}", userAgent);
         }
       } else {
-        LOG.debug("Unable to update DWR request content for an non-persistent user agent");
+        log.debug("Unable to update DWR request content for an non-persistent user agent");
       }
     }
     return text;

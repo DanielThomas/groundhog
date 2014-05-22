@@ -89,7 +89,7 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
         ChannelFuture future = bootstrap.connect(hostAndPort.getHostText(), hostAndPort.getPort());
         UserAgentRequest request = delayedRequest.getRequest();
-        future.addListener(new UserAgentChannelWriter(request, resultListener));
+        future.addListener(new UserAgentChannelWriter(request, resultListener, log));
         channelGroup.add(future.channel());
       }
     }

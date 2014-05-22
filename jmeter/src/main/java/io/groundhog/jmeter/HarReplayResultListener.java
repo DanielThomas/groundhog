@@ -87,7 +87,7 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
   private void queueResult(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
                            long start, long end, Optional<Document> document, Optional<String> failureReason) {
     SampleResult result = SampleResult.createTestSample(start, end);
-    result.setSamplerData(request.toString());
+    result.setSamplerData(request.getMethod() + " " + request.getUri() + " " + request.getProtocolVersion());
     boolean hasFailure = failureReason.isPresent();
     result.setSuccessful(!hasFailure);
     if (hasFailure) {
