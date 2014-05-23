@@ -25,28 +25,25 @@ import spock.lang.Specification
  * Tests for {@link DefaultCaptureHttpDecoder}.
  */
 class DefaultCaptureHttpDecoderTest extends Specification {
-  @Ignore // copied from proxy tests, as this copy is now made here. Needs to be rewritten
   def 'defensive copy of request is made, preventing proxy from modifying recorded request'() {
-    def decoder = Mock(CaptureHttpDecoder)
-    //def captureFilter = new CaptureHttpFilter(decoder, Mock(CaptureController), 'http', 'localhost', 8080)
+    def writer = Mock(CaptureWriter)
+    def decoder = new DefaultCaptureHttpDecoder(writer, Mock(File))
     def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, 'http://localhost/')
     def header = HttpHeaders.Names.CONNECTION
     request.headers().add(header, HttpHeaders.Values.KEEP_ALIVE)
     def response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
 
-    HttpObject decodedObject = null;
+    CaptureRequest captureRequest = null;
 
     when:
-    captureFilter.requestPre(request)
+    decoder.request(request)
+    decoder.request(DefaultLastHttpContent.EMPTY_LAST_CONTENT)
+    decoder.response(response)
+    decoder.response(DefaultLastHttpContent.EMPTY_LAST_CONTENT)
     request.headers().remove(header)
-    captureFilter.responsePre(response)
-    captureFilter.responsePost(DefaultLastHttpContent.EMPTY_LAST_CONTENT)
 
     then:
-    1 * decoder.request({ decodedObject = it } as HttpObject)
-    decodedObject instanceof DefaultHttpRequest
-    def capturedRequest = (HttpRequest) decodedObject
-    !capturedRequest.is(request)
-    capturedRequest.headers().get(HttpHeaders.Names.CONNECTION) == HttpHeaders.Values.KEEP_ALIVE
+    1 * writer.writeAsync({ captureRequest = it } as CaptureRequest)
+    captureRequest.request.headers().get(HttpHeaders.Names.CONNECTION) == HttpHeaders.Values.KEEP_ALIVE
   }
 }
