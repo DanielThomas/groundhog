@@ -62,7 +62,7 @@ import static com.google.common.base.Preconditions.*;
 public class HarFileCaptureWriter extends AbstractExecutionThreadService implements CaptureWriter {
   private static final Logger LOG = LoggerFactory.getLogger(CaptureWriter.class);
 
-  private static final Set<String> EXCLUDED_HEADERS = Sets.newHashSet(HttpHeaders.Names.HOST, HttpHeaders.Names.VIA);
+  private static final Set<String> MINIMUM_RESPONSE_HEADERS = Sets.newHashSet(HttpHeaders.Names.SET_COOKIE, HttpHeaders.Names.LOCATION);
   private static final int DEFAULT_HTTP_PORT = 80;
   private static final int DEFAULT_HTTPS_PORT = 443;
   private static final String HTTP_SCHEME = "http";
@@ -279,7 +279,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
       @Override
       public boolean apply(@Nullable Map.Entry<String, String> input) {
         String name = null == input ? "" : input.getKey();
-        return EXCLUDED_HEADERS.contains(name) || (minimumOnly && !HttpArchive.MINIMUM_RESPONSE_HEADERS.contains(name));
+        return minimumOnly && !MINIMUM_RESPONSE_HEADERS.contains(name);
       }
     };
 
