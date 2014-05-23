@@ -60,7 +60,7 @@ import static com.google.common.base.Preconditions.*;
  */
 public final class UserAgentChannelWriter implements ChannelFutureListener {
   private static final String CONTAINER_SESSION_COOKIE_NAME = "JSESSIONID";
-  private static final String APPLICATION_SESSION_COOKIE_NAME = "session_id";
+  public static final String APPLICATION_SESSION_COOKIE_NAME = "session_id";
 
   private static final Predicate<Cookie> IS_APPLICATION_SESSION_COOKIE = new Predicate<Cookie>() {
     @Override
@@ -107,6 +107,7 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
 
   private final UserAgentRequest uaRequest;
   private final ReplayResultListener resultListener;
+  private Optional<UserAgent> userAgent = Optional.absent();
 
   @Inject
   UserAgentChannelWriter(@Assisted UserAgentRequest uaRequest,
@@ -123,6 +124,7 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
     try {
       HttpRequest request = copyRequest(uaRequest);
       UserAgent userAgent = getUserAgent();
+      this.userAgent = Optional.of(userAgent);
       HttpPostRequestEncoder encoder = null;
       Optional<HttpArchive.PostData> postData = uaRequest.getPostData();
       if (postData.isPresent()) {
@@ -152,7 +154,7 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
         channel.flush();
       }
     } catch (Exception e) {
-      resultListener.failure(uaRequest, Optional.<Throwable>of(e));
+      resultListener.failure(uaRequest, userAgent, Optional.<Throwable>of(e));
     }
   }
 
@@ -184,38 +186,43 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
   private UserAgent getUserAgent() {
     Optional<Cookie> sessionCookie = getSessionCookie();
     Optional<Cookie> setSessionCookie = getSetSessionCookie(uaRequest.getExpectedResponse().get());
-
-    Optional<HashCode> cacheKey = Optional.absent();
-    if (sessionCookie.isPresent()) {
-      HashCode currentHash = getCookieValueHash(sessionCookie.get());
-      if (setSessionCookie.isPresent()) {
-        HashCode newHash = getCookieValueHash(setSessionCookie.get());
-        if (!currentHash.equals(newHash)) {
-          log.info("Detected user agent cookie hash change in replay data: {} -> {}", currentHash, newHash);
-          userAgentCache.put(newHash, userAgentCache.getUnchecked(currentHash));
-          userAgentCache.invalidate(currentHash);
-          currentHash = newHash;
+    Optional<UserAgent> requestUserAgent = Optional.absent();
+    if (setSessionCookie.isPresent()) {
+      HashCode newKey = getCookieValueHash(setSessionCookie.get());
+      if (sessionCookie.isPresent()) {
+        HashCode existingKey = getCookieValueHash(sessionCookie.get());
+        if (!existingKey.equals(newKey)) {
+          log.debug("Detected user agent cookie change. Adding synonym {} -> {} (new -> existing)",
+              newKey, existingKey);
+          userAgentCache.put(newKey, userAgentCache.getUnchecked(existingKey));
         }
+      } else {
+        log.debug("Detected new user agent. Hash {}, cookie {}", newKey, setSessionCookie.get());
+        requestUserAgent = Optional.of(userAgentCache.getUnchecked(newKey));
       }
-      cacheKey = Optional.of(currentHash);
-    } else if (setSessionCookie.isPresent()) {
-      HashCode newUserAgent = getCookieValueHash(setSessionCookie.get());
-      log.info("Detected new user agent {}", newUserAgent);
-      cacheKey = Optional.of(newUserAgent);
     }
-    return cacheKey.isPresent() ? userAgentCache.getUnchecked(cacheKey.get()) : NON_PERSISTENT_UA;
+    if (sessionCookie.isPresent()) {
+      HashCode existingKey = getCookieValueHash(sessionCookie.get());
+      requestUserAgent = Optional.fromNullable(userAgentCache.getIfPresent(existingKey));
+      if (!requestUserAgent.isPresent()) {
+        log.debug("Could not find existing user agent for {}, request {}", existingKey, uaRequest);
+      }
+    }
+    userAgent = requestUserAgent.isPresent() ? requestUserAgent : Optional.of(NON_PERSISTENT_UA);
+    return userAgent.get();
   }
 
   private Optional<Cookie> getSessionCookie() {
     return FluentIterable.from(uaRequest.getCookies()).filter(IS_APPLICATION_SESSION_COOKIE).first();
   }
 
-  private Optional<Cookie> getSetSessionCookie(HttpResponse response) {
+  @VisibleForTesting
+  static Optional<Cookie> getSetSessionCookie(HttpResponse response) {
     List<String> headers = response.headers().getAll(HttpHeaders.Names.SET_COOKIE);
     return FluentIterable.from(headers).transform(HEADER_TO_COOKIE).filter(IS_APPLICATION_SESSION_COOKIE).last();
   }
 
-  private HashCode getCookieValueHash(Cookie cookie) {
+  private static HashCode getCookieValueHash(Cookie cookie) {
     return Hashing.goodFastHash(64).hashString(cookie.getValue(), Charsets.UTF_8);
   }
 
@@ -227,15 +234,17 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
   }
 
   private List<HttpArchive.Param> getPostParamsWithOverrides(List<HttpArchive.Param> params, UserAgent userAgent) {
-    ListIterator<HttpArchive.Param> it = params.listIterator();
-    while (it.hasNext()) {
-      HttpArchive.Param param = it.next();
-      String name = param.getName();
-      Optional<HttpArchive.Param> override = userAgent.getOverrideParam(name);
-      if (override.isPresent()) {
-        HttpArchive.Param overrideParam = override.get();
-        log.debug("Overriding {} with {}", param, overrideParam);
-        it.set(overrideParam);
+    if (userAgent.isPersistent()) {
+      ListIterator<HttpArchive.Param> it = params.listIterator();
+      while (it.hasNext()) {
+        HttpArchive.Param param = it.next();
+        String name = param.getName();
+        Optional<HttpArchive.Param> override = userAgent.getOverrideParam(name);
+        if (override.isPresent()) {
+          HttpArchive.Param overrideParam = override.get();
+          log.debug("Overriding {} with {}", param, overrideParam);
+          it.set(overrideParam);
+        }
       }
     }
     return params;
@@ -288,7 +297,7 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
     @Override
     public void operationComplete(ChannelFuture future) throws Exception {
       if (!future.isSuccess()) {
-        resultListener.failure(request, Optional.fromNullable(future.cause()));
+        resultListener.failure(request, userAgent, Optional.fromNullable(future.cause()));
       }
     }
   }

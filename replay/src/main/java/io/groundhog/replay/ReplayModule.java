@@ -13,7 +13,7 @@ import java.io.File;
 public final class ReplayModule extends AbstractReplayModule {
   @Override
   protected void configureReplay() {
-    File captureFile = new File("/tmp/Dannys-MacBook-Pro.local-1400776763449/capture.har.gz");
+    File captureFile = new File("/tmp/Dannys-MacBook-Pro.local-1400874087859/capture.har.gz");
     String hostname = "localhost";
     int port = 8080;
     bind(File.class).toInstance(captureFile);

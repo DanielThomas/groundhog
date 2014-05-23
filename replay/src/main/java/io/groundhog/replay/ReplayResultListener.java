@@ -10,11 +10,11 @@ import org.jsoup.nodes.Document;
  * @since 1.0
  */
 public interface ReplayResultListener {
-  void success(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
-                      long start, long end, Optional<Document> document);
+  void success(HttpRequest request, HttpResponse response, UserAgent userAgent, int bytesRead, long start, long end,
+               Optional<Document> document);
 
-  void failure(String failureReason, HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
+  void failure(String failureReason, HttpRequest request, HttpResponse response, UserAgent userAgent, int bytesRead,
                long start, long end, Optional<Document> document);
 
-  void failure(HttpRequest request, Optional<Throwable> cause);
+  void failure(HttpRequest request, Optional<UserAgent> userAgent, Optional<Throwable> cause);
 }

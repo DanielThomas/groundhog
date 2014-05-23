@@ -45,7 +45,6 @@ import static com.google.common.base.Preconditions.checkState;
  * @since 1.0
  */
 public final class DefaultRequestDispatcher extends AbstractExecutionThreadService implements RequestDispatcher {
-  private static final int SKEW_THRESHOLD_MILLIS = 100;
   private static final int CHANNEL_WAIT_DURATION = 5000;
 
   private final Bootstrap bootstrap;
@@ -116,7 +115,7 @@ public final class DefaultRequestDispatcher extends AbstractExecutionThreadServi
   private void checkSkew(long actualTime, long expectedTime) {
     long skew = actualTime - expectedTime;
     if (Math.abs(skew) > SKEW_THRESHOLD_MILLIS) {
-      String message = skew > 0 ? "Dispatcher is behind recorded time by {}ms" : "Dispatcher is ahead of recorded time by {}ms";
+      String message = skew > 0 ? "Dispatcher is behind simulated time by {}ms" : "Dispatcher is ahead of simulated time by {}ms";
       log.warn(message, skew);
     }
   }

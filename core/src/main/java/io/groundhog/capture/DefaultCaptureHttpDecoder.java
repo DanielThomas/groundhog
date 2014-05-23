@@ -83,7 +83,7 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     if (httpObject instanceof HttpRequest) {
       startedDateTime = System.currentTimeMillis();
       request = captureRequest((HttpRequest) httpObject);
-    } else if (httpObject instanceof HttpContent) {
+    } else if (httpObject instanceof HttpContent && null != request) {
       HttpContent chunk = ((HttpContent) httpObject);
       HttpMethod method = request.getMethod();
       MediaType mediaType = getMediaType(request);

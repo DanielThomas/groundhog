@@ -21,6 +21,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
 
 /**
  * @author Danny Thomas
@@ -34,6 +35,7 @@ public abstract class AbstractReplayModule extends AbstractModule {
     bind(RequestReader.class).to(DefaultRequestReader.class);
     install(new FactoryModuleBuilder().implement(ChannelFutureListener.class, UserAgentChannelWriter.class).build(UserAgentChannelWriterFactory.class));
     install(new FactoryModuleBuilder().implement(UserAgent.class, DefaultUserAgent.class).build(UserAgentFactory.class));
+    install(new FactoryModuleBuilder().implement(ChannelHandler.class, ReplayHandler.class).build(ReplayHandlerFactory.class));
     configureReplay();
   }
 

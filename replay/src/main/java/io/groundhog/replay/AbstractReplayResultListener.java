@@ -19,6 +19,7 @@ package io.groundhog.replay;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
+import com.google.common.hash.HashCode;
 import com.google.common.net.MediaType;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -77,11 +78,9 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
     return label.toString();
   }
 
-  protected static String getLabel(HttpRequest request, HttpResponse response, HttpResponse expectedResponse,
-                                   Optional<Document> document) {
+  protected static String getLabel(HttpRequest request, HttpResponse response, Optional<Document> document) {
     checkNotNull(request);
     checkNotNull(response);
-    checkNotNull(expectedResponse);
     checkNotNull(document);
     StringBuilder label = new StringBuilder();
     String headerLabel = request.headers().get(TRANSACTION_LABEL_HEADER);
@@ -128,5 +127,14 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
       return "Font";
     }
     return "Other";
+  }
+
+  protected static String getUserAgentKey(Optional<UserAgent> userAgent) {
+    return userAgent.isPresent() ? getUserAgentKey(userAgent.get()) : "";
+  }
+
+  protected static String getUserAgentKey(UserAgent userAgent) {
+    HashCode key = userAgent.getKey();
+    return key.asInt() == 0 ? "-" : key.toString();
   }
 }

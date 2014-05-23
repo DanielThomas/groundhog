@@ -18,11 +18,7 @@
 package io.groundhog.replay
 
 import com.google.common.cache.LoadingCache
-import io.netty.handler.codec.http.DefaultHttpRequest
-import io.netty.handler.codec.http.HttpHeaders
-import io.netty.handler.codec.http.HttpMethod
-import io.netty.handler.codec.http.HttpVersion
-import org.slf4j.Logger
+import io.netty.handler.codec.http.*
 import spock.lang.Specification
 
 /**
@@ -42,5 +38,23 @@ class UserAgentChannelWriterTest extends Specification {
 
     then:
     copiedRequest.headers().get(HttpHeaders.Names.CONNECTION) == "close"
+  }
+
+  def 'session cookie is not present on a response with no headers'() {
+    def response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+    expect:
+    !UserAgentChannelWriter.getSetSessionCookie(response).isPresent()
+  }
+
+  def 'session cookie is present on a response with application cookie header'() {
+    def response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)
+    response.headers().add(HttpHeaders.Names.SET_COOKIE, new DefaultCookie(UserAgentChannelWriter.APPLICATION_SESSION_COOKIE_NAME, "value"))
+
+    when:
+    def cookie = UserAgentChannelWriter.getSetSessionCookie(response)
+
+    then:
+    cookie.isPresent()
+    cookie.get().value == "value"
   }
 }

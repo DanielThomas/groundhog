@@ -35,6 +35,8 @@ import org.jsoup.nodes.Attributes;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -43,7 +45,7 @@ import java.util.Set;
  * @author Danny Thomas
  * @since 1.0
  */
-public final class UserAgentHandler extends ChannelDuplexHandler {
+public class UserAgentHandler extends ChannelDuplexHandler {
   /**
    * POST fields to be overridden with values parsed from received documents.
    * <p/>
@@ -51,6 +53,7 @@ public final class UserAgentHandler extends ChannelDuplexHandler {
    */
   private static final Set<String> OVERRIDE_POST_FIELDS = Sets.newHashSet("blackboard.platform.security.NonceUtil.nonce");
 
+  private Logger log = LoggerFactory.getLogger(UserAgentHandler.class);
   private ReplayHttpRequest request;
   private UserAgent userAgent;
   private HttpResponse response;
@@ -63,19 +66,22 @@ public final class UserAgentHandler extends ChannelDuplexHandler {
       request = (ReplayHttpRequest) msg;
       userAgent = request.getUserAgent();
       if (userAgent.isPersistent() && request.isBlocking()) {
+        log.debug("Attempting to acquire block for {}, request {}", userAgent, request.getUri());
         userAgent.tryBlock(250);
       }
       setRequestCookies();
     }
-
+    log.trace("Writing request {} for user agent {}", request.getUri(), userAgent);
     super.write(ctx, msg, promise);
   }
 
   public void setRequestCookies() {
-    Set<Cookie> cookies = userAgent.getCookiesForUri(request.getUri());
-    String encodedCookies = ClientCookieEncoder.encode(cookies);
-    if (!encodedCookies.isEmpty()) {
-      request.headers().add(HttpHeaders.Names.COOKIE, encodedCookies);
+    if (userAgent.isPersistent()) {
+      Set<Cookie> cookies = userAgent.getCookiesForUri(request.getUri());
+      String encodedCookies = ClientCookieEncoder.encode(cookies);
+      if (!encodedCookies.isEmpty()) {
+        request.headers().add(HttpHeaders.Names.COOKIE, encodedCookies);
+      }
     }
   }
 
@@ -85,9 +91,7 @@ public final class UserAgentHandler extends ChannelDuplexHandler {
       response = (HttpResponse) msg;
       if (userAgent.isPersistent()) {
         parseCookies();
-        if (request.isBlocking()) {
-          userAgent.releaseBlock();
-        }
+        releaseIfBlocking();
       }
     } else if (msg instanceof HttpContent) {
       parseDocument((HttpContent) msg);
@@ -99,8 +103,13 @@ public final class UserAgentHandler extends ChannelDuplexHandler {
         return;
       }
     }
-
     super.channelRead(ctx, msg);
+  }
+
+  private void releaseIfBlocking() {
+    if (request.isBlocking()) {
+      userAgent.releaseBlock();
+    }
   }
 
   private void parseCookies() {
@@ -145,5 +154,11 @@ public final class UserAgentHandler extends ChannelDuplexHandler {
       }
     }
     userAgent.setOverridePostValues(params);
+  }
+
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    releaseIfBlocking();
+    super.exceptionCaught(ctx, cause);
   }
 }

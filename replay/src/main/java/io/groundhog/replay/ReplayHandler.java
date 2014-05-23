@@ -18,6 +18,7 @@
 package io.groundhog.replay;
 
 import com.google.common.base.Optional;
+import com.google.inject.assistedinject.Assisted;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
@@ -25,6 +26,8 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.jsoup.nodes.Document;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +40,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class ReplayHandler extends ChannelDuplexHandler {
   private final ReplayResultListener resultListener;
+  private final UserAgentHandler userAgentHandler;
 
   private ReplayHttpRequest request;
   private HttpResponse response;
@@ -44,8 +48,11 @@ public final class ReplayHandler extends ChannelDuplexHandler {
   private long started;
   private final AtomicInteger bytesRead = new AtomicInteger();
 
-  public ReplayHandler(ChannelPipeline pipeline, ReplayResultListener resultListener, boolean useSSL) throws Exception {
+  @Inject
+  ReplayHandler(@Assisted ChannelPipeline pipeline, UserAgentHandler userAgentHandler, ReplayResultListener resultListener,
+                @Named("usessl") boolean useSSL) throws Exception {
     checkNotNull(pipeline);
+    this.userAgentHandler = checkNotNull(userAgentHandler);
     this.resultListener = checkNotNull(resultListener);
     initPipeline(pipeline, useSSL);
   }
@@ -62,7 +69,7 @@ public final class ReplayHandler extends ChannelDuplexHandler {
     p.addLast("codec", new HttpClientCodec());
     p.addLast("inflater", new HttpContentDecompressor());
     p.addLast("chunkedWriter", new ChunkedWriteHandler());
-    p.addLast("ua", new UserAgentHandler());
+    p.addLast("ua", userAgentHandler);
     p.addLast("replay", this);
   }
 
@@ -91,10 +98,11 @@ public final class ReplayHandler extends ChannelDuplexHandler {
       long ended = System.currentTimeMillis();
       Optional<Document> document = ((ReplayLastHttpContent) msg).getDocument();
       Optional<String> failure = getFailure(response, expectedResponse);
+      UserAgent userAgent = request.getUserAgent();
       if (failure.isPresent()) {
-        resultListener.failure(failure.get(), request, response, expectedResponse, bytesRead.get(), started, ended, document);
+        resultListener.failure(failure.get(), request, response, userAgent, bytesRead.get(), started, ended, document);
       } else {
-        resultListener.success(request, response, expectedResponse, bytesRead.get(), started, ended, document);
+        resultListener.success(request, response, userAgent, bytesRead.get(), started, ended, document);
       }
     }
   }
@@ -124,7 +132,7 @@ public final class ReplayHandler extends ChannelDuplexHandler {
     //noinspection ThrowableResultOfMethodCallIgnored
     checkNotNull(cause);
     HttpRequest failedRequest = null == request ? new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "No HTTP request written") : request;
-    resultListener.failure(failedRequest, Optional.of(cause));
+    resultListener.failure(failedRequest, Optional.of(request.getUserAgent()), Optional.of(cause));
     ctx.close();
   }
 

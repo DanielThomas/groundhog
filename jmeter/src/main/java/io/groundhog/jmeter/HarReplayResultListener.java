@@ -19,6 +19,7 @@ package io.groundhog.jmeter;
 
 import io.groundhog.base.URIScheme;
 import io.groundhog.replay.AbstractReplayResultListener;
+import io.groundhog.replay.UserAgent;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -54,18 +55,20 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
   }
 
   @Override
-  public void success(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
-                      long start, long end, Optional<Document> document) {
-    queueResult(request, response, expectedResponse, bytesRead, start, end, document, Optional.<String>absent());
+  public void success(HttpRequest request, HttpResponse response, UserAgent userAgent,
+                      int bytesRead, long start, long end, Optional<Document> document) {
+    queueResult(request, response, userAgent, bytesRead, start, end, document, Optional.<String>absent());
   }
 
   @Override
-  public void failure(String failureReason, HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead, long start, long end, Optional<Document> document) {
-    queueResult(request, response, expectedResponse, bytesRead, start, end, document, Optional.of(failureReason));
+  public void failure(String failureReason, HttpRequest request, HttpResponse response, UserAgent userAgent,
+                      int bytesRead, long start, long end, Optional<Document> document) {
+    queueResult(request, response, userAgent, bytesRead, start, end, document, Optional.of(failureReason));
   }
 
   @Override
-  public void failure(HttpRequest request, Optional<Throwable> cause) {
+  public void failure(HttpRequest request, Optional<UserAgent> userAgent, Optional<Throwable> cause) {
+    checkNotNull(userAgent);
     SampleResult result = SampleResult.createTestSample(0);
     result.setSuccessful(false);
     result.setSampleLabel(getLabel(request));
@@ -84,8 +87,9 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
     resultQueue.add(result);
   }
 
-  private void queueResult(HttpRequest request, HttpResponse response, HttpResponse expectedResponse, int bytesRead,
-                           long start, long end, Optional<Document> document, Optional<String> failureReason) {
+  private void queueResult(HttpRequest request, HttpResponse response, UserAgent userAgent, int bytesRead, long start,
+                           long end, Optional<Document> document, Optional<String> failureReason) {
+    checkNotNull(userAgent);
     SampleResult result = SampleResult.createTestSample(start, end);
     result.setSamplerData(request.getMethod() + " " + request.getUri() + " " + request.getProtocolVersion());
     boolean hasFailure = failureReason.isPresent();
@@ -98,7 +102,7 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
       result.setResponseCode(String.valueOf(status.code()));
       result.setResponseMessage(status.reasonPhrase());
     }
-    result.setSampleLabel(getLabel(request, response, expectedResponse, document));
+    result.setSampleLabel(getLabel(request, response, document));
     if (document.isPresent()) {
       Document responseData = document.get();
       result.setResponseData(responseData.outerHtml(), responseData.outputSettings().charset().name());

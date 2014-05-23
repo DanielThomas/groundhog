@@ -30,8 +30,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public final class DelayedUserAgentRequest implements Delayed {
-  private static final int WARMUP_TIME = 250;
-
   private final UserAgentRequest request;
   private final long startedDateTime;
   private final long timeReplayStartedNanos;
@@ -39,7 +37,7 @@ public final class DelayedUserAgentRequest implements Delayed {
 
   public DelayedUserAgentRequest(UserAgentRequest request, long startedDateTime, long timeReplayStartedNanos, long firstRequestTime) {
     this.request = checkNotNull(request);
-    this.startedDateTime = startedDateTime + WARMUP_TIME;
+    this.startedDateTime = startedDateTime;
     this.timeReplayStartedNanos = timeReplayStartedNanos;
     this.firstRequestTime = firstRequestTime;
   }
@@ -75,5 +73,4 @@ public final class DelayedUserAgentRequest implements Delayed {
   public UserAgentRequest getRequest() {
     return request;
   }
-
 }

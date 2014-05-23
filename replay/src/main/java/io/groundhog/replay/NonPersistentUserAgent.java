@@ -19,7 +19,9 @@ package io.groundhog.replay;
 
 import io.groundhog.har.HttpArchive;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
+import com.google.common.hash.HashCode;
 import io.netty.handler.codec.http.Cookie;
 
 import java.util.Collection;
@@ -32,6 +34,13 @@ import java.util.Set;
  * @since 1.0
  */
 public final class NonPersistentUserAgent implements UserAgent {
+  private static final HashCode NON_PERSISTENT_HASH = HashCode.fromInt(0);
+
+  @Override
+  public HashCode getKey() {
+    return NON_PERSISTENT_HASH;
+  }
+
   @Override
   public void tryBlock(long timeout) {
     throw unsupportedOperation();
@@ -69,5 +78,13 @@ public final class NonPersistentUserAgent implements UserAgent {
 
   private UnsupportedOperationException unsupportedOperation() {
     return new UnsupportedOperationException("This is a non-persistent UA. This operation is not supported");
+  }
+
+  @Override
+  public String toString() {
+    Objects.ToStringHelper helper = Objects.toStringHelper(this);
+    helper.add("persistent", isPersistent());
+    helper.add("key", NON_PERSISTENT_HASH);
+    return helper.toString();
   }
 }

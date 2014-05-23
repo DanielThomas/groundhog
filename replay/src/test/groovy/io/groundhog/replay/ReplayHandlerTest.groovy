@@ -30,7 +30,7 @@ import spock.lang.Specification
  */
 class ReplayHandlerTest extends Specification {
   def listener = Mock(ReplayResultListener)
-  def handler = new ReplayHandler(Mock(ChannelPipeline), listener, false)
+  def handler = new ReplayHandler(Mock(ChannelPipeline), Mock(UserAgentHandler), listener, false)
 
   def 'a response with a new instance of an equal response status is successful'() {
     given:

@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.assistedinject.Assisted;
 import io.netty.handler.codec.http.Cookie;
 import org.slf4j.Logger;
@@ -44,7 +45,12 @@ public final class DefaultUserAgent implements UserAgent {
     this.key = checkNotNull(key);
     cookies = Sets.newLinkedHashSet();
     postParamOverrides = Maps.newHashMap();
-    block = new Semaphore(1);
+    block = new Semaphore(1, true);
+  }
+
+  @Override
+  public HashCode getKey() {
+    return key;
   }
 
   @Override
@@ -58,12 +64,10 @@ public final class DefaultUserAgent implements UserAgent {
   @Override
   public void tryBlock(long timeout) {
     try {
-      log.debug("Attempting to acquire block for {}", this);
-      if (block.tryAcquire(timeout, TimeUnit.MILLISECONDS)) {
-        log.debug("Blocking operations for {}", this);
-      } else {
-        log.warn("Timeout during block acquire for {}, queue length {}", this, block.getQueueLength());
+      if (!block.tryAcquire(timeout, TimeUnit.MILLISECONDS)) {
         block.release();
+        int queueLength = block.getQueueLength();
+        throw new UncheckedTimeoutException("Timeout during block acquire for " + key + ", queue length " + queueLength);
       }
     } catch (InterruptedException e) {
       throw Throwables.propagate(e);
@@ -73,7 +77,6 @@ public final class DefaultUserAgent implements UserAgent {
   @Override
   public void releaseBlock() {
     block.release();
-    log.debug("Released block for {}", this);
   }
 
   @Override

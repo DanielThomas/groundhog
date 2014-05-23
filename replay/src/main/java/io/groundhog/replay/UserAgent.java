@@ -14,6 +14,10 @@ g * @author Danny Thomas
  * @since 1.0
  */
 public interface UserAgent {
+  HashCode getKey();
+
+  boolean isPersistent();
+
   void tryBlock(long timeout);
 
   void releaseBlock();
@@ -25,6 +29,4 @@ public interface UserAgent {
   Set<Cookie> getCookiesForUri(String uri);
 
   Optional<HttpArchive.Param> getOverrideParam(String name);
-
-  boolean isPersistent();
 }

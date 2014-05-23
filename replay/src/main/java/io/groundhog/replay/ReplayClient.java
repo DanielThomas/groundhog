@@ -20,7 +20,6 @@ package io.groundhog.replay;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -41,8 +40,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public final class ReplayClient extends AbstractExecutionThreadService {
-  // The maximum delay for a request before the service pauses reading requests, to prevent excessive number of objects in the dispatcher queue
-  private static final int DELAY_LIMIT_MS = 10000;
+  /**
+   * The maximum delay for a request before the service pauses reading requests, to prevent excessive number of objects
+   * in the dispatcher queue.
+   */
+  private static final int DELAY_LIMIT_MS = 5000;
 
   private final EventLoopGroup group;
   private final RequestReader requestReader;
@@ -51,17 +53,15 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private Logger log = LoggerFactory.getLogger(ReplayClient.class);
 
   @Inject
-  ReplayClient(Bootstrap bootstrap, File recordingFile, RequestDispatcher dispatcher, @Named("usessl") final boolean useSSL, final ReplayResultListener resultListener) {
+  ReplayClient(Bootstrap bootstrap, File recordingFile, RequestDispatcher dispatcher, final ReplayHandlerFactory replayHandlerFactory) {
     checkNotNull(recordingFile);
+
     this.dispatcher = checkNotNull(dispatcher);
-    checkNotNull(resultListener);
-
     group = new NioEventLoopGroup();
-
     bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        new ReplayHandler(ch.pipeline(), resultListener, useSSL);
+        replayHandlerFactory.create(ch.pipeline());
       }
     });
 
@@ -77,27 +77,42 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   protected void run() throws Exception {
     UserAgentRequest firstRequest = requestReader.readRequest();
     long firstRequestTime = firstRequest.getStartedDateTime();
+    DelayedUserAgentRequest delayedFirstRequest = new DelayedUserAgentRequest(firstRequest, firstRequestTime, System.nanoTime(), firstRequestTime);
+    log.trace("Queuing first request {}", delayedFirstRequest);
+    dispatcher.queue(delayedFirstRequest);
+
+    /*
+     * The overhead of getting initial connections can cause initial requests to bunch up, and cause out of order
+     * requests which affects session cookie management. We use the first request to warm up the dispatcher, and delay
+     * further requests by the skew tolerance limit for the dispatcher, to prevent warnings being logged.
+     *
+     * If in future we support multiple hosts, we might need handle warm up differently. That said, this should only
+     * affect requests captured from load generation tools with very low latency, and no wait times. I'd never expect
+     * to see problems with this with normal wait times.
+     */
     long timeStartedNanos = System.nanoTime();
-    log.debug("Starting replay, first request time (millis) {}, time started (nanos) {}", firstRequestTime, timeStartedNanos);
-    dispatcher.queue(new DelayedUserAgentRequest(firstRequest, firstRequestTime, timeStartedNanos, firstRequestTime));
+    firstRequestTime = firstRequestTime - RequestDispatcher.SKEW_THRESHOLD_MILLIS;
 
     while (isRunning()) {
-      UserAgentRequest userAgentRequest = requestReader.readRequest();
-      long startedDateTime = userAgentRequest.getStartedDateTime();
-      DelayedUserAgentRequest delayedRequest = new DelayedUserAgentRequest(userAgentRequest, startedDateTime, timeStartedNanos, firstRequestTime);
-      long delayMillis = delayedRequest.getDelay(TimeUnit.MILLISECONDS);
-      if (DELAY_LIMIT_MS < delayMillis) {
-        log.info("Reached read-ahead limit of {}ms (current request delay {}ms). Sleeping for {}ms", DELAY_LIMIT_MS, delayMillis, DELAY_LIMIT_MS);
-        Thread.sleep(DELAY_LIMIT_MS);
-      }
       if (dispatcher.isRunning()) {
+        UserAgentRequest request = requestReader.readRequest();
+        long startedDateTime = request.getStartedDateTime();
+        DelayedUserAgentRequest delayedRequest = new DelayedUserAgentRequest(request, startedDateTime, timeStartedNanos, firstRequestTime);
+        log.trace("Queuing {}", delayedRequest);
         dispatcher.queue(delayedRequest);
-      }
-      if (requestReader.isLastRequest(userAgentRequest)) {
-        log.info("Last request read, performing graceful shutdown of dispatcher");
-        dispatcher.stopAsync();
-        dispatcher.awaitTerminated();
-        break;
+
+        if (requestReader.isLastRequest(request)) {
+          log.info("Last request read, performing graceful shutdown of dispatcher");
+          dispatcher.stopAsync();
+          dispatcher.awaitTerminated();
+          break;
+        }
+
+        long delayMillis = delayedRequest.getDelay(TimeUnit.MILLISECONDS);
+        if (DELAY_LIMIT_MS < delayMillis) {
+          log.info("Reached read-ahead limit of {}ms (current request delay {}ms). Sleeping for {}ms", DELAY_LIMIT_MS, delayMillis, DELAY_LIMIT_MS);
+          Thread.sleep(DELAY_LIMIT_MS);
+        }
       }
     }
   }
