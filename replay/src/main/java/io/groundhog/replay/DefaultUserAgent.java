@@ -36,7 +36,8 @@ public final class DefaultUserAgent implements UserAgent {
 
   private final HashCode key;
 
-  private Logger log = LoggerFactory.getLogger(DefaultUserAgent.class);
+  // Default access because there seems to be an intermittent problem with assisted injection and access control
+  Logger log = LoggerFactory.getLogger(DefaultUserAgent.class);
 
   @Inject
   DefaultUserAgent(@Assisted HashCode key) {
