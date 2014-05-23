@@ -1,5 +1,7 @@
 package io.groundhog.replay;
 
+import io.groundhog.har.HttpArchive;
+
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -9,8 +11,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
-import io.groundhog.har.HttpArchive;
-
 import com.google.inject.assistedinject.Assisted;
 import io.netty.handler.codec.http.Cookie;
 import org.slf4j.Logger;
@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Objects.ToStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @author Danny Thomas
@@ -55,6 +54,7 @@ public final class DefaultUserAgent implements UserAgent {
     return helper.toString();
   }
 
+  @Override
   public void tryBlock(long timeout) {
     try {
       log.debug("Attempting to acquire block for {}", this);
@@ -69,11 +69,13 @@ public final class DefaultUserAgent implements UserAgent {
     }
   }
 
+  @Override
   public void releaseBlock() {
     block.release();
     log.debug("Released block for {}", this);
   }
 
+  @Override
   public void setCookies(Collection<Cookie> cookies) {
     checkNotNull(cookies);
     synchronized (this.cookies) {
@@ -84,6 +86,7 @@ public final class DefaultUserAgent implements UserAgent {
     }
   }
 
+  @Override
   public Set<Cookie> getCookiesForUri(String uri) {
     checkNotNull(uri);
     synchronized (cookies) {
@@ -106,6 +109,7 @@ public final class DefaultUserAgent implements UserAgent {
     }
   };
 
+  @Override
   public void setOverridePostValues(Collection<HttpArchive.Param> params) {
     checkNotNull(params);
     synchronized (postParamOverrides) {
@@ -115,6 +119,7 @@ public final class DefaultUserAgent implements UserAgent {
     }
   }
 
+  @Override
   public Optional<HttpArchive.Param> getOverrideParam(String name) {
     checkNotNull(name);
     synchronized (postParamOverrides) {
@@ -122,6 +127,7 @@ public final class DefaultUserAgent implements UserAgent {
     }
   }
 
+  @Override
   public boolean isPersistent() {
     return true;
   }

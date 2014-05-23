@@ -58,7 +58,7 @@ public final class ReplayClient extends AbstractExecutionThreadService {
 
     group = new NioEventLoopGroup();
 
-    bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
+    bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
         new ReplayHandler(ch.pipeline(), resultListener, useSSL);

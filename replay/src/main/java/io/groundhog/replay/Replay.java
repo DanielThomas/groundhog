@@ -22,9 +22,6 @@ import io.groundhog.logging.Slf4jModule;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * @author Danny Thomas

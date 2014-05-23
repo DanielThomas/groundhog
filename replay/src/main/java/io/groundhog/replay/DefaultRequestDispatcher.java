@@ -78,11 +78,13 @@ public final class DefaultRequestDispatcher extends AbstractExecutionThreadServi
     queue = new DelayQueue<>();
   }
 
+  @Override
   public Service clearQueue() {
     queue.clear();
     return stopAsync();
   }
 
+  @Override
   public void queue(DelayedUserAgentRequest request) throws InterruptedException {
     checkNotNull(request);
     checkState(isRunning(), "This dispatcher is not running");
