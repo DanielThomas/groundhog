@@ -32,6 +32,9 @@ idea {
         def codestyle = new XmlParser().parse(file('gradle/idea-codestyle.xml'))
         node.append(codestyle)
 
+        def inspections = new XmlParser().parse(file('gradle/idea-inspections.xml'))
+        node.append(inspections)
+
         def copyrightManager = node.component.find { it.'@name' == 'CopyrightManager' }
         node.remove(copyrightManager)
         def copyright = new XmlParser().parse(file('gradle/idea-copyright.xml'))
