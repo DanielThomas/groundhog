@@ -18,9 +18,7 @@
 package io.groundhog.jmeter;
 
 import io.groundhog.base.URIScheme;
-import io.groundhog.replay.DefaultRequestDispatcher;
-import io.groundhog.replay.ReplayResultListener;
-import io.groundhog.replay.RequestDispatcher;
+import io.groundhog.replay.*;
 
 import com.google.common.net.HostAndPort;
 import com.google.inject.AbstractModule;
@@ -37,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class JMeterModule extends AbstractModule {
+public final class JMeterModule extends AbstractReplayModule {
   private final File recordingFile;
   private final Queue<SampleResult> results;
   private final URIScheme scheme;
@@ -51,10 +49,8 @@ public class JMeterModule extends AbstractModule {
   }
 
   @Override
-  protected void configure() {
+  protected void configureReplay() {
     bind(File.class).toInstance(recordingFile);
-    bind(RequestDispatcher.class).to(DefaultRequestDispatcher.class);
-    bind(Bootstrap.class).toInstance(new Bootstrap());
     bind(HostAndPort.class).annotatedWith(Names.named("target")).toInstance(targetHostAndPort);
     bind(boolean.class).annotatedWith(Names.named("usessl")).toInstance(URIScheme.HTTPS == scheme);
     bind(ReplayResultListener.class).toInstance(new HarReplayResultListener(results, scheme, targetHostAndPort));

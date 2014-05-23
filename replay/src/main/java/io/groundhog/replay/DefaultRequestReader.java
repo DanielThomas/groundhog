@@ -51,8 +51,6 @@ import static com.google.common.base.Preconditions.*;
  * @since 1.0
  */
 public class DefaultRequestReader implements RequestReader {
-  private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestReader.class);
-
   private static final String REQUIRED_HAR_VERSION = "1.2";
   private static final Set<String> SKIPPED_ENTRY_FIELDS = ImmutableSortedSet.of("pageref", "serverIPAddress",
           "connection", "comment");

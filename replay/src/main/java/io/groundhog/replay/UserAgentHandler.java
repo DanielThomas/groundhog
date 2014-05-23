@@ -35,8 +35,6 @@ import org.jsoup.nodes.Attributes;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -45,9 +43,7 @@ import java.util.Set;
  * @author Danny Thomas
  * @since 1.0
  */
-public class UserAgentHandler extends ChannelDuplexHandler {
-  private static final Logger LOG = LoggerFactory.getLogger(UserAgentHandler.class);
-
+public final class UserAgentHandler extends ChannelDuplexHandler {
   /**
    * POST fields to be overridden with values parsed from received documents.
    * <p/>
@@ -99,7 +95,7 @@ public class UserAgentHandler extends ChannelDuplexHandler {
         if (userAgent.isPersistent() && null != document) {
           scrapeFormFields();
         }
-        super.channelRead(ctx, new ReplayLastHttpContent((LastHttpContent) msg, Optional.fromNullable(document)));
+        super.channelRead(ctx, new DefaultReplayLastHttpContent((LastHttpContent) msg, Optional.fromNullable(document)));
         return;
       }
     }

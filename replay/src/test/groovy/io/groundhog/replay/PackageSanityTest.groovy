@@ -19,6 +19,8 @@ package io.groundhog.replay
 
 import com.google.common.base.Optional
 import com.google.common.base.Predicate
+import com.google.common.hash.HashCode
+import com.google.common.hash.Hashing
 import com.google.common.net.HostAndPort
 import com.google.common.testing.AbstractPackageSanityTests
 import io.groundhog.har.HttpArchive
@@ -42,15 +44,17 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     def postData = new HttpArchive.PostData("name", "value")
     setDefault(UserAgentRequest.class, new UserAgentRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/",
         Optional.of(postData), HttpHeaders.EMPTY_HEADERS, Collections.<Cookie> emptySet(), new File(""), 0l))
-    def resultListener = new LoggingResultListener()
-    setDefault(RequestDispatcher, new DefaultRequestDispatcher(new Bootstrap(), HostAndPort.fromHost("localhost"), resultListener))
+    def channelWriterFactory =  { null } as UserAgentChannelWriterFactory
+    def userAgentFactory = { null } as UserAgentFactory
+    setDefault(RequestDispatcher, new DefaultRequestDispatcher(new Bootstrap(), HostAndPort.fromHost("localhost"), channelWriterFactory, userAgentFactory))
     setDefault(HttpMethod, HttpMethod.GET)
     setDefault(HttpHeaders, HttpHeaders.EMPTY_HEADERS)
     setDefault(HttpVersion, HttpVersion.HTTP_1_1)
     setDefault(HttpArchive.PostData, postData)
     setDefault(ReplayHttpRequest, new ReplayHttpRequest(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/"),
-        new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK), new DefaultUserAgent(), false))
-    setDefault(ReplayLastHttpContent, new ReplayLastHttpContent(new DefaultLastHttpContent(), Optional.absent()))
+        new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK), new NonPersistentUserAgent(), false))
+    setDefault(DefaultReplayLastHttpContent, new DefaultReplayLastHttpContent(new DefaultLastHttpContent(), Optional.absent()))
     setDefault(HostAndPort, HostAndPort.fromParts("localhost", 80))
+    setDefault(HashCode, Hashing.goodFastHash(64).hashInt(12345))
   }
 }

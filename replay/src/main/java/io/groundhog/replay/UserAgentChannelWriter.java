@@ -29,6 +29,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.net.MediaType;
+import com.google.inject.assistedinject.Assisted;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -36,8 +37,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -49,13 +52,13 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.*;
 
 /**
- * A {@link ChannelFutureListener} that writes a {@link UserAgentRequest} to the channel future,
- * and notifies a {@link ReplayResultListener} of failures, if any.
+ * A {@link ChannelFutureListener} that writes a {@link UserAgentRequest} to the channel future, and notifies a
+ * {@link ReplayResultListener} of failures.
  *
  * @author Danny Thomas
  * @since 1.0
  */
-public class UserAgentChannelWriter implements ChannelFutureListener {
+public final class UserAgentChannelWriter implements ChannelFutureListener {
   private static final String CONTAINER_SESSION_COOKIE_NAME = "JSESSIONID";
   private static final String APPLICATION_SESSION_COOKIE_NAME = "session_id";
 
@@ -89,10 +92,10 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
 
   private final LoadingCache<HashCode, UserAgent> userAgentCache;
 
-  private Logger log;
+  private Logger log = LoggerFactory.getLogger(UserAgentChannelWriter.class);
 
   static {
-    NON_PERSISTENT_UA = new DefaultUserAgent();
+    NON_PERSISTENT_UA = new NonPersistentUserAgent();
     String localHostName;
     try {
       localHostName = InetAddress.getLocalHost().getHostName();
@@ -105,12 +108,13 @@ public class UserAgentChannelWriter implements ChannelFutureListener {
   private final UserAgentRequest uaRequest;
   private final ReplayResultListener resultListener;
 
-  public UserAgentChannelWriter(UserAgentRequest uaRequest, ReplayResultListener resultListener,
-                                LoadingCache<HashCode, UserAgent> userAgentCache, Logger log) {
+  @Inject
+  UserAgentChannelWriter(@Assisted UserAgentRequest uaRequest,
+                         @Assisted LoadingCache<HashCode, UserAgent> userAgentCache,
+                         ReplayResultListener resultListener) {
     this.uaRequest = checkNotNull(uaRequest);
-    this.resultListener = checkNotNull(resultListener);
     this.userAgentCache = checkNotNull(userAgentCache);
-    this.log = checkNotNull(log);
+    this.resultListener = checkNotNull(resultListener);
   }
 
   @Override

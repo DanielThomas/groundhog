@@ -44,7 +44,7 @@ import static com.google.common.base.Preconditions.checkState;
  * @author Danny Thomas
  * @since 1.0
  */
-public class DefaultRequestDispatcher extends AbstractExecutionThreadService implements RequestDispatcher {
+public final class DefaultRequestDispatcher extends AbstractExecutionThreadService implements RequestDispatcher {
   private static final int SKEW_THRESHOLD_MILLIS = 100;
   private static final int CHANNEL_WAIT_DURATION = 5000;
 
@@ -52,27 +52,30 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
   private final ChannelGroup channelGroup;
   private final DelayQueue<DelayedUserAgentRequest> queue;
   private final HostAndPort hostAndPort;
-  private final ReplayResultListener resultListener;
   private final LoadingCache<HashCode, UserAgent> userAgentCache;
+  private final UserAgentChannelWriterFactory channelWriterFactory;
 
   private Logger log = LoggerFactory.getLogger(RequestDispatcher.class);
 
   @Inject
-  DefaultRequestDispatcher(Bootstrap bootstrap, @Named("target") HostAndPort hostAndPort, ReplayResultListener resultListener) {
+  DefaultRequestDispatcher(Bootstrap bootstrap, @Named("target") HostAndPort hostAndPort,
+                           UserAgentChannelWriterFactory channelWriterFactory,
+                           final UserAgentFactory userAgentFactory) {
     this.bootstrap = checkNotNull(bootstrap);
     this.hostAndPort = checkNotNull(hostAndPort);
-    this.resultListener = checkNotNull(resultListener);
+    this.channelWriterFactory = checkNotNull(channelWriterFactory);
 
-    channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    queue = new DelayQueue<>();
-
+    checkNotNull(userAgentFactory);
     CacheLoader<HashCode, UserAgent> loader = new CacheLoader<HashCode, UserAgent>() {
       @Override
       public UserAgent load(HashCode key) throws Exception {
-        return new DefaultUserAgent(key);
+        return userAgentFactory.create(key);
       }
     };
     userAgentCache = CacheBuilder.newBuilder().build(loader);
+
+    channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    queue = new DelayQueue<>();
   }
 
   public Service clearQueue() {
@@ -102,7 +105,7 @@ public class DefaultRequestDispatcher extends AbstractExecutionThreadService imp
         checkSkew(TimeUnit.NANOSECONDS.toMillis(actualTime), delayedRequest.getExpectedTime());
         ChannelFuture future = bootstrap.connect(hostAndPort.getHostText(), hostAndPort.getPort());
         UserAgentRequest request = delayedRequest.getRequest();
-        future.addListener(new UserAgentChannelWriter(request, resultListener, userAgentCache, log));
+        future.addListener(channelWriterFactory.create(request, userAgentCache));
         channelGroup.add(future.channel());
       }
     }

@@ -35,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class ReplayHandler extends ChannelDuplexHandler {
+public final class ReplayHandler extends ChannelDuplexHandler {
   private final ReplayResultListener resultListener;
 
   private ReplayHttpRequest request;

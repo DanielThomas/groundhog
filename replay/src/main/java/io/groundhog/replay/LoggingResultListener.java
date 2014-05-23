@@ -13,7 +13,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class LoggingResultListener extends AbstractReplayResultListener implements ReplayResultListener {
+public final class LoggingResultListener extends AbstractReplayResultListener implements ReplayResultListener {
   private Logger log = LoggerFactory.getLogger(LoggingResultListener.class);
 
   @Override

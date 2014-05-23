@@ -10,10 +10,14 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
 import io.groundhog.har.HttpArchive;
+
+import com.google.inject.assistedinject.Assisted;
 import io.netty.handler.codec.http.Cookie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -23,30 +27,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * TODO look into the monitor waits for this class. Might need to swap out the coarse synchronisation for concurrent collections
- *
  * @author Danny Thomas
  * @since 1.0
  */
-public class DefaultUserAgent implements UserAgent {
-  private static final Logger LOG = LoggerFactory.getLogger(DefaultUserAgent.class);
-
+public final class DefaultUserAgent implements UserAgent {
   private final Set<Cookie> cookies;
   private final Map<String, HttpArchive.Param> postParamOverrides;
   private final Semaphore block;
 
-  private final Optional<HashCode> key;
+  private final HashCode key;
 
-  public DefaultUserAgent() {
-    this(Optional.<HashCode>absent());
-  }
+  private Logger log = LoggerFactory.getLogger(DefaultUserAgent.class);
 
-  public DefaultUserAgent(HashCode key) {
-    this(Optional.of(key));
-  }
-
-  private DefaultUserAgent(Optional<HashCode> key) {
-    this.key = key;
+  @Inject
+  DefaultUserAgent(@Assisted HashCode key) {
+    this.key = checkNotNull(key);
     cookies = Sets.newLinkedHashSet();
     postParamOverrides = Maps.newHashMap();
     block = new Semaphore(1);
@@ -61,13 +56,12 @@ public class DefaultUserAgent implements UserAgent {
   }
 
   public void tryBlock(long timeout) {
-    checkPersistent();
     try {
-      LOG.debug("Attempting to acquire block for {}", this);
+      log.debug("Attempting to acquire block for {}", this);
       if (block.tryAcquire(timeout, TimeUnit.MILLISECONDS)) {
-        LOG.debug("Blocking operations for {}", this);
+        log.debug("Blocking operations for {}", this);
       } else {
-        LOG.warn("Timeout during block acquire for {}, queue length {}", this, block.getQueueLength());
+        log.warn("Timeout during block acquire for {}, queue length {}", this, block.getQueueLength());
         block.release();
       }
     } catch (InterruptedException e) {
@@ -76,14 +70,12 @@ public class DefaultUserAgent implements UserAgent {
   }
 
   public void releaseBlock() {
-    checkPersistent();
     block.release();
-    LOG.debug("Released block for {}", this);
+    log.debug("Released block for {}", this);
   }
 
   public void setCookies(Collection<Cookie> cookies) {
     checkNotNull(cookies);
-    checkPersistent();
     synchronized (this.cookies) {
       for (Cookie cookie : cookies) {
         this.cookies.remove(cookie);
@@ -102,7 +94,6 @@ public class DefaultUserAgent implements UserAgent {
     }
   }
 
-
   /**
    * Sort cookies in descending order by path length.
    */
@@ -117,7 +108,6 @@ public class DefaultUserAgent implements UserAgent {
 
   public void setOverridePostValues(Collection<HttpArchive.Param> params) {
     checkNotNull(params);
-    checkPersistent();
     synchronized (postParamOverrides) {
       for (HttpArchive.Param param : params) {
         postParamOverrides.put(param.getName(), param);
@@ -132,12 +122,8 @@ public class DefaultUserAgent implements UserAgent {
     }
   }
 
-  private void checkPersistent() {
-    checkState(isPersistent(), "This UA is not persistent");
-  }
-
   public boolean isPersistent() {
-    return key.isPresent();
+    return true;
   }
 
   private static class CookiePathPredicate implements Predicate<Cookie> {
@@ -148,13 +134,9 @@ public class DefaultUserAgent implements UserAgent {
     }
 
     @Override
-    public boolean apply(Cookie cookie) {
-      String path = cookie.getPath();
+    public boolean apply(@Nullable Cookie cookie) {
+      String path = cookie != null ? cookie.getPath() : null;
       return path == null || path.isEmpty() || uri.startsWith(path);
     }
-  }
-
-  public Optional<HashCode> getKey() {
-    return key;
   }
 }

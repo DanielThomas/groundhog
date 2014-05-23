@@ -2,40 +2,26 @@ package io.groundhog.replay;
 
 import com.google.common.net.HostAndPort;
 import com.google.inject.AbstractModule;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelFutureListener;
 
 import java.io.File;
 
 /**
  * @author Michael Olague
+ * @author Danny Thomas
  * @since 1.0
  */
-public class ReplayModule extends AbstractModule {
-  @Override
-  protected void configure() {
-    // Temporarily comment out the configuration logic - this class is only for development as it stands
-//    String propsLocation = "conf/config.properties";
-//    Properties props = new Properties();
-//    try {
-//      props.load(new FileInputStream(propsLocation));
-//    } catch (IOException e) {
-//      Throwables.propagate(e);
-//    }
-//    String hostname = props.getProperty("replayHostName");
-//    int port = Integer.parseInt(props.getProperty("replayPort"));
-//    File recordingFile = new File(props.getProperty("replayRecordingFile"));
-
+public final class ReplayModule extends AbstractReplayModule {
+  protected void configureReplay() {
+    File captureFile = new File("/tmp/Dannys-MacBook-Pro.local-1400776763449/capture.har.gz");
     String hostname = "localhost";
     int port = 8080;
-    File recordingFile = new File("out/recording.har");
-
-    bind(Bootstrap.class).toInstance(new Bootstrap());
-    bind(ReplayResultListener.class).to(LoggingResultListener.class);
+    bind(File.class).toInstance(captureFile);
     bind(HostAndPort.class).annotatedWith(Names.named("target")).toInstance(HostAndPort.fromParts(hostname, port));
     bind(boolean.class).annotatedWith(Names.named("usessl")).toInstance(false);
-    bind(RequestDispatcher.class).to(DefaultRequestDispatcher.class);
-    bind(RequestReader.class).to(DefaultRequestReader.class);
-    bind(File.class).toInstance(recordingFile);
+    bind(ReplayResultListener.class).to(LoggingResultListener.class);
   }
 }

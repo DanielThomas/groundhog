@@ -14,7 +14,6 @@ g * @author Danny Thomas
  * @since 1.0
  */
 public interface UserAgent {
-
   void tryBlock(long timeout);
 
   void releaseBlock();
@@ -28,6 +27,4 @@ public interface UserAgent {
   Optional<HttpArchive.Param> getOverrideParam(String name);
 
   boolean isPersistent();
-
-  public Optional<HashCode> getKey();
 }

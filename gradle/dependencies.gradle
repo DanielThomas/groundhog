@@ -21,6 +21,7 @@ ext {
 }
 
 versions.guava = '17.0'
+versions.guice = '3.0'
 versions.jetty = '9.1.4.v20140401'
 versions.hc = '4.3.3'
 versions.slf4j = '1.7.7'
@@ -57,7 +58,10 @@ configurations.all {
 
 
 libraries.guava = "com.google.guava:guava:$versions.guava"
-libraries.guice = 'com.google.inject:guice:3.0'
+libraries.guice = [
+    "com.google.inject:guice:$versions.guice",
+    "com.google.inject.extensions:guice-assistedinject:$versions.guice"
+]
 libraries.logback = 'ch.qos.logback:logback-classic:1.1.2'
 libraries.jsr305 = 'com.google.code.findbugs:jsr305:2.0.3'
 libraries.inject = 'javax.inject:javax.inject:1'

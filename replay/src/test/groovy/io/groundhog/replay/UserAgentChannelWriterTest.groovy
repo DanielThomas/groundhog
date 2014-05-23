@@ -33,7 +33,7 @@ class UserAgentChannelWriterTest extends Specification {
     def uaRequest = Mock(UserAgentRequest)
     uaRequest.headers() >> HttpHeaders.EMPTY_HEADERS
     def listener = Mock(ReplayResultListener)
-    def writer = new UserAgentChannelWriter(uaRequest, listener, Mock(LoadingCache), Mock(Logger))
+    def writer = new UserAgentChannelWriter(uaRequest, Mock(LoadingCache), listener)
     def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/")
     request.headers().add(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE)
 

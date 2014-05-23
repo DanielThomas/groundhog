@@ -29,8 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Danny Thomas
  * @since 1.0
  */
-public class DelayedUserAgentRequest implements Delayed {
-  // TODO make this configurable. This avoids requests at the very start of replay from piling on top on one another
+public final class DelayedUserAgentRequest implements Delayed {
   private static final int WARMUP_TIME = 250;
 
   private final UserAgentRequest request;

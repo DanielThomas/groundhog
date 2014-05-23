@@ -31,11 +31,7 @@ import java.util.Set;
  * @author Danny Thomas
  * @since 1.0
  */
-public class LastUserAgentRequest extends UserAgentRequest {
-  public LastUserAgentRequest(HttpVersion httpVersion, HttpMethod method, String uri, Optional<HttpArchive.PostData> postData, HttpHeaders headers, Set<Cookie> cookies, File uploadLocation, long startedDateTime) {
-    super(httpVersion, method, uri, postData, headers, cookies, uploadLocation, startedDateTime);
-  }
-
+public final class LastUserAgentRequest extends UserAgentRequest {
   public LastUserAgentRequest(UserAgentRequest request, HttpResponse expectedResponse) {
     super(request, expectedResponse);
   }
