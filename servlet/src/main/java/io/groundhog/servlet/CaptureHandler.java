@@ -60,7 +60,7 @@ public final class CaptureHandler extends HandlerWrapper {
     checkNotNull(baseRequest);
     checkNotNull(request);
     checkNotNull(response);
-    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter, new File("/tmp"));
+    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter);
     try {
       captureDecoder.request(CaptureValve.transformRequest(request));
     } catch (Exception e) {

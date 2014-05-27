@@ -27,7 +27,7 @@ import spock.lang.Specification
 class DefaultCaptureHttpDecoderTest extends Specification {
   def 'defensive copy of request is made, preventing proxy from modifying recorded request'() {
     def writer = Mock(CaptureWriter)
-    def decoder = new DefaultCaptureHttpDecoder(writer, Mock(File))
+    def decoder = new DefaultCaptureHttpDecoder(writer)
     def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, 'http://localhost/')
     def header = HttpHeaders.Names.CONNECTION
     request.headers().add(header, HttpHeaders.Values.KEEP_ALIVE)

@@ -36,6 +36,7 @@ import com.google.common.collect.Sets;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.multipart.FileUpload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +78,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   private final boolean gzip;
   private final DateFormat iso8601Format;
 
+  private File uploadLocation;
   private JsonGenerator generator;
 
   public HarFileCaptureWriter(File outputLocation, boolean lightweight, boolean includeContent, boolean pretty, boolean gzip) {
@@ -114,6 +116,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     if (!outputDir.mkdirs()) {
       throw new IOException("Could not create directory " + outputDir);
     }
+    uploadLocation = new File(outputDir, "uploads");
     File outputFile = new File(outputDir, gzip ? "capture.har.gz" : "capture.har");
     OutputStream outputStream = gzip ? new GZIPOutputStream(new FileOutputStream(outputFile)) : new FileOutputStream(outputFile);
     JsonFactory jsonFactory = new JsonFactory();
@@ -181,6 +184,18 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     if (isRunning()) {
       requestQueue.add(captureRequest);
     }
+  }
+
+  @Override
+  public void writeUpload(FileUpload fileUpload, long startedDateTime) throws IOException {
+    checkNotNull(fileUpload);
+    checkNotNull(uploadLocation, "Upload location is null");
+    File destDir = new File(uploadLocation, String.valueOf(startedDateTime));
+    if (!destDir.mkdirs()) {
+      throw new IOException("Did not successfully create upload location " + destDir);
+    }
+    File destFile = new File(destDir, fileUpload.getFilename());
+    fileUpload.renameTo(destFile);
   }
 
   private void writeEntry(CaptureRequest captureRequest) throws IOException {

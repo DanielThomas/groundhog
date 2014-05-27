@@ -79,7 +79,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     tempDir = Files.createTempDir()
     def writer = Mock(CaptureWriter)
     def controller = new DefaultCaptureController(writer)
-    filterSource = new CaptureFilterSource(writer, controller, URIScheme.HTTP.scheme, LOCALHOST, serverPort, tempDir)
+    filterSource = new CaptureFilterSource(writer, controller, URIScheme.HTTP.scheme, LOCALHOST, serverPort)
     proxy = new ProxyServer(writer, filterSource, LOCALHOST, proxyPort)
 
     server = new Server(serverPort);
@@ -129,7 +129,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
 
   CaptureWriter mockWriter() {
     def writer = Mock(CaptureWriter)
-    def decoder = new DefaultCaptureHttpDecoder(writer, tempDir)
+    def decoder = new DefaultCaptureHttpDecoder(writer)
     filterSource.setCaptureDecoder(decoder)
     writer
   }

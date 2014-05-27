@@ -58,7 +58,6 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
   private static final MediaType APPLICATION_X_WWW_FORM_URLENCODED = MediaType.parse(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
 
   private final CaptureWriter captureWriter;
-  private final File uploadLocation;
 
   private long startedDateTime;
   private HttpRequest request;
@@ -75,9 +74,8 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
   // Quick and dirty solution to print this warning once per request
   private boolean hasWarnedOctetStream;
 
-  public DefaultCaptureHttpDecoder(CaptureWriter captureWriter, File uploadLocation) {
+  public DefaultCaptureHttpDecoder(CaptureWriter captureWriter) {
     this.captureWriter = checkNotNull(captureWriter);
-    this.uploadLocation = checkNotNull(uploadLocation);
   }
 
   @Override
@@ -151,10 +149,8 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
           FileUpload upload = (FileUpload) data;
           String name = encodeAttribute(upload.getName(), upload.getCharset());
           param = new HttpArchive.Param(name, upload.getFilename(), upload.getContentType());
-          File destFile = new File(uploadLocation, String.format("%s/%s", startedDateTime, upload.getFilename()));
           try {
-            checkState(destFile.getParentFile().mkdirs(), "Did not successfully create upload location %s", destFile);
-            upload.renameTo(destFile);
+            captureWriter.writeUpload(upload, startedDateTime);
           } finally {
             decoder.removeHttpDataFromClean(upload);
           }

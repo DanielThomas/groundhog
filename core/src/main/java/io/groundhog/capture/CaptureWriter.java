@@ -18,6 +18,9 @@
 package io.groundhog.capture;
 
 import com.google.common.util.concurrent.Service;
+import io.netty.handler.codec.http.multipart.FileUpload;
+
+import java.io.IOException;
 
 /**
  * A {@link Service} providing asynchronous writing of {@link CaptureRequest}s.
@@ -32,4 +35,12 @@ public interface CaptureWriter extends Service {
    * @param captureRequest the captured request to be written
    */
   public void writeAsync(CaptureRequest captureRequest);
+
+  /**
+   * Write a file upload. The write operation may block.
+   *
+   * @param fileUpload the {@link io.netty.handler.codec.http.multipart.FileUpload}
+   * @param startedDateTime the time in milliseconds of the request that this upload is for
+   */
+  public void writeUpload(FileUpload fileUpload, long startedDateTime) throws IOException;
 }

@@ -74,7 +74,7 @@ public final class CaptureValve extends ValveBase implements Valve {
   public void invoke(Request request, Response response) throws IOException, ServletException {
     checkNotNull(request);
     checkNotNull(response);
-    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter, new File("/tmp"));
+    CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter);
     wrapCoyoteInputBuffer(request, captureDecoder);
     try {
       try {

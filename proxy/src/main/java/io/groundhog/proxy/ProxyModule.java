@@ -54,11 +54,7 @@ public class ProxyModule extends AbstractModule {
     File outputLocation = new File(properties.getProperty("output.location"));
     checkArgument(outputLocation.isDirectory(), "output.location must be a directory and must exist");
 
-    String uploadDirectoryName = "uploads";
-    File uploadLocation = new File(outputLocation, uploadDirectoryName);
-    bind(File.class).annotatedWith(Names.named("uploadLocation")).toInstance(uploadLocation);
     String outputCompression = properties.getProperty("output.compression");
-
     CaptureWriter captureWriter = new HarFileCaptureWriter(outputLocation, true, false, false, "gzip".equals(outputCompression));
     bind(CaptureWriter.class).toInstance(captureWriter);
     bind(CaptureController.class).to(DefaultCaptureController.class);

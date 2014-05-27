@@ -45,7 +45,6 @@ public class CaptureFilterSource extends HttpFiltersSourceAdapter {
   private final String host;
   private final int port;
   private final CaptureWriter captureWriter;
-  private final File uploadLocation;
 
   private Optional<CaptureHttpDecoder> captureDecoder = Optional.absent();
   private CaptureController captureController;
@@ -54,15 +53,13 @@ public class CaptureFilterSource extends HttpFiltersSourceAdapter {
   CaptureFilterSource(CaptureWriter captureWriter, CaptureController captureController,
                       @Named("target.scheme") String protocol,
                       @Named("target.host") String host,
-                      @Named("target.port") int port,
-                      @Named("uploadLocation") File uploadLocation) {
+                      @Named("target.port") int port) {
     this.captureWriter = checkNotNull(captureWriter);
     this.captureController = checkNotNull(captureController);
     this.protocol = checkNotNull(protocol);
     this.host = checkNotNull(host);
     checkArgument(port > 0, "Port must be greater than zero");
     this.port = port;
-    this.uploadLocation = checkNotNull(uploadLocation);
   }
 
   @Override
@@ -72,7 +69,7 @@ public class CaptureFilterSource extends HttpFiltersSourceAdapter {
     if (captureDecoder.isPresent()) {
       return new CaptureHttpFilter(captureDecoder.get(), captureController, protocol, host, port);
     } else {
-      return new CaptureHttpFilter(new DefaultCaptureHttpDecoder(captureWriter, uploadLocation), captureController, protocol, host, port);
+      return new CaptureHttpFilter(new DefaultCaptureHttpDecoder(captureWriter), captureController, protocol, host, port);
     }
   }
 
