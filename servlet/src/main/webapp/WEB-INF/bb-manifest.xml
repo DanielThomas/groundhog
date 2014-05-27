@@ -43,6 +43,8 @@
       <!-- Guice -->
       <permission type="java.lang.RuntimePermission" name="getProtectionDomain"/>
       <permission type="java.lang.reflect.ReflectPermission" name="suppressAccessChecks"/>
+      <!-- Netty InternalLoggerFactory/Slf4JLoggerFactory -->
+      <permission type="java.lang.RuntimePermission" name="setIO"/>
       <!-- Tomcat Host lookup -->
       <permission type="javax.management.MBeanServerPermission" name="findMBeanServer"/>
       <permission type="javax.management.MBeanPermission" name="*" actions="*"/>
