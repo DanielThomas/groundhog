@@ -2,6 +2,7 @@ package io.groundhog.jmeter;
 
 import io.groundhog.base.URIScheme;
 import io.groundhog.replay.ReplayClient;
+import io.groundhog.replay.RequestDispatcher;
 
 import com.google.common.net.HostAndPort;
 import com.google.inject.Guice;
@@ -42,20 +43,25 @@ public class HarReplaySampler extends AbstractSampler implements TestBean, Threa
   @Override
   public SampleResult sample(Entry entry) {
     if (null == client) {
-      HostAndPort hostAndPort = HostAndPort.fromParts(host, port);
-      Module jmeterModule = new JMeterModule(new File(filename), results, scheme, hostAndPort);
-      Injector injector = Guice.createInjector(new JMeterSlf4jModule(), jmeterModule);
-      client = injector.getInstance(ReplayClient.class);
+      try {
+        HostAndPort hostAndPort = HostAndPort.fromParts(host, port);
+        Module jmeterModule = new JMeterModule(new File(filename), results, scheme, hostAndPort);
+        Injector injector = Guice.createInjector(new JMeterSlf4jModule(), jmeterModule);
+        client = injector.getInstance(ReplayClient.class);
 
-      LOG.info("Starting replay for " + filename + " using " + scheme.getScheme() + " against " + hostAndPort);
-      client.startAsync();
-      client.awaitRunning();
+        LOG.info("Starting replay for " + filename + " using " + scheme.getScheme() + " against " + hostAndPort);
+        client.startAsync();
+        client.awaitRunning();
+      } catch (Exception e) {
+        LOG.error("Fatal error while initialising replay. Stopping current thread", e);
+        JMeterContextService.getContext().getThread().stop();
+      }
     }
 
     while (true) {
       if (client.isRunning() || !results.isEmpty()) {
         try {
-          SampleResult result = results.poll(500, TimeUnit.MILLISECONDS);
+          SampleResult result = results.poll(RequestDispatcher.SKEW_THRESHOLD_MILLIS, TimeUnit.MILLISECONDS);
           if (null != result) {
             return result;
           }
