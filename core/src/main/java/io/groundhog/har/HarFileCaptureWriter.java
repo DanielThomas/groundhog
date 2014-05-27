@@ -189,13 +189,15 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   @Override
   public void writeUpload(FileUpload fileUpload, long startedDateTime) throws IOException {
     checkNotNull(fileUpload);
-    checkNotNull(uploadLocation, "Upload location is null");
-    File destDir = new File(uploadLocation, String.valueOf(startedDateTime));
-    if (!destDir.mkdirs()) {
-      throw new IOException("Did not successfully create upload location " + destDir);
+    if (isRunning()) {
+      checkNotNull(uploadLocation, "Upload location is null");
+      File destDir = new File(uploadLocation, String.valueOf(startedDateTime));
+      if (!destDir.mkdirs()) {
+        throw new IOException("Did not successfully create upload location " + destDir);
+      }
+      File destFile = new File(destDir, fileUpload.getFilename());
+      fileUpload.renameTo(destFile);
     }
-    File destFile = new File(destDir, fileUpload.getFilename());
-    fileUpload.renameTo(destFile);
   }
 
   private void writeEntry(CaptureRequest captureRequest) throws IOException {
