@@ -72,6 +72,9 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
   private boolean responseComplete;
   private boolean captureComplete;
 
+  // Quick and dirty solution to print this warning once per request
+  private boolean hasWarnedOctetStream;
+
   public DefaultCaptureHttpDecoder(CaptureWriter captureWriter, File uploadLocation) {
     this.captureWriter = checkNotNull(captureWriter);
     this.uploadLocation = checkNotNull(uploadLocation);
@@ -97,7 +100,10 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
           ByteBuf buf = chunk.content();
           content.append(buf.copy().toString(Charsets.UTF_8));
         } else if (mediaType.is(MediaType.OCTET_STREAM)) {
-          LOG.warn("{} media types are not currently handled", mediaType);
+          if (!hasWarnedOctetStream) {
+            LOG.warn("{} media types are not currently handled, request {}", mediaType, request);
+            hasWarnedOctetStream = true;
+          }
         } else if (isDecodedMediaType(mediaType)) {
           if (null == decoder) {
             decoder = new HttpPostRequestDecoder(request);
