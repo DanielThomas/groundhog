@@ -14,8 +14,6 @@ import com.google.common.hash.HashCode;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.assistedinject.Assisted;
 import io.netty.handler.codec.http.Cookie;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -36,9 +34,6 @@ public final class DefaultUserAgent implements UserAgent {
   private final Semaphore block;
 
   private final HashCode key;
-
-  // Default access because there seems to be an intermittent problem with assisted injection and access control
-  Logger log = LoggerFactory.getLogger(DefaultUserAgent.class);
 
   @Inject
   DefaultUserAgent(@Assisted HashCode key) {
