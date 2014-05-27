@@ -191,12 +191,14 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
       HashCode newKey = getCookieValueHash(setSessionCookie.get());
       if (sessionCookie.isPresent()) {
         HashCode existingKey = getCookieValueHash(sessionCookie.get());
-        if (!existingKey.equals(newKey)) {
+        requestUserAgent = Optional.fromNullable(userAgentCache.getIfPresent(existingKey));
+        if (!existingKey.equals(newKey) && requestUserAgent.isPresent()) {
           log.debug("Detected user agent cookie change. Adding synonym {} -> {} (new -> existing)",
               newKey, existingKey);
-          userAgentCache.put(newKey, userAgentCache.getUnchecked(existingKey));
+          userAgentCache.put(newKey, requestUserAgent.get());
         }
-      } else {
+      }
+      if (!requestUserAgent.isPresent()) {
         log.debug("Detected new user agent. Hash {}, cookie {}", newKey, setSessionCookie.get());
         requestUserAgent = Optional.of(userAgentCache.getUnchecked(newKey));
       }

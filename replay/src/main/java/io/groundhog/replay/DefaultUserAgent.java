@@ -14,6 +14,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.assistedinject.Assisted;
 import io.netty.handler.codec.http.Cookie;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -34,6 +35,8 @@ public final class DefaultUserAgent implements UserAgent {
   private final Semaphore block;
 
   private final HashCode key;
+
+  private Logger log;
 
   @Inject
   DefaultUserAgent(@Assisted HashCode key) {
@@ -79,6 +82,7 @@ public final class DefaultUserAgent implements UserAgent {
     checkNotNull(cookies);
     synchronized (this.cookies) {
       for (Cookie cookie : cookies) {
+        log.debug("Setting cookie {} for {}", cookie, key);
         this.cookies.remove(cookie);
         this.cookies.add(cookie);
       }

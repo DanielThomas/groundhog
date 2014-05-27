@@ -15,7 +15,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public final class LoggingResultListener extends AbstractReplayResultListener implements ReplayResultListener {
-  private Logger log = LoggerFactory.getLogger(LoggingResultListener.class);
+  public Logger log = LoggerFactory.getLogger(LoggingResultListener.class);
 
   @Override
   public void success(HttpRequest request, HttpResponse response, UserAgent userAgent,
