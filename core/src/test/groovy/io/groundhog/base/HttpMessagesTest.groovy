@@ -1,5 +1,6 @@
-package io.groundhog.base;
+package io.groundhog.base
 
+import com.google.common.net.MediaType;
 import io.netty.handler.codec.http.*
 import spock.lang.Specification
 
@@ -51,5 +52,26 @@ class HttpMessagesTest extends Specification {
 
     then:
     thrown(IllegalArgumentException)
+  }
+
+  def 'default media type is application/octet-stream'() {
+    HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, '/')
+
+    when:
+    def mediaType = HttpMessages.getMediaType(request)
+
+    then:
+    mediaType.is(MediaType.OCTET_STREAM)
+  }
+
+  def 'media type is parsed with charset'() {
+    HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, '/')
+    request.headers().add(HttpHeaders.Names.CONTENT_TYPE, "text/html; charset=utf-8");
+
+    when:
+    def mediaType = HttpMessages.getMediaType(request)
+
+    then:
+    mediaType.is(MediaType.HTML_UTF_8)
   }
 }

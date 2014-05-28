@@ -61,6 +61,7 @@ public class HttpMessages {
   }
 
   public static MediaType getMediaType(HttpMessage message) {
+    checkNotNull(message);
     String contentType = message.headers().get(HttpHeaders.Names.CONTENT_TYPE);
     return null == contentType ? MediaType.OCTET_STREAM : MediaType.parse(contentType);
   }
