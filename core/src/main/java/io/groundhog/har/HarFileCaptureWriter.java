@@ -18,7 +18,7 @@
 package io.groundhog.har;
 
 import io.groundhog.Groundhog;
-import io.groundhog.base.HttpRequests;
+import io.groundhog.base.HttpMessages;
 import io.groundhog.capture.CaptureRequest;
 import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.DefaultCapturePostRequest;
@@ -236,7 +236,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   @VisibleForTesting
   static String getUrl(CaptureRequest captureRequest) {
     HttpRequest request = captureRequest.getRequest();
-    HostAndPort hostAndPort = HttpRequests.identifyHostAndPort(request);
+    HostAndPort hostAndPort = HttpMessages.identifyHostAndPort(request);
     try {
       int port = hostAndPort.getPortOrDefault(80);
       String protocol = getUrlScheme(port);

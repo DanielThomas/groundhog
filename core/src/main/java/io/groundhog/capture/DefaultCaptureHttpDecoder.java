@@ -17,6 +17,7 @@
 
 package io.groundhog.capture;
 
+import io.groundhog.base.HttpMessages;
 import io.groundhog.har.HttpArchive;
 
 import com.google.common.base.Charsets;
@@ -87,7 +88,7 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     } else if (httpObject instanceof HttpContent && null != request) {
       HttpContent chunk = ((HttpContent) httpObject);
       HttpMethod method = request.getMethod();
-      MediaType mediaType = getMediaType(request);
+      MediaType mediaType = HttpMessages.getMediaType(request);
       if (POST_DECODE_METHODS.contains(method)) {
         isPost = true;
         chunk = chunk.duplicate();
@@ -124,11 +125,6 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
       }
     }
     writeIfComplete();
-  }
-
-  private MediaType getMediaType(HttpRequest request) {
-    String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
-    return null == contentType ? MediaType.OCTET_STREAM : MediaType.parse(contentType);
   }
 
   private boolean isDecodedMediaType(MediaType mediaType) {

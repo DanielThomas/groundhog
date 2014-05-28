@@ -4,18 +4,18 @@ import io.netty.handler.codec.http.*
 import spock.lang.Specification
 
 /**
- * Tests for {@link HttpRequests}.
+ * Tests for {@link HttpMessages}.
  *
  * @author Danny Thomas
  * @since 1.0
  */
-class HttpRequestsTest extends Specification {
+class HttpMessagesTest extends Specification {
   def 'returns host with port'() {
     when:
     HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, 'http://localhost:80/uri')
 
     then:
-    HttpRequests.identifyHostAndPort(request).toString() == 'localhost:80'
+    HttpMessages.identifyHostAndPort(request).toString() == 'localhost:80'
   }
 
   def 'returns host, from url with path'() {
@@ -23,7 +23,7 @@ class HttpRequestsTest extends Specification {
     HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, 'http://localhost/uri')
 
     then:
-    HttpRequests.identifyHostAndPort(request).toString() == 'localhost'
+    HttpMessages.identifyHostAndPort(request).toString() == 'localhost'
   }
 
   def 'returns host from plain url'() {
@@ -31,7 +31,7 @@ class HttpRequestsTest extends Specification {
     HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, 'http://localhost');
 
     then:
-    HttpRequests.identifyHostAndPort(request).toString() == 'localhost'
+    HttpMessages.identifyHostAndPort(request).toString() == 'localhost'
   }
 
   def 'returns host from path with request host header set'() {
@@ -40,14 +40,14 @@ class HttpRequestsTest extends Specification {
     request.headers().set(HttpHeaders.Names.HOST, 'localhost');
 
     then:
-    HttpRequests.identifyHostAndPort(request).toString() == 'localhost'
+    HttpMessages.identifyHostAndPort(request).toString() == 'localhost'
   }
 
   def 'throws IAE if path with no request host header set'() {
     HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, '/')
 
     when:
-    HttpRequests.identifyHostAndPort(request)
+    HttpMessages.identifyHostAndPort(request)
 
     then:
     thrown(IllegalArgumentException)

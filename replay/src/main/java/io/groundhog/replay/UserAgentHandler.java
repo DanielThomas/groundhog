@@ -17,6 +17,7 @@
 
 package io.groundhog.replay;
 
+import io.groundhog.base.HttpMessages;
 import io.groundhog.har.HttpArchive;
 
 import com.google.common.base.Charsets;
@@ -24,6 +25,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.net.MediaType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
@@ -46,6 +48,8 @@ import java.util.Set;
  * @since 1.0
  */
 public class UserAgentHandler extends ChannelDuplexHandler {
+  private static final MediaType TEXT_HTML = MediaType.create("text", "html");
+
   private Logger log = LoggerFactory.getLogger(UserAgentHandler.class);
   private ReplayHttpRequest request;
   private UserAgent userAgent;
@@ -112,7 +116,8 @@ public class UserAgentHandler extends ChannelDuplexHandler {
   }
 
   private void parseDocument(HttpContent httpContent) {
-    if (userAgent.isPersistent() && HttpMethod.GET == request.getMethod() && hasHtmlContentType(response)) {
+    MediaType mediaType = HttpMessages.getMediaType(response);
+    if (userAgent.isPersistent() && HttpMethod.GET == request.getMethod() && mediaType.is(TEXT_HTML)) {
       ByteBuf byteBuf = httpContent.content().duplicate();
       if (null == content) {
         content = Unpooled.buffer();
@@ -120,20 +125,13 @@ public class UserAgentHandler extends ChannelDuplexHandler {
       content.writeBytes(byteBuf);
 
       if (httpContent instanceof LastHttpContent) {
-        // FIXME use correct encoding. See org.jsoup.helper.DataUtil.parseByteData()g
-        String decodedContent = content.toString(Charsets.UTF_8);
-        // TODO look into incrementally parsing the document to avoid needing to hold onto the content
+        String decodedContent = content.toString(mediaType.charset().or(Charsets.ISO_8859_1));
         if (!decodedContent.isEmpty()) {
           document = Jsoup.parse(decodedContent);
         }
         content.release();
       }
     }
-  }
-
-  private boolean hasHtmlContentType(HttpResponse response) {
-    String contentType = response.headers().get(HttpHeaders.Names.CONTENT_TYPE);
-    return contentType != null && contentType.startsWith("text/html");
   }
 
   private void scrapeFormFields() {

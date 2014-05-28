@@ -19,7 +19,9 @@ package io.groundhog.base;
 
 import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
+import com.google.common.net.MediaType;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMessage;
 import io.netty.handler.codec.http.HttpRequest;
 
 import java.net.URI;
@@ -29,13 +31,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Static utility methods pertaining to {@link io.netty.handler.codec.http.HttpRequest} instances.
+ * Static utility methods pertaining to {@link io.netty.handler.codec.http.HttpMessage} instances.
  *
  * @author Danny Thomas
  * @since 1.0
  */
-public class HttpRequests {
-  private HttpRequests() {
+public class HttpMessages {
+  private HttpMessages() {
   }
 
   public static HostAndPort identifyHostAndPort(HttpRequest httpRequest) {
@@ -56,5 +58,10 @@ public class HttpRequests {
     } catch (URISyntaxException e) {
       throw Throwables.propagate(e);
     }
+  }
+
+  public static MediaType getMediaType(HttpMessage message) {
+    String contentType = message.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+    return null == contentType ? MediaType.OCTET_STREAM : MediaType.parse(contentType);
   }
 }
