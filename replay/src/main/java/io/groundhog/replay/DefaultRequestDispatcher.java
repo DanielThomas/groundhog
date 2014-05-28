@@ -78,9 +78,9 @@ public final class DefaultRequestDispatcher extends AbstractExecutionThreadServi
   }
 
   @Override
-  public Service clearQueue() {
+  public void clearQueue() {
     queue.clear();
-    return stopAsync();
+    channelGroup.disconnect();
   }
 
   @Override

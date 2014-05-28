@@ -14,5 +14,5 @@ public interface RequestDispatcher extends Service {
 
   void queue(DelayedUserAgentRequest request) throws InterruptedException;
 
-  Service clearQueue();
+  void clearQueue();
 }
