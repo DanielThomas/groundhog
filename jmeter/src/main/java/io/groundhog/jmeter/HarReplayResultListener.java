@@ -72,7 +72,7 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
     checkNotNull(userAgent);
     SampleResult result = SampleResult.createTestSample(0);
     result.setSuccessful(false);
-    result.setSampleLabel(getLabel(request));
+    result.setSampleLabel(getLabel(request) + " (Error, no response)");
     result.setResponseCode("A failure occurred");
     if (cause.isPresent()) {
       Optional<String> knownErrorMessage = getMessageForKnownException(cause.get());
