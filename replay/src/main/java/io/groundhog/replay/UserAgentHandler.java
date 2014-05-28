@@ -136,13 +136,15 @@ public class UserAgentHandler extends ChannelDuplexHandler {
 
   private void scrapeFormFields() {
     Elements elements = document.select("form input[type=hidden]");
-    List<HttpArchive.Param> params = Lists.newArrayList();
-    for (Element element : elements) {
-      Attributes attributes = element.attributes();
-      HttpArchive.Param param = new HttpArchive.Param(attributes.get("name"), attributes.get("value"));
-      params.add(param);
+    if (!elements.isEmpty()) {
+      List<HttpArchive.Param> params = Lists.newArrayList();
+      for (Element element : elements) {
+        Attributes attributes = element.attributes();
+        HttpArchive.Param param = new HttpArchive.Param(attributes.get("name"), attributes.get("value"));
+        params.add(param);
+      }
+      userAgent.setOverridePostValues(params);
     }
-    userAgent.setOverridePostValues(params);
   }
 
   @Override

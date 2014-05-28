@@ -24,6 +24,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Objects.ToStringHelper;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -116,6 +117,7 @@ public final class DefaultUserAgent implements UserAgent {
   @Override
   public void setOverridePostValues(Collection<HttpArchive.Param> params) {
     checkNotNull(params);
+    checkArgument(!params.isEmpty(), "Parameter list may not be empty");
     synchronized (postParamOverrides) {
       log.debug("Setting override post values for {}: {}", key, params);
       for (HttpArchive.Param param : params) {
