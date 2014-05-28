@@ -46,13 +46,6 @@ import java.util.Set;
  * @since 1.0
  */
 public class UserAgentHandler extends ChannelDuplexHandler {
-  /**
-   * POST fields to be overridden with values parsed from received documents.
-   * <p/>
-   * TODO configure this externally
-   */
-  private static final Set<String> OVERRIDE_POST_FIELDS = Sets.newHashSet("blackboard.platform.security.NonceUtil.nonce");
-
   private Logger log = LoggerFactory.getLogger(UserAgentHandler.class);
   private ReplayHttpRequest request;
   private UserAgent userAgent;
@@ -127,7 +120,7 @@ public class UserAgentHandler extends ChannelDuplexHandler {
       content.writeBytes(byteBuf);
 
       if (httpContent instanceof LastHttpContent) {
-        // FIXME use correct encoding. See org.jsoup.helper.DataUtil.parseByteData()
+        // FIXME use correct encoding. See org.jsoup.helper.DataUtil.parseByteData()g
         String decodedContent = content.toString(Charsets.UTF_8);
         // TODO look into incrementally parsing the document to avoid needing to hold onto the content
         if (!decodedContent.isEmpty()) {
@@ -148,10 +141,8 @@ public class UserAgentHandler extends ChannelDuplexHandler {
     List<HttpArchive.Param> params = Lists.newArrayList();
     for (Element element : elements) {
       Attributes attributes = element.attributes();
-      if (OVERRIDE_POST_FIELDS.contains(attributes.get("name"))) {
-        HttpArchive.Param param = new HttpArchive.Param(attributes.get("name"), attributes.get("value"));
-        params.add(param);
-      }
+      HttpArchive.Param param = new HttpArchive.Param(attributes.get("name"), attributes.get("value"));
+      params.add(param);
     }
     userAgent.setOverridePostValues(params);
   }

@@ -18,6 +18,7 @@
 package io.groundhog.har;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -151,11 +152,12 @@ public class HttpArchive {
     @Override
     public String toString() {
       Objects.ToStringHelper helper = Objects.toStringHelper(this);
+      helper.omitNullValues();
       helper.add("name", name);
       helper.add("value", value);
-      helper.add("comment", comment);
-      helper.add("fileName", fileName);
-      helper.add("contentType", contentType);
+      helper.add("comment", Strings.emptyToNull(comment));
+      helper.add("fileName", Strings.emptyToNull(fileName));
+      helper.add("contentType", Strings.emptyToNull(contentType));
       return helper.toString();
     }
   }

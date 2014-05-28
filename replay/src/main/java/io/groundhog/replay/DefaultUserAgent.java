@@ -117,6 +117,7 @@ public final class DefaultUserAgent implements UserAgent {
   public void setOverridePostValues(Collection<HttpArchive.Param> params) {
     checkNotNull(params);
     synchronized (postParamOverrides) {
+      log.debug("Setting override post values for {}: {}", key, params);
       for (HttpArchive.Param param : params) {
         postParamOverrides.put(param.getName(), param);
       }
@@ -127,7 +128,11 @@ public final class DefaultUserAgent implements UserAgent {
   public Optional<HttpArchive.Param> getOverrideParam(String name) {
     checkNotNull(name);
     synchronized (postParamOverrides) {
-      return Optional.fromNullable(postParamOverrides.get(name));
+      Optional<HttpArchive.Param> param = Optional.fromNullable(postParamOverrides.get(name));
+      if (param.isPresent()) {
+        postParamOverrides.remove(name);
+      }
+      return param;
     }
   }
 

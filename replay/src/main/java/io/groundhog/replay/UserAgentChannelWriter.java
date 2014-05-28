@@ -265,7 +265,7 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
         Optional<HttpArchive.Param> override = userAgent.getOverrideParam(name);
         if (override.isPresent()) {
           HttpArchive.Param overrideParam = override.get();
-          log.debug("Overriding {} with {}", param, overrideParam);
+          log.debug("Overriding POST parameter {} with {}", param, overrideParam);
           it.set(overrideParam);
         }
       }
