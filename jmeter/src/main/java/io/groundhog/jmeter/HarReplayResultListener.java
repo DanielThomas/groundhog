@@ -21,6 +21,7 @@ import io.groundhog.base.URIScheme;
 import io.groundhog.replay.AbstractReplayResultListener;
 import io.groundhog.replay.UserAgent;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -107,7 +108,7 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
       Document responseData = document.get();
       result.setResponseData(responseData.outerHtml(), responseData.outputSettings().charset().name());
     } else {
-      result.setSamplerData("No data received");
+      result.setResponseData("No response data received", Charsets.UTF_8.name());
     }
     try {
       result.setURL(new URL(scheme.getScheme(), hostAndPort.getHostText(), hostAndPort.getPortOrDefault(scheme.getDefaultPort()), request.getUri()));
