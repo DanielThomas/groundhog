@@ -167,7 +167,8 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
       } else {
         File sourceFile = new File(uaRequest.getUploadLocation(), String.format("%s/%s", uaRequest.getStartedDateTime(),
             param.getFileName()));
-        encoder.addBodyFileUpload(param.getName(), sourceFile, param.getContentType(), false);
+        // isText is true to prevent Content-Transfer-Encoding from being included
+        encoder.addBodyFileUpload(param.getName(), sourceFile, param.getContentType(), true);
       }
     }
     return params.isEmpty() ? request : encoder.finalizeRequest();
