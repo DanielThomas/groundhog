@@ -138,7 +138,7 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
       }
 
       HttpResponse expectedResponse = uaRequest.getExpectedResponse().get();
-      boolean blocking = getSetSessionCookie(expectedResponse).isPresent();
+      boolean blocking = shouldBlock(expectedResponse);
       if (request instanceof FullHttpRequest) {
         request = new ReplayFullHttpRequest((FullHttpRequest) request, expectedResponse, userAgent, blocking);
       } else {
@@ -184,6 +184,22 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
     return request;
   }
 
+  private boolean shouldBlock(HttpResponse expectedResponse) {
+    Optional<Cookie> setSessionCookie = getSetSessionCookie(expectedResponse);
+    if (setSessionCookie.isPresent()) {
+      Optional<Cookie> sessionCookie = getSessionCookie();
+      // Block only if the set cookie is expected to change the session, avoiding unnecessary blocking when an application is Set-Cookie happy
+      if (sessionCookie.isPresent()) {
+        HashCode sessionHash = getCookieValueHash(sessionCookie);
+        HashCode setSessionHash = getCookieValueHash(sessionCookie);
+        return !sessionHash.equals(setSessionHash);
+      } else {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private UserAgent getUserAgent() {
     Optional<Cookie> sessionCookie = getSessionCookie();
     Optional<Cookie> setSessionCookie = getSetSessionCookie(uaRequest.getExpectedResponse().get());
@@ -191,7 +207,7 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
     if (setSessionCookie.isPresent()) {
       HashCode newKey = getCookieValueHash(setSessionCookie.get());
       if (sessionCookie.isPresent()) {
-        HashCode existingKey = getCookieValueHash(sessionCookie.get());
+        HashCode existingKey = getCookieValueHash(sessionCookie);
         requestUserAgent = Optional.fromNullable(userAgentCache.getIfPresent(existingKey));
         if (!existingKey.equals(newKey) && requestUserAgent.isPresent()) {
           log.debug("Detected user agent cookie change. Adding synonym {} -> {} (new -> existing)",
@@ -205,7 +221,7 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
       }
     }
     if (sessionCookie.isPresent()) {
-      HashCode existingKey = getCookieValueHash(sessionCookie.get());
+      HashCode existingKey = getCookieValueHash(sessionCookie);
       requestUserAgent = Optional.fromNullable(userAgentCache.getIfPresent(existingKey));
       if (!requestUserAgent.isPresent()) {
         log.debug("Could not find existing user agent for {}, request {}", existingKey, uaRequest);
@@ -223,6 +239,10 @@ public final class UserAgentChannelWriter implements ChannelFutureListener {
   static Optional<Cookie> getSetSessionCookie(HttpResponse response) {
     List<String> headers = response.headers().getAll(HttpHeaders.Names.SET_COOKIE);
     return FluentIterable.from(headers).transform(HEADER_TO_COOKIE).filter(IS_APPLICATION_SESSION_COOKIE).last();
+  }
+
+  private static HashCode getCookieValueHash(Optional<Cookie> cookie) {
+    return getCookieValueHash(cookie.get());
   }
 
   private static HashCode getCookieValueHash(Cookie cookie) {

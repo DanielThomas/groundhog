@@ -83,7 +83,7 @@ public final class DefaultUserAgent implements UserAgent {
     checkNotNull(cookies);
     synchronized (this.cookies) {
       for (Cookie cookie : cookies) {
-        log.debug("Setting cookie {} for {}", cookie, key);
+        log.trace("Setting cookie {} for {}", cookie, key);
         this.cookies.remove(cookie);
         this.cookies.add(cookie);
       }
