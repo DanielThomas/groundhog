@@ -22,7 +22,6 @@ import com.google.common.base.Strings;
 import com.google.common.hash.HashCode;
 import com.google.common.net.MediaType;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import org.jsoup.nodes.Document;
@@ -64,21 +63,14 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
   }
 
   protected static String getLabel(HttpRequest request) {
-    checkNotNull(request);
-    StringBuilder label = new StringBuilder();
-    String headerLabel = request.headers().get(TRANSACTION_LABEL_HEADER);
-    if (null == headerLabel) {
-      HttpMethod method = request.getMethod();
-      label.append(method.name());
-      label.append(" ");
-      label.append(request.getUri());
-    } else {
-      label.append(headerLabel);
-    }
-    return label.toString();
+    return getLabel(request, Optional.<HttpResponse>absent(), Optional.<Document>absent());
   }
 
   protected static String getLabel(HttpRequest request, HttpResponse response, Optional<Document> document) {
+    return getLabel(request, Optional.of(response), document);
+  }
+
+  protected static String getLabel(HttpRequest request, Optional<HttpResponse> response, Optional<Document> document) {
     checkNotNull(request);
     checkNotNull(response);
     checkNotNull(document);
@@ -86,20 +78,23 @@ public abstract class AbstractReplayResultListener implements ReplayResultListen
     String headerLabel = request.headers().get(TRANSACTION_LABEL_HEADER);
     if (null == headerLabel) {
       label.append(request.getUri());
-      String contentType = Strings.nullToEmpty(response.headers().get(HttpHeaders.Names.CONTENT_TYPE));
-      label.append(" (");
-      label.append(response.getStatus());
-      if (!contentType.isEmpty()) {
-        label.append(", ");
-        MediaType type = MediaType.parse(contentType);
-        label.append(getMediaTypeLabel(type));
-        if (document.isPresent()) {
-          String title = document.get().title();
-          label.append(": ");
-          label.append(title.isEmpty() ? UNTITLED_PAGE_LABEL : title);
+      if (response.isPresent()) {
+        HttpResponse httpResponse = response.get();
+        String contentType = Strings.nullToEmpty(httpResponse.headers().get(HttpHeaders.Names.CONTENT_TYPE));
+        label.append(" (");
+        label.append(httpResponse.getStatus());
+        if (!contentType.isEmpty()) {
+          label.append(", ");
+          MediaType type = MediaType.parse(contentType);
+          label.append(getMediaTypeLabel(type));
+          if (document.isPresent()) {
+            String title = document.get().title();
+            label.append(": ");
+            label.append(title.isEmpty() ? UNTITLED_PAGE_LABEL : title);
+          }
         }
+        label.append(")");
       }
-      label.append(")");
     } else {
       label.append(headerLabel);
     }
