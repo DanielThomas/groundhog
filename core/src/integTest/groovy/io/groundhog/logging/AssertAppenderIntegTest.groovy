@@ -15,7 +15,7 @@
  *
  */
 
-package io.groundhog.base
+package io.groundhog.logging;
 
 import org.slf4j.LoggerFactory
 import spock.lang.Specification
