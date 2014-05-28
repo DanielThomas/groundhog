@@ -62,7 +62,7 @@ public class DefaultCaptureRequest implements CaptureRequest {
   }
 
   @Override
-  public Optional<String> getContent() {
+  public String getContent() {
     return Optional.absent();
   }
 }

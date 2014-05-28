@@ -19,9 +19,7 @@ package io.groundhog.capture;
 
 import io.groundhog.har.HttpArchive;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.net.HostAndPort;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
@@ -52,11 +50,13 @@ public class DefaultCapturePostRequest extends DefaultCaptureRequest {
     this.content = checkNotNull(content);
   }
 
+  @Override
   public List<HttpArchive.Param> getParams() {
     return params;
   }
 
-  public Optional<String> getContent() {
-    return Optional.of(content);
+  @Override
+  public String getContent() {
+    return content;
   }
 }

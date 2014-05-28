@@ -352,8 +352,8 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     generator.writeObjectFieldStart("postData");
     generator.writeStringField("mimeType", headers.get(HttpHeaders.Names.CONTENT_TYPE));
 
-    if (captureRequest.getContent().isPresent()) {
-      generator.writeStringField("text", captureRequest.getContent().get());
+    if (!captureRequest.getContent().isEmpty()) {
+      generator.writeStringField("text", captureRequest.getContent());
     }
 
     if (!captureRequest.getParams().isEmpty()) {
