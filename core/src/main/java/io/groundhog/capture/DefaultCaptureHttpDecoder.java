@@ -142,12 +142,12 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
         HttpArchive.Param param;
         if (data instanceof Attribute) {
           Attribute attr = (Attribute) data;
-          String name = encodeAttribute(attr.getName(), attr.getCharset());
-          String value = encodeAttribute(attr.getValue(), attr.getCharset());
+          String name = attr.getName();
+          String value = attr.getValue();
           param = new HttpArchive.Param(name, value);
         } else if (data instanceof FileUpload) {
           FileUpload upload = (FileUpload) data;
-          String name = encodeAttribute(upload.getName(), upload.getCharset());
+          String name = upload.getName();
           param = new HttpArchive.Param(name, upload.getFilename(), upload.getContentType());
           try {
             captureWriter.writeUpload(upload, startedDateTime);
@@ -161,15 +161,6 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
       }
     } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
       LOG.debug("Reached end of chunk");
-    }
-  }
-
-  private String encodeAttribute(String value, Charset charset) {
-    checkNotNull(value);
-    try {
-      return URLEncoder.encode(value, charset.name());
-    } catch (UnsupportedEncodingException e) {
-      throw Throwables.propagate(e);
     }
   }
 

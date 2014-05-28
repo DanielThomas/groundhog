@@ -49,5 +49,5 @@ public interface CaptureRequest {
    *
    * @return {@link com.google.common.base.Optional} request content
    */
-  Optional<String> getContent();
+  String getContent();
 }

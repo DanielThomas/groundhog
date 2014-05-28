@@ -445,7 +445,6 @@ public class DefaultRequestReader implements RequestReader {
     while (JsonToken.END_ARRAY != parser.nextToken()) {
       params.add(parsePostDataParam());
     }
-
     return params;
   }
 

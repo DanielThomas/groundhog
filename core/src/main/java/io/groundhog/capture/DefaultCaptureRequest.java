@@ -44,14 +44,17 @@ public class DefaultCaptureRequest implements CaptureRequest {
     this.response = checkNotNull(response);
   }
 
+  @Override
   public long getStartedDateTime() {
     return startedDateTime;
   }
 
+  @Override
   public HttpRequest getRequest() {
     return request;
   }
 
+  @Override
   public HttpResponse getResponse() {
     return response;
   }
@@ -63,6 +66,6 @@ public class DefaultCaptureRequest implements CaptureRequest {
 
   @Override
   public String getContent() {
-    return Optional.absent();
+    return "";
   }
 }
