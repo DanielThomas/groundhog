@@ -34,5 +34,14 @@ public class HarReplaySamplerBeanInfo extends BeanInfoSupport {
     p = property("port");
     p.setValue(NOT_UNDEFINED, Boolean.TRUE);
     p.setValue(DEFAULT, URIScheme.HTTP.getDefaultPort());
+
+    createPropertyGroup("timeouts", new String[]{"connectionTimeout", "socketReadTimeout"});
+    p = property("connectionTimeout");
+    p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+    p.setValue(DEFAULT, 250);
+
+    p = property("socketReadTimeout");
+    p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+    p.setValue(DEFAULT, 250);
   }
 }

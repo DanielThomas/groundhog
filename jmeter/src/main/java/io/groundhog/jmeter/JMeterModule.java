@@ -40,12 +40,16 @@ public final class JMeterModule extends AbstractReplayModule {
   private final Queue<SampleResult> results;
   private final URIScheme scheme;
   private final HostAndPort targetHostAndPort;
+  private final int connectionTimeout;
+  private final int socketReadTimeout;
 
-  public JMeterModule(File recordingFile, Queue<SampleResult> results, URIScheme scheme, HostAndPort targetHostAndPort) {
+  public JMeterModule(File recordingFile, Queue<SampleResult> results, URIScheme scheme, HostAndPort targetHostAndPort, int connectionTimeout, int socketReadTimeout) {
     this.recordingFile = checkNotNull(recordingFile);
     this.results = checkNotNull(results);
     this.scheme = checkNotNull(scheme);
     this.targetHostAndPort = checkNotNull(targetHostAndPort);
+    this.connectionTimeout = connectionTimeout;
+    this.socketReadTimeout = socketReadTimeout;
   }
 
   @Override
@@ -53,6 +57,8 @@ public final class JMeterModule extends AbstractReplayModule {
     bind(File.class).toInstance(recordingFile);
     bind(HostAndPort.class).annotatedWith(Names.named("target")).toInstance(targetHostAndPort);
     bind(boolean.class).annotatedWith(Names.named("usessl")).toInstance(URIScheme.HTTPS == scheme);
+    bind(Integer.class).annotatedWith(Names.named("connectionTimeout")).toInstance(connectionTimeout);
+    bind(Integer.class).annotatedWith(Names.named("socketReadTimeout")).toInstance(socketReadTimeout);
     bind(ReplayResultListener.class).toInstance(new HarReplayResultListener(results, scheme, targetHostAndPort));
   }
 }

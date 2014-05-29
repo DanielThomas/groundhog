@@ -38,6 +38,8 @@ public class HarReplaySampler extends AbstractSampler implements TestBean, Threa
   private URIScheme scheme;
   private String host;
   private int port;
+  private int connectionTimeout;
+  private int socketReadTimeout;
   private ReplayClient client;
 
   @Override
@@ -45,7 +47,7 @@ public class HarReplaySampler extends AbstractSampler implements TestBean, Threa
     if (null == client) {
       try {
         HostAndPort hostAndPort = HostAndPort.fromParts(host, port);
-        Module jmeterModule = new JMeterModule(new File(filename), results, scheme, hostAndPort);
+        Module jmeterModule = new JMeterModule(new File(filename), results, scheme, hostAndPort, connectionTimeout, socketReadTimeout);
         Injector injector = Guice.createInjector(new JMeterSlf4jModule(), jmeterModule);
         client = injector.getInstance(ReplayClient.class);
 
@@ -126,4 +128,12 @@ public class HarReplaySampler extends AbstractSampler implements TestBean, Threa
   public void setPort(int port) {
     this.port = port;
   }
+
+  public void setConnectionTimeout (int connectionTimeout) { this.connectionTimeout = connectionTimeout; }
+
+  public int getConnectionTimeout() { return this.connectionTimeout; }
+
+  public void setSocketReadTimeout(int socketReadTimeout) { this.socketReadTimeout = socketReadTimeout; }
+
+  public int getSocketReadTimeout() { return this.socketReadTimeout; }
 }

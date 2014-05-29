@@ -20,8 +20,10 @@ package io.groundhog.replay;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -53,14 +55,18 @@ public final class ReplayClient extends AbstractExecutionThreadService {
   private Logger log = LoggerFactory.getLogger(ReplayClient.class);
 
   @Inject
-  ReplayClient(Bootstrap bootstrap, File recordingFile, RequestDispatcher dispatcher, final ReplayHandlerFactory replayHandlerFactory) {
+  ReplayClient(Bootstrap bootstrap, File recordingFile, RequestDispatcher dispatcher, final ReplayHandlerFactory replayHandlerFactory, @Named("connectionTimeout") final int connectionTimeout) {
     checkNotNull(recordingFile);
 
     this.dispatcher = checkNotNull(dispatcher);
+    checkNotNull(connectionTimeout);
+
     group = new NioEventLoopGroup();
     bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
+        ChannelConfig chConfig = ch.config();
+        chConfig.setConnectTimeoutMillis(connectionTimeout);
         replayHandlerFactory.create(ch.pipeline());
       }
     });
