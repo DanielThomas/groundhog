@@ -38,6 +38,7 @@ subprojects {
   apply from: "$rootProject.rootDir/gradle/test.gradle"
   apply from: "$rootProject.rootDir/gradle/integTest.gradle"
   apply from: "$rootProject.rootDir/gradle/idea-module.gradle"
+  apply from: "$rootProject.rootDir/gradle/maven.gradle"
 }
 
 task wrapper(type: Wrapper) { gradleVersion = '1.11' }

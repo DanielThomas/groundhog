@@ -26,3 +26,7 @@ dependencies {
 
     testCompile libraries.testlibs
 }
+
+artifacts {
+  archives distZip
+}

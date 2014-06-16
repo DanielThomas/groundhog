@@ -26,3 +26,7 @@ dependencies {
   testCompile libraries.testlibs
   integTestCompile libraries.httptest
 }
+
+artifacts {
+  archives distZip
+}
