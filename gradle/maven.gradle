@@ -17,17 +17,17 @@
 
 apply plugin: 'maven'
 
-def nexusUsername = System.getenv('NEXUS_USERNAME')
-def nexusPassword = System.getenv('NEXUS_PASSWORD')
+def mavenUsername = properties.jenkinsMavenUsername ?: System.getenv('MAVEN_USERNAME')
+def mavenPassword = properties.jenkinsMavenPassword ?: System.getenv('MAVEN_PASSWORD')
 
 uploadArchives {
   repositories {
     mavenDeployer {
       repository(url: 'https://maven.blackboard.com/content/repositories/releases/') {
-        authentication(userName: nexusUsername, password: nexusPassword)
+        authentication(userName: mavenUsername, password: mavenPassword)
       }
       snapshotRepository(url: 'https://maven.blackboard.com/content/repositories/snapshots/') {
-        authentication(userName: nexusUsername, password: nexusPassword)
+        authentication(userName: mavenUsername, password: mavenPassword)
       }
     }
   }
