@@ -20,9 +20,6 @@ apply plugin: 'maven'
 def mavenUsername = hasProperty('jenkinsMavenUsername') ? jenkinsMavenUsername : System.getenv('NEXUS_USERNAME')
 def mavenPassword = hasProperty('jenkinsMavenPassword') ? jenkinsMavenPassword : System.getenv('NEXUS_PASSWORD')
 
-println mavenUsername
-println mavenPassword
-
 uploadArchives {
   repositories {
     mavenDeployer {
