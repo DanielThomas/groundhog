@@ -17,8 +17,8 @@
 
 apply plugin: 'maven'
 
-def mavenUsername = properties.jenkinsMavenUsername ?: System.getenv('MAVEN_USERNAME')
-def mavenPassword = properties.jenkinsMavenPassword ?: System.getenv('MAVEN_PASSWORD')
+def mavenUsername = hasProperty('jenkinsMavenUsername') ? jenkinsMavenUsername : System.getenv('MAVEN_USERNAME')
+def mavenPassword = hasProperty('jenkinsMavenPassword') ? jenkinsMavenPassword : System.getenv('MAVEN_PASSWORD')
 
 uploadArchives {
   repositories {
