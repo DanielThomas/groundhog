@@ -21,8 +21,8 @@ public final class ReplayModule extends AbstractReplayModule {
     bind(File.class).toInstance(captureFile);
     bind(HostAndPort.class).annotatedWith(Names.named("target")).toInstance(HostAndPort.fromParts(hostname, port));
     bind(boolean.class).annotatedWith(Names.named("usessl")).toInstance(false);
-    bind(Integer.class).annotatedWith(Names.named("socketTimeout")).toInstance(socketTimeout);
     bind(Integer.class).annotatedWith(Names.named("connectionTimeout")).toInstance(connectionTimeout) ;
+    bind(Integer.class).annotatedWith(Names.named("socketReadTimeout")).toInstance(socketTimeout);
     bind(ReplayResultListener.class).to(LoggingResultListener.class);
   }
 }

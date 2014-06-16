@@ -33,7 +33,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -52,7 +51,7 @@ public final class ReplayHandler extends ChannelDuplexHandler {
   private final int socketTimeout;
 
   @Inject
-  ReplayHandler(@Assisted ChannelPipeline pipeline, UserAgentHandler userAgentHandler, ReplayResultListener resultListener, @Named("usessl") boolean useSSL, @Named("socketTimeout")int socketTimeout) throws Exception {
+  ReplayHandler(@Assisted ChannelPipeline pipeline, UserAgentHandler userAgentHandler, ReplayResultListener resultListener, @Named("usessl") boolean useSSL, @Named("socketReadTimeout") int socketTimeout) throws Exception {
     checkNotNull(pipeline);
     this.userAgentHandler = checkNotNull(userAgentHandler);
     this.resultListener = checkNotNull(resultListener);
@@ -73,7 +72,7 @@ public final class ReplayHandler extends ChannelDuplexHandler {
     p.addLast("inflater", new HttpContentDecompressor());
     p.addLast("chunkedWriter", new ChunkedWriteHandler());
     p.addLast("readTimeoutHandler", new ReadTimeoutHandler(this.socketTimeout));
-    p.addLast("ua", new UserAgentHandler());
+    p.addLast("ua", userAgentHandler);
     p.addLast("replay", this);
   }
 
