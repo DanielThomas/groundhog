@@ -17,6 +17,7 @@
 
 package io.groundhog.proxy;
 
+import io.groundhog.base.URIScheme;
 import io.groundhog.capture.CaptureController;
 import io.groundhog.capture.CaptureHttpDecoder;
 import io.groundhog.capture.CaptureWriter;
@@ -24,16 +25,14 @@ import io.groundhog.capture.DefaultCaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
+import com.google.common.net.HostAndPort;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import com.google.inject.assistedinject.Assisted;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.HttpFilters;
 import org.littleshoot.proxy.HttpFiltersSourceAdapter;
 
-import java.io.File;
-
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -41,25 +40,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 1.0
  */
 public class CaptureFilterSource extends HttpFiltersSourceAdapter {
-  private final String protocol;
-  private final String host;
-  private final int port;
   private final CaptureWriter captureWriter;
+  private final URIScheme scheme;
+  private final HostAndPort hostAndPort;
 
   private Optional<CaptureHttpDecoder> captureDecoder = Optional.absent();
   private CaptureController captureController;
 
   @Inject
-  CaptureFilterSource(CaptureWriter captureWriter, CaptureController captureController,
-                      @Named("target.scheme") String protocol,
-                      @Named("target.host") String host,
-                      @Named("target.port") int port) {
+  CaptureFilterSource(@Assisted URIScheme scheme, @Assisted HostAndPort hostAndPort, CaptureWriter captureWriter,
+                      CaptureController captureController) {
     this.captureWriter = checkNotNull(captureWriter);
     this.captureController = checkNotNull(captureController);
-    this.protocol = checkNotNull(protocol);
-    this.host = checkNotNull(host);
-    checkArgument(port > 0, "Port must be greater than zero");
-    this.port = port;
+    this.scheme = checkNotNull(scheme);
+    this.hostAndPort = checkNotNull(hostAndPort);
   }
 
   @Override
@@ -67,9 +61,9 @@ public class CaptureFilterSource extends HttpFiltersSourceAdapter {
     checkNotNull(originalRequest);
     checkNotNull(ctx);
     if (captureDecoder.isPresent()) {
-      return new CaptureHttpFilter(captureDecoder.get(), captureController, protocol, host, port);
+      return new CaptureHttpFilter(captureDecoder.get(), captureController, scheme, hostAndPort);
     } else {
-      return new CaptureHttpFilter(new DefaultCaptureHttpDecoder(captureWriter), captureController, protocol, host, port);
+      return new CaptureHttpFilter(new DefaultCaptureHttpDecoder(captureWriter), captureController, scheme, hostAndPort);
     }
   }
 

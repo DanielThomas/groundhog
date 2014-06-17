@@ -15,32 +15,18 @@
  *
  */
 
-package io.groundhog.base;
+package io.groundhog.proxy;
 
-import javax.annotation.concurrent.Immutable;
+import io.groundhog.base.URIScheme;
+
+import com.google.common.net.HostAndPort;
 
 /**
+ * Assisted injection factory interface for {@link CaptureFilterSource}.
+ *
  * @author Danny Thomas
  * @since 1.0
  */
-@Immutable
-public enum URIScheme {
-  HTTP("http", 80),
-  HTTPS("https", 443);
-
-  private final String scheme;
-  private final int defaultPort;
-
-  private URIScheme(String scheme, int defaultPort) {
-    this.scheme = scheme;
-    this.defaultPort = defaultPort;
-  }
-
-  public String scheme() {
-    return scheme;
-  }
-
-  public int defaultPort() {
-    return defaultPort;
-  }
+public interface CaptureFilterSourceFactory {
+  CaptureFilterSource create(URIScheme scheme, HostAndPort hostAndPort);
 }

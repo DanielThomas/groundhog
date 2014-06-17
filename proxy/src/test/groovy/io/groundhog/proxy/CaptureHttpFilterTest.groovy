@@ -1,5 +1,7 @@
 package io.groundhog.proxy
 
+import com.google.common.net.HostAndPort
+import io.groundhog.base.URIScheme
 import io.groundhog.capture.CaptureController
 import io.groundhog.capture.CaptureHttpDecoder
 import io.netty.handler.codec.http.*
@@ -9,7 +11,7 @@ import spock.lang.Specification
  * Tests for {@link CaptureHttpFilter}.
  */
 class CaptureHttpFilterTest extends Specification {
-  def captureFilter = new CaptureHttpFilter(Mock(CaptureHttpDecoder), Mock(CaptureController), 'http', 'localhost', 8080)
+  def captureFilter = new CaptureHttpFilter(Mock(CaptureHttpDecoder), Mock(CaptureController), URIScheme.HTTP, HostAndPort.fromParts('localhost', 8080))
 
   def 'uri rewriting handles domain without a path or query'() {
     def uri = 'http://foo.com'
@@ -64,13 +66,5 @@ class CaptureHttpFilterTest extends Specification {
 
     then:
     request.uri == 'http://localhost:8080/path'
-  }
-
-  def 'port number less than zero throws an IllegalArgumentException'() {
-    when:
-    new CaptureHttpFilter(Mock(CaptureHttpDecoder), Mock(CaptureController), '', '', 0)
-
-    then:
-    thrown(IllegalArgumentException)
   }
 }

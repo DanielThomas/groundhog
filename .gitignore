@@ -7,3 +7,6 @@ out/
 *.iws
 # Native library path created when running proxy
 **/lib/bin/
+# SelfSignedMitmManager default filenames
+littleproxy_cert
+littleproxy_keystore.jks

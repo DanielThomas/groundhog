@@ -17,49 +17,86 @@
 
 package io.groundhog.proxy;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import io.groundhog.base.URIScheme;
 import io.groundhog.capture.CaptureWriter;
 
-import java.net.InetSocketAddress;
-
-import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
+import com.google.common.net.HostAndPort;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import org.littleshoot.proxy.HttpFiltersSource;
+import org.littleshoot.proxy.HttpProxyServerBootstrap;
+import org.littleshoot.proxy.extras.SelfSignedMitmManager;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import java.net.InetSocketAddress;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
+ * A capturing proxy server.
+ *
  * @author Danny Thomas
  * @since 1.0
  */
 public final class ProxyServer extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
-  
-  private CaptureWriter captureWriter;
-  private CaptureFilterSource captureFilterSource;
-  private String listenAddress;
-  private int listenPort;
+
+  private final CaptureWriter captureWriter;
+  private final CaptureFilterSourceFactory filterSourceFactory;
+  private final HostAndPort listenHttp;
+  private final Optional<HostAndPort> listenHttps;
+  private final HostAndPort targetHttp;
+  private final Optional<HostAndPort> targetHttps;
 
   @Inject
-  public ProxyServer(CaptureWriter captureWriter,
-      CaptureFilterSource captureFilterSource,
-      @Named("listen.address") String listenAddress,
-      @Named("listen.port") int listenPort) {
+  ProxyServer(CaptureWriter captureWriter,
+              CaptureFilterSourceFactory filterSourceFactory,
+              @Named("listen.http") HostAndPort listenHttp,
+              @Named("listen.https") HostAndPort listenHttps,
+              @Named("target.http") HostAndPort targetHttp,
+              @Named("target.https") HostAndPort targetHttps) {
+    this(captureWriter, filterSourceFactory, listenHttp, targetHttp);
+    // Disabled for now, this is actually less straight forward than I'd hoped. LittleProxy only MITMs on CONNECT, not regular requests
+//    this.listenHttps = Optional.of(listenHttps);
+//    this.targetHttps = Optional.of(targetHttps);
+    // Keep the null tester happy
+    checkNotNull(listenHttps);
+    checkNotNull(targetHttps);
+  }
+
+  ProxyServer(CaptureWriter captureWriter, CaptureFilterSourceFactory filterSourceFactory, HostAndPort listen, HostAndPort target) {
     this.captureWriter = checkNotNull(captureWriter);
-    this.captureFilterSource = checkNotNull(captureFilterSource);
-    this.listenAddress = checkNotNull(listenAddress);
-    checkArgument(listenPort > 0, "Listener port must be greater than zero");
-    this.listenPort = listenPort;
+    this.filterSourceFactory = checkNotNull(filterSourceFactory);
+    this.listenHttp = checkNotNull(listen);
+    this.targetHttp = checkNotNull(target);
+    this.listenHttps = Optional.absent();
+    this.targetHttps = Optional.absent();
   }
 
   @Override
   protected void startUp() throws Exception {
-    LOG.info("Starting recording server on address {}:{}, capture writer {}", listenAddress, listenPort, captureWriter);
-    DefaultHttpProxyServer.bootstrap().withAddress(new InetSocketAddress(listenAddress, listenPort)).withFiltersSource(captureFilterSource).start();
+    startProxy(URIScheme.HTTP, listenHttp, targetHttp);
+    if (listenHttps.isPresent()) {
+      startProxy(URIScheme.HTTPS, listenHttps.get(), targetHttps.get());
+    }
+  }
+
+  private void startProxy(URIScheme scheme, HostAndPort listen, HostAndPort target) {
+    LOG.info("Starting {} capture proxy on address {} for target {}. Configured writer {}", scheme, listen, target, captureWriter);
+    HttpFiltersSource filterSource = filterSourceFactory.create(scheme, target);
+    HttpProxyServerBootstrap bootstrap = DefaultHttpProxyServer.bootstrap().withAddress(toInetSocketAddress(listen)).withFiltersSource(filterSource);
+    if (URIScheme.HTTPS == scheme) {
+      bootstrap.withManInTheMiddle(new SelfSignedMitmManager());
+    }
+    bootstrap.start();
+  }
+
+  private InetSocketAddress toInetSocketAddress(HostAndPort hostAndPort) {
+    return new InetSocketAddress(hostAndPort.getHostText(), hostAndPort.getPort());
   }
 
   @Override

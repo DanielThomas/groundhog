@@ -1,19 +1,26 @@
 package io.groundhog.proxy;
 
-import io.groundhog.capture.*;
+import io.groundhog.base.URIScheme;
+import io.groundhog.capture.CaptureController;
+import io.groundhog.capture.CaptureWriter;
+import io.groundhog.capture.DefaultCaptureController;
 import io.groundhog.har.HarFileCaptureWriter;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
+import com.google.common.net.HostAndPort;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provider;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
+import io.netty.channel.ChannelHandler;
+import org.littleshoot.proxy.HttpFiltersSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -49,7 +56,14 @@ public class ProxyModule extends AbstractModule {
       Throwables.propagate(e);
     }
 
-    Names.bindProperties(binder(), properties);
+    for (String addressType : Arrays.asList("target", "listen")) {
+      String host = properties.getProperty(addressType + ".address");
+      for (URIScheme uriScheme : URIScheme.values()) {
+        String prefix = addressType + "." + uriScheme.scheme();
+        int port = Integer.valueOf(properties.getProperty(prefix + "_port"));
+        bind(HostAndPort.class).annotatedWith(Names.named(prefix)).toInstance(HostAndPort.fromParts(host, port));
+      }
+    }
 
     File outputLocation = new File(properties.getProperty("output.location"));
     checkArgument(outputLocation.isDirectory(), "output.location must be a directory and must exist");
@@ -58,6 +72,7 @@ public class ProxyModule extends AbstractModule {
     CaptureWriter captureWriter = new HarFileCaptureWriter(outputLocation, true, false, false, "gzip".equals(outputCompression));
     bind(CaptureWriter.class).toInstance(captureWriter);
     bind(CaptureController.class).to(DefaultCaptureController.class);
+    install(new FactoryModuleBuilder().implement(HttpFiltersSource.class, CaptureFilterSource.class).build(CaptureFilterSourceFactory.class));
   }
 
   private Optional<File> findConfigInParent(File parentDir, int limit) {

@@ -18,6 +18,7 @@
 package io.groundhog.proxy
 
 import com.google.common.io.Files
+import com.google.common.net.HostAndPort
 import io.groundhog.base.URIScheme
 import io.groundhog.capture.*
 import io.groundhog.har.HttpArchive
@@ -61,7 +62,14 @@ class ProxyServerMockCaptureIntegTest extends Specification {
   @Shared
   CaptureFilterSource filterSource
   @Shared
+  CaptureFilterSourceFactory filterSourceFactory
+  @Shared
   ProxyServer proxy
+
+  @Shared
+  HostAndPort listen
+  @Shared
+  HostAndPort target
 
   @Shared
   Server server
@@ -80,8 +88,12 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     tempDir = Files.createTempDir()
     def writer = Mock(CaptureWriter)
     def controller = new DefaultCaptureController(writer)
-    filterSource = new CaptureFilterSource(writer, controller, URIScheme.HTTP.scheme, LOCALHOST, serverPort)
-    proxy = new ProxyServer(writer, filterSource, LOCALHOST, proxyPort)
+    listen = HostAndPort.fromParts(LOCALHOST, proxyPort)
+    target = HostAndPort.fromParts(LOCALHOST, serverPort)
+    filterSource = new CaptureFilterSource(URIScheme.HTTP, target, writer, controller)
+    filterSourceFactory = Mock(CaptureFilterSourceFactory)
+    filterSourceFactory.create(_,_) >> filterSource
+    proxy = new ProxyServer(writer, filterSourceFactory, listen, target)
 
     server = new Server(serverPort);
     def context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
@@ -136,7 +148,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
   }
 
   def 'starting a proxy an already listening port causes a RuntimeException to be thrown'() {
-    def newProxy = new ProxyServer(Mock(CaptureWriter), filterSource, LOCALHOST, proxyPort)
+    def newProxy = new ProxyServer(Mock(CaptureWriter), filterSourceFactory, listen, target)
 
     when:
     newProxy.startAsync()

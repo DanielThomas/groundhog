@@ -111,7 +111,7 @@ public class HarReplayResultListener extends AbstractReplayResultListener {
       result.setResponseData("No response data received", Charsets.UTF_8.name());
     }
     try {
-      result.setURL(new URL(scheme.getScheme(), hostAndPort.getHostText(), hostAndPort.getPortOrDefault(scheme.getDefaultPort()), request.getUri()));
+      result.setURL(new URL(scheme.scheme(), hostAndPort.getHostText(), hostAndPort.getPortOrDefault(scheme.defaultPort()), request.getUri()));
     } catch (MalformedURLException e) {
       throw Throwables.propagate(e);
     }

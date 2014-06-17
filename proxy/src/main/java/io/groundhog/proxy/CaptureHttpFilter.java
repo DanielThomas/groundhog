@@ -17,11 +17,13 @@
 
 package io.groundhog.proxy;
 
+import io.groundhog.base.URIScheme;
 import io.groundhog.capture.CaptureController;
 import io.groundhog.capture.CaptureHttpDecoder;
 
 import com.google.common.base.Throwables;
-import io.netty.handler.codec.http.DefaultHttpRequest;
+import com.google.common.net.HostAndPort;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
@@ -29,11 +31,9 @@ import org.littleshoot.proxy.HttpFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -47,18 +47,14 @@ final class CaptureHttpFilter implements HttpFilters {
 
   private final CaptureHttpDecoder captureDecoder;
   private final CaptureController captureController;
-  private final String protocol;
-  private final String host;
-  private final int port;
+  private final URIScheme scheme;
+  private final HostAndPort hostAndPort;
 
-  @Inject
-  CaptureHttpFilter(CaptureHttpDecoder captureDecoder, CaptureController captureController, String protocol, String host, int port) {
+  CaptureHttpFilter(CaptureHttpDecoder captureDecoder, CaptureController captureController, URIScheme scheme, HostAndPort hostAndPort) {
     this.captureDecoder = checkNotNull(captureDecoder);
     this.captureController = checkNotNull(captureController);
-    this.protocol = checkNotNull(protocol);
-    this.host = checkNotNull(host);
-    checkArgument(port > 0, "Port must be greater than zero");
-    this.port = port;
+    this.scheme = checkNotNull(scheme);
+    this.hostAndPort = checkNotNull(hostAndPort);
   }
 
   @Override
@@ -113,14 +109,17 @@ final class CaptureHttpFilter implements HttpFilters {
       // URL is used because it handles decoded URLs, while URI only handles encoded URLs.
       // Note that request.getUri() may return the path without a scheme, domain and port.
       URL url;
+      String protocol = scheme.scheme();
+      String host = hostAndPort.getHostText();
+      int port = hostAndPort.getPort();
       String uri = request.getUri();
       if (uri.startsWith("http")) {
         url = new URL(request.getUri());
       } else {
         if (uri.startsWith("/")) {
-          url = new URL(protocol, host, port, request.getUri());
+          url = new URL(scheme.scheme(), host, port, request.getUri());
         } else {
-          url = new URL(protocol, host, port, "/" + request.getUri());
+          url = new URL(scheme.scheme(), host, port, "/" + request.getUri());
         }
       }
 

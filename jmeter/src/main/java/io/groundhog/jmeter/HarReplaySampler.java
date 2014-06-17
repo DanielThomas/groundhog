@@ -51,7 +51,7 @@ public class HarReplaySampler extends AbstractSampler implements TestBean, Threa
         Injector injector = Guice.createInjector(new JMeterSlf4jModule(), jmeterModule);
         client = injector.getInstance(ReplayClient.class);
 
-        LOG.info("Starting replay for " + filename + " using " + scheme.getScheme() + " against " + hostAndPort);
+        LOG.info("Starting replay for " + filename + " using " + scheme.scheme() + " against " + hostAndPort);
         client.startAsync();
         client.awaitRunning();
       } catch (Exception e) {

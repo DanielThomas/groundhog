@@ -18,7 +18,9 @@
 package io.groundhog.proxy
 
 import com.google.common.base.Predicate
+import com.google.common.net.HostAndPort
 import com.google.common.testing.AbstractPackageSanityTests
+import io.groundhog.base.URIScheme
 import io.groundhog.capture.CaptureController
 import io.groundhog.capture.DefaultCaptureController
 import io.groundhog.har.HarFileCaptureWriter
@@ -42,10 +44,17 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     })
     CaptureWriter writer = new HarFileCaptureWriter(new File(''), false, false, false, false)
     CaptureController controller = new DefaultCaptureController(writer)
-    CaptureFilterSource captureFilterSource = new CaptureFilterSource(writer, controller,  '', '', 1)
+    CaptureFilterSource filterSource = new CaptureFilterSource(URIScheme.HTTP, HostAndPort.fromParts('localhost', 8080), writer, controller)
+    CaptureFilterSourceFactory filterSourceFactory = new CaptureFilterSourceFactory() {
+      @Override
+      CaptureFilterSource create(URIScheme scheme, HostAndPort hostAndPort) {
+        return filterSource
+      }
+    }
     setDefault(CaptureWriter.class, writer)
-    setDefault(CaptureFilterSource.class, captureFilterSource)
-    setDefault(ProxyServer.class, new ProxyServer(writer, captureFilterSource, "", 1))
+    setDefault(CaptureFilterSource.class, filterSource)
+    setDefault(ProxyServer.class, new ProxyServer(writer, filterSourceFactory, HostAndPort.fromParts('localhost', 8080), HostAndPort.fromParts('localhost', 8080)))
     setDefault(CaptureController, new DefaultCaptureController(writer))
+    setDefault(HostAndPort, HostAndPort.fromParts('localhost', 8080))
   }
 }
