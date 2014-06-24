@@ -18,6 +18,7 @@
 package io.groundhog.servlet;
 
 import io.groundhog.Groundhog;
+import io.groundhog.base.URIScheme;
 import io.groundhog.capture.*;
 
 import io.netty.buffer.ByteBuf;
@@ -74,6 +75,7 @@ public final class CaptureValve extends ValveBase implements Valve {
   public void invoke(Request request, Response response) throws IOException, ServletException {
     checkNotNull(request);
     checkNotNull(response);
+    URIScheme scheme = request.isSecure() ? URIScheme.HTTPS : URIScheme.HTTP;
     CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter);
     wrapCoyoteInputBuffer(request, captureDecoder);
     try {
@@ -83,7 +85,7 @@ public final class CaptureValve extends ValveBase implements Valve {
           handleControlRequest(httpRequest, response);
           return;
         }
-        captureDecoder.request(httpRequest);
+        captureDecoder.request(httpRequest, scheme);
       } catch (Exception e) {
         LOG.error("Error capturing request", e);
       }
@@ -93,7 +95,7 @@ public final class CaptureValve extends ValveBase implements Valve {
 
       try {
         // We're emulating the Netty codec, so signal to the decoder that the request has completed, because we've started to process a response
-        captureDecoder.request(LastHttpContent.EMPTY_LAST_CONTENT);
+        captureDecoder.request(LastHttpContent.EMPTY_LAST_CONTENT, scheme);
         captureDecoder.response(transformResponse(request, response));
         captureDecoder.response(LastHttpContent.EMPTY_LAST_CONTENT);
       } catch (Exception e) {

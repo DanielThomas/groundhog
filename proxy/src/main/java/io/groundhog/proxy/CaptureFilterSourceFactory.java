@@ -28,5 +28,5 @@ import com.google.common.net.HostAndPort;
  * @since 1.0
  */
 public interface CaptureFilterSourceFactory {
-  CaptureFilterSource create(URIScheme scheme, HostAndPort hostAndPort);
+  CaptureFilterSource create(URIScheme scheme);
 }

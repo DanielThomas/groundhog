@@ -17,10 +17,20 @@
 
 package io.groundhog.base;
 
-import com.google.common.testing.AbstractPackageSanityTests;
+import com.google.common.testing.AbstractPackageSanityTests
+import io.netty.handler.codec.http.DefaultHttpRequest
+import io.netty.handler.codec.http.HttpHeaders
+import io.netty.handler.codec.http.HttpMethod
+import io.netty.handler.codec.http.HttpRequest
+import io.netty.handler.codec.http.HttpVersion;
 
 /**
  * Package sanity tests for {@link io.groundhog.base}.
  */
 class PackageSanityTest extends AbstractPackageSanityTests {
+  PackageSanityTest() {
+    def request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/")
+    request.headers().add(HttpHeaders.Names.HOST, "localhost")
+    setDefault(HttpRequest, request)
+  }
 }

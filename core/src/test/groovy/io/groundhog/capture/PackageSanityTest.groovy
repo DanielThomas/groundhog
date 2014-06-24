@@ -20,6 +20,7 @@ package io.groundhog.capture
 
 import com.google.common.net.HostAndPort
 import com.google.common.testing.AbstractPackageSanityTests
+import io.groundhog.base.URIScheme
 
 /**
  * Package sanity tests for {@link io.groundhog.capture}.
@@ -30,5 +31,6 @@ import com.google.common.testing.AbstractPackageSanityTests
 class PackageSanityTest extends AbstractPackageSanityTests {
   public PackageSanityTest() {
     setDefault(HostAndPort.class, HostAndPort.fromParts("host", 80))
+    setDefault(URIScheme.class, URIScheme.HTTP)
   }
 }

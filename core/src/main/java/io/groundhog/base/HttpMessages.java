@@ -17,17 +17,19 @@
 
 package io.groundhog.base;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
 import com.google.common.net.MediaType;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMessage;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.*;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -52,7 +54,7 @@ public class HttpMessages {
         if (null != hostHeader) {
           return HostAndPort.fromString(hostHeader);
         } else {
-          throw new IllegalArgumentException("The host header may not be null for requests with host relative uris");
+          throw new IllegalArgumentException("The HOST header may not be null for requests with host relative uris");
         }
       }
     } catch (URISyntaxException e) {
@@ -64,5 +66,52 @@ public class HttpMessages {
     checkNotNull(message);
     String contentType = message.headers().get(HttpHeaders.Names.CONTENT_TYPE);
     return null == contentType ? MediaType.OCTET_STREAM : MediaType.parse(contentType);
+  }
+
+  public static URL getUrl(HttpRequest request) {
+    return getUrl(request, Optional.<URIScheme>absent());
+  }
+
+  public static URL getUrl(HttpRequest request, URIScheme defaultScheme) {
+    return getUrl(request, Optional.of(defaultScheme));
+  }
+
+  private static URL getUrl(HttpRequest request, Optional<URIScheme> defaultScheme) {
+    try {
+      final URI uri = new URI(request.getUri());
+      String file = uri.getPath();
+      if (null != uri.getQuery()) {
+        file = file + "?" + uri.getQuery();
+      }
+      QueryStringDecoder decoder = new QueryStringDecoder(file);
+      QueryStringEncoder encoder = new QueryStringEncoder(decoder.path());
+      for (Map.Entry<String, List<String>> entry : decoder.parameters().entrySet()) {
+        for (String value : entry.getValue()) {
+          encoder.addParam(entry.getKey(), value);
+        }
+      }
+      file = encoder.toString();
+      final URIScheme scheme;
+      final String host;
+      final int port;
+      if (null == uri.getScheme()) {
+        HostAndPort hostAndPort = HttpMessages.identifyHostAndPort(request);
+        if (defaultScheme.isPresent()) {
+          scheme = defaultScheme.get();
+          port = hostAndPort.getPortOrDefault(scheme.defaultPort());
+        } else {
+          port = hostAndPort.getPortOrDefault(URIScheme.HTTP.defaultPort());
+          scheme = URIScheme.fromPortOrDefault(port, URIScheme.HTTP);
+        }
+        host = hostAndPort.getHostText();
+      } else {
+        scheme = URIScheme.valueOf(uri.getScheme().toUpperCase());
+        host = uri.getHost();
+        port = uri.getPort();
+      }
+      return port == scheme.defaultPort() ? new URL(scheme.name(), host, file) : new URL(scheme.name(), host, port, file);
+    } catch (URISyntaxException | MalformedURLException e) {
+      throw Throwables.propagate(e);
+    }
   }
 }

@@ -17,6 +17,7 @@
 
 package io.groundhog.servlet;
 
+import io.groundhog.base.URIScheme;
 import io.groundhog.capture.CaptureHttpDecoder;
 import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.DefaultCaptureHttpDecoder;
@@ -60,9 +61,10 @@ public final class CaptureHandler extends HandlerWrapper {
     checkNotNull(baseRequest);
     checkNotNull(request);
     checkNotNull(response);
+    URIScheme scheme = request.isSecure() ? URIScheme.HTTPS : URIScheme.HTTP;
     CaptureHttpDecoder captureDecoder = new DefaultCaptureHttpDecoder(captureWriter);
     try {
-      captureDecoder.request(CaptureValve.transformRequest(request));
+      captureDecoder.request(CaptureValve.transformRequest(request), scheme);
     } catch (Exception e) {
       LOG.error("Error capturing request", e);
     }

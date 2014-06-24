@@ -17,17 +17,16 @@
 
 package io.groundhog.proxy;
 
-import io.groundhog.base.HttpMessages;
 import io.groundhog.base.URIScheme;
 import io.groundhog.capture.CaptureWriter;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
-import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import org.littleshoot.proxy.*;
@@ -38,8 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Queue;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -75,6 +72,7 @@ public final class ProxyServer extends AbstractIdleService {
     this.targetHttps = Optional.of(targetHttps);
   }
 
+  @VisibleForTesting
   ProxyServer(CaptureWriter captureWriter, CaptureFilterSourceFactory filterSourceFactory, HostAndPort listen, HostAndPort target) {
     this.captureWriter = checkNotNull(captureWriter);
     this.filterSourceFactory = checkNotNull(filterSourceFactory);
@@ -94,70 +92,77 @@ public final class ProxyServer extends AbstractIdleService {
 
   private void startProxy(URIScheme scheme, HostAndPort listen, HostAndPort target) {
     LOG.info("Starting {} capture proxy on address {} for target {}. Configured writer {}", scheme, listen, target, captureWriter);
-    HttpFiltersSource filterSource = filterSourceFactory.create(scheme, target);
+    CaptureFilterSource filterSource = checkNotNull(filterSourceFactory.create(scheme));
     HttpProxyServerBootstrap bootstrap = DefaultHttpProxyServer.bootstrap().withAddress(toInetSocketAddress(listen)).withFiltersSource(filterSource);
+
+    /*
+     * We use chained proxy support to achieve rewriting to a single host, as it's the best way to achieve HTTPS support
+     * without modifying LittleProxy.
+     */
+    final ChainedProxyAdapter proxyAdapter;
     if (URIScheme.HTTPS == scheme) {
-      configureHttps(bootstrap);
+      SelfSignedSslEngineSource sslEngineSource = new SelfSignedSslEngineSource(true);
+      // Client to proxy connections
+      bootstrap.withSslEngineSource(sslEngineSource).withAuthenticateSslClients(false);
+      // Proxy to server connections
+      proxyAdapter = new SslRewriteChainedProxy(target, sslEngineSource);
+    } else {
+      proxyAdapter = new RewriteChainedProxy(target);
     }
+    bootstrap.withChainProxyManager(new ChainedProxyManager() {
+      @Override
+      public void lookupChainedProxies(HttpRequest httpRequest, Queue<ChainedProxy> chainedProxies) {
+        chainedProxies.add(proxyAdapter);
+      }
+    });
     bootstrap.start();
   }
 
-  /**
-   * This is a little hacky, however it's the best way to achieve HTTPS support without modifying LittleProxy. The MITM
-   * manager only supports the CONNECT method, so we need to use a {@link ChainedProxy} to re-encrypt connections to
-   * the intended host.
-   */
-  private void configureHttps(HttpProxyServerBootstrap bootstrap) {
-    final SelfSignedSslEngineSource sslEngineSource = new SelfSignedSslEngineSource(true);
+  private static class RewriteChainedProxy extends ChainedProxyAdapter {
+    private final HostAndPort target;
 
-    // Client to proxy connections
-    bootstrap.withSslEngineSource(sslEngineSource).withAuthenticateSslClients(false);
+    public RewriteChainedProxy(HostAndPort target) {
+      this.target = checkNotNull(target);
+    }
 
-    // Proxy to server connections
-    ChainedProxyManager chainedProxyManager = new ChainedProxyManager() {
-      @Override
-      public void lookupChainedProxies(final HttpRequest httpRequest, Queue<ChainedProxy> chainedProxies) {
-        chainedProxies.add(new ChainedProxyAdapter() {
-          @Override
-          public boolean requiresEncryption() {
-            return true;
-          }
+    @Override
+    public InetSocketAddress getChainedProxyAddress() {
+      return toInetSocketAddress(target);
+    }
 
-          @Override
-          public SSLEngine newSslEngine() {
-            return sslEngineSource.newSslEngine();
-          }
-
-          @Override
-          public InetSocketAddress getChainedProxyAddress() {
-            HostAndPort hostAndPort = HttpMessages.identifyHostAndPort(httpRequest);
-            return toInetSocketAddress(hostAndPort);
-          }
-
-          /**
-           * Filters the request to avoid the side-effects of chaining: removes the VIA header and ensures the URI is
-           * bare without scheme or hostname.
-           */
-          @Override
-          public void filterRequest(HttpObject httpObject) {
-            if (httpObject instanceof HttpRequest) {
-              HttpRequest proxyHttpRequest = (HttpRequest) httpObject;
-              try {
-                URL url = new URL(proxyHttpRequest.getUri());
-                proxyHttpRequest.setUri(url.getFile());
-              } catch (MalformedURLException e) {
-                throw Throwables.propagate(e);
-              }
-              proxyHttpRequest.headers().remove(HttpHeaders.VIA);
-            }
-          }
-        });
+    /**
+     * Filters the request to avoid the side-effects of chaining such as removing the VIA header.
+     */
+    @Override
+    public void filterRequest(HttpObject httpObject) {
+      if (httpObject instanceof HttpRequest) {
+        HttpRequest proxyHttpRequest = (HttpRequest) httpObject;
+        HttpHeaders headers = proxyHttpRequest.headers();
+        headers.remove(HttpHeaders.Names.VIA);
       }
-    };
-    bootstrap.withChainProxyManager(chainedProxyManager);
+    }
   }
 
-  private InetSocketAddress toInetSocketAddress(HostAndPort hostAndPort) {
+  private static class SslRewriteChainedProxy extends RewriteChainedProxy {
+    private final SslEngineSource sslEngineSource;
+
+    public SslRewriteChainedProxy(HostAndPort target, SslEngineSource sslEngineSource) {
+      super(target);
+      this.sslEngineSource = checkNotNull(sslEngineSource);
+    }
+
+    @Override
+    public boolean requiresEncryption() {
+      return true;
+    }
+
+    @Override
+    public SSLEngine newSslEngine() {
+      return sslEngineSource.newSslEngine();
+    }
+  }
+
+  private static InetSocketAddress toInetSocketAddress(HostAndPort hostAndPort) {
     return new InetSocketAddress(hostAndPort.getHostText(), hostAndPort.getPort());
   }
 

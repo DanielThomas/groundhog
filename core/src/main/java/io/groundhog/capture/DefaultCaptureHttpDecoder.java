@@ -18,10 +18,12 @@
 package io.groundhog.capture;
 
 import io.groundhog.base.HttpMessages;
+import io.groundhog.base.URIScheme;
 import io.groundhog.har.HttpArchive;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -35,13 +37,9 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
+import java.net.URL;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -81,10 +79,20 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
 
   @Override
   public void request(HttpObject httpObject) {
+    requestInternal(httpObject, Optional.<URIScheme>absent());
+  }
+
+  @Override
+  public void request(HttpObject httpObject, URIScheme scheme) {
+    requestInternal(httpObject, Optional.of(scheme));
+  }
+
+  private void requestInternal(HttpObject httpObject, Optional<URIScheme> scheme) {
     checkNotNull(httpObject);
+    checkNotNull(scheme);
     if (httpObject instanceof HttpRequest) {
       startedDateTime = System.currentTimeMillis();
-      request = captureRequest((HttpRequest) httpObject);
+      request = captureRequest((HttpRequest) httpObject, scheme.get());
     } else if (httpObject instanceof HttpContent && null != request) {
       HttpContent chunk = ((HttpContent) httpObject);
       HttpMethod method = request.getMethod();
@@ -160,17 +168,11 @@ public class DefaultCaptureHttpDecoder implements CaptureHttpDecoder {
     }
   }
 
-  private HttpRequest captureRequest(HttpRequest httpRequest) {
+  private HttpRequest captureRequest(HttpRequest httpRequest, URIScheme scheme) {
     checkNotNull(httpRequest);
-    // Netty's codecs decode everything for us, so we need to re-encode everything so it hits the capture writer in the correct form
-    QueryStringDecoder decoder = new QueryStringDecoder(httpRequest.getUri());
-    QueryStringEncoder encoder = new QueryStringEncoder(decoder.path());
-    for (Map.Entry<String, List<String>> entry : decoder.parameters().entrySet()) {
-      for (String value : entry.getValue()) {
-        encoder.addParam(entry.getKey(), value);
-      }
-    }
-    HttpRequest copiedRequest = new DefaultHttpRequest(httpRequest.getProtocolVersion(), httpRequest.getMethod(), encoder.toString());
+    // Reflect the scheme, host and port and ensure that query parameters are encoded
+    URL url = HttpMessages.getUrl(httpRequest, scheme);
+    HttpRequest copiedRequest = new DefaultHttpRequest(httpRequest.getProtocolVersion(), httpRequest.getMethod(), url.toExternalForm());
     copiedRequest.headers().set(httpRequest.headers());
     return copiedRequest;
   }

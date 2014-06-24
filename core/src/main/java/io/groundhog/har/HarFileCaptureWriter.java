@@ -214,7 +214,7 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     if (lightweight && HttpArchive.DEFAULT_METHOD != request.getMethod()) {
       generator.writeStringField("method", request.getMethod().name());
     }
-    generator.writeStringField("url", getUrl(captureRequest));
+    generator.writeStringField("url", captureRequest.getRequest().getUri());
     if (lightweight && HttpArchive.DEFAULT_HTTP_VERSION != request.getProtocolVersion()) {
       generator.writeStringField("httpVersion", request.getProtocolVersion().text());
     }
@@ -228,42 +228,6 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
       writePostData(proxyPostRequest);
     }
     generator.writeEndObject();
-  }
-
-  @VisibleForTesting
-  static String getUrl(CaptureRequest captureRequest) {
-    HttpRequest request = captureRequest.getRequest();
-    HostAndPort hostAndPort = HttpMessages.identifyHostAndPort(request);
-    try {
-      final URI uri = new URI(request.getUri());
-      String file = uri.getPath();
-      if (null != uri.getQuery()) {
-        file = file + "?" + uri.getQuery();
-      }
-      final URL url;
-      if (null == uri.getScheme()) {
-        final URIScheme scheme;
-        final int port;
-        if (hostAndPort.hasPort()) {
-          scheme = URIScheme.fromPortOrDefault(hostAndPort.getPort(), URIScheme.HTTP);
-          port = hostAndPort.getPort();
-        } else {
-          scheme = URIScheme.HTTP;
-          port = scheme.defaultPort();
-        }
-        final String host = hostAndPort.getHostText();
-        if (port == scheme.defaultPort()) {
-          url = new URL(scheme.name(), host, file);
-        } else {
-          url = new URL(scheme.name(), host, port, file);
-        }
-      } else {
-        url =  new URL(uri.getScheme(), uri.getHost(), uri.getPort(), file);
-      }
-      return url.toExternalForm();
-    } catch (URISyntaxException | MalformedURLException e) {
-      throw Throwables.propagate(e);
-    }
   }
 
   private void writeResponse(CaptureRequest captureRequest) throws IOException {

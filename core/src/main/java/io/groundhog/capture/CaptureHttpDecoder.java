@@ -17,6 +17,8 @@
 
 package io.groundhog.capture;
 
+import io.groundhog.base.URIScheme;
+
 import io.netty.handler.codec.http.HttpObject;
 
 /**
@@ -30,6 +32,13 @@ import io.netty.handler.codec.http.HttpObject;
  * @since 1.0
  */
 public interface CaptureHttpDecoder {
+  /**
+   * Process request objects, indicating the {@link URIScheme}.
+   *
+   * @param httpObject the {@link HttpObject} to be processed
+   */
+  void request(HttpObject httpObject, URIScheme scheme);
+
   /**
    * Process request objects.
    *

@@ -44,10 +44,10 @@ class PackageSanityTest extends AbstractPackageSanityTests {
     })
     CaptureWriter writer = new HarFileCaptureWriter(new File(''), false, false, false, false)
     CaptureController controller = new DefaultCaptureController(writer)
-    CaptureFilterSource filterSource = new CaptureFilterSource(URIScheme.HTTP, HostAndPort.fromParts('localhost', 8080), writer, controller)
+    CaptureFilterSource filterSource = new CaptureFilterSource(URIScheme.HTTP, writer, controller)
     CaptureFilterSourceFactory filterSourceFactory = new CaptureFilterSourceFactory() {
       @Override
-      CaptureFilterSource create(URIScheme scheme, HostAndPort hostAndPort) {
+      CaptureFilterSource create(URIScheme scheme) {
         return filterSource
       }
     }

@@ -17,6 +17,7 @@
 
 package io.groundhog.capture
 
+import io.groundhog.base.URIScheme
 import io.netty.handler.codec.http.*
 import spock.lang.Ignore
 import spock.lang.Specification
@@ -36,8 +37,8 @@ class DefaultCaptureHttpDecoderTest extends Specification {
     CaptureRequest captureRequest = null;
 
     when:
-    decoder.request(request)
-    decoder.request(DefaultLastHttpContent.EMPTY_LAST_CONTENT)
+    decoder.request(request, URIScheme.HTTP)
+    decoder.request(DefaultLastHttpContent.EMPTY_LAST_CONTENT, URIScheme.HTTP)
     decoder.response(response)
     decoder.response(DefaultLastHttpContent.EMPTY_LAST_CONTENT)
     request.headers().remove(header)

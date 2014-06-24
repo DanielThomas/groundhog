@@ -81,6 +81,9 @@ class ProxyServerMockCaptureIntegTest extends Specification {
   @Shared
   CloseableHttpClient hcClient
 
+  @Shared
+  String baseUri
+
   def setupSpec() {
     proxyPort = getRandomPort()
     def serverPort = getRandomPort()
@@ -90,10 +93,12 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     def controller = new DefaultCaptureController(writer)
     listen = HostAndPort.fromParts(LOCALHOST, proxyPort)
     target = HostAndPort.fromParts(LOCALHOST, serverPort)
-    filterSource = new CaptureFilterSource(URIScheme.HTTP, target, writer, controller)
+    def scheme = URIScheme.HTTP
+    filterSource = new CaptureFilterSource(scheme, writer, controller)
     filterSourceFactory = Mock(CaptureFilterSourceFactory)
-    filterSourceFactory.create(_,_) >> filterSource
+    filterSourceFactory.create(_) >> filterSource
     proxy = new ProxyServer(writer, filterSourceFactory, listen, target)
+    baseUri = new URL(scheme.name(), 'localhost', proxyPort, BASE_PATH).toExternalForm()
 
     server = new Server(serverPort);
     def context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
@@ -212,7 +217,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
     def capturedRequest = captured.request
     capturedRequest.method == HttpMethod.GET
-    capturedRequest.uri == BASE_PATH
+    capturedRequest.uri == baseUri
     capturedRequest.protocolVersion == HttpVersion.HTTP_1_1
   }
 
@@ -227,7 +232,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
     def capturedRequest = captured.request
     capturedRequest.method == HttpMethod.POST
-    capturedRequest.uri == BASE_PATH
+    capturedRequest.uri == baseUri
     capturedRequest.protocolVersion == HttpVersion.HTTP_1_1
   }
 
@@ -281,7 +286,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     then:
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
     def capturedRequest = captured.request
-    capturedRequest.uri == BASE_PATH + '?key1=value1&key2=value2'
+    capturedRequest.uri == baseUri + '?key1=value1&key2=value2'
   }
 
   def 'query string is captured as part of URI for POST request'() {
@@ -294,7 +299,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
     then:
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
     def capturedRequest = captured.request
-    capturedRequest.uri == BASE_PATH + '?key1=value1&key2=value2'
+    capturedRequest.uri == baseUri + '?key1=value1&key2=value2'
   }
 
   def 'query strings are url encoded when captured'() {
@@ -306,7 +311,7 @@ class ProxyServerMockCaptureIntegTest extends Specification {
 
     then:
     1 * writer.writeAsync({ captured = it } as CaptureRequest)
-    captured.request.uri == BASE_PATH + '?field1=value1&field2=%E2%98%BA'
+    captured.request.uri == baseUri + '?field1=value1&field2=%E2%98%BA'
   }
 
   def 'multipart text fields are captured'() {

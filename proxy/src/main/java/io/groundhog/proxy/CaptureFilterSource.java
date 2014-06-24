@@ -25,7 +25,6 @@ import io.groundhog.capture.DefaultCaptureHttpDecoder;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.google.common.net.HostAndPort;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import io.netty.channel.ChannelHandlerContext;
@@ -42,18 +41,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CaptureFilterSource extends HttpFiltersSourceAdapter {
   private final CaptureWriter captureWriter;
   private final URIScheme scheme;
-  private final HostAndPort hostAndPort;
 
   private Optional<CaptureHttpDecoder> captureDecoder = Optional.absent();
   private CaptureController captureController;
 
   @Inject
-  CaptureFilterSource(@Assisted URIScheme scheme, @Assisted HostAndPort hostAndPort, CaptureWriter captureWriter,
-                      CaptureController captureController) {
+  CaptureFilterSource(@Assisted URIScheme scheme, CaptureWriter captureWriter, CaptureController captureController) {
+    this.scheme = checkNotNull(scheme);
     this.captureWriter = checkNotNull(captureWriter);
     this.captureController = checkNotNull(captureController);
-    this.scheme = checkNotNull(scheme);
-    this.hostAndPort = checkNotNull(hostAndPort);
   }
 
   @Override
@@ -61,9 +57,9 @@ public class CaptureFilterSource extends HttpFiltersSourceAdapter {
     checkNotNull(originalRequest);
     checkNotNull(ctx);
     if (captureDecoder.isPresent()) {
-      return new CaptureHttpFilter(captureDecoder.get(), captureController, scheme, hostAndPort);
+      return new CaptureHttpFilter(scheme, captureDecoder.get(), captureController);
     } else {
-      return new CaptureHttpFilter(new DefaultCaptureHttpDecoder(captureWriter), captureController, scheme, hostAndPort);
+      return new CaptureHttpFilter(scheme, new DefaultCaptureHttpDecoder(captureWriter), captureController);
     }
   }
 

@@ -18,6 +18,7 @@
 package io.groundhog.servlet
 
 import io.groundhog.capture.CaptureWriter
+import io.netty.handler.codec.http.HttpHeaders
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.HttpVersion
 import org.eclipse.jetty.server.Request
@@ -28,14 +29,15 @@ import spock.lang.Specification
  * Tests for {@link CaptureHandler}.
  */
 class CaptureHandlerTest extends Specification {
-  def 'Writer is invoked with correct request details'() {
+  def 'writer is invoked with correct request details'() {
     def writer = Mock(CaptureWriter.class)
     def handler = new CaptureHandler(writer)
     def request = Mock(Request)
     request.getProtocol() >> 'HTTP/1.1'
     request.getMethod() >> 'GET'
     request.getRequestURI() >> '/'
-    request.getHeaderNames() >> Collections.emptyEnumeration()
+    request.getHeaderNames() >> Collections.enumeration(Arrays.asList(HttpHeaders.Names.HOST))
+    request.getHeaders(HttpHeaders.Names.HOST) >> Collections.enumeration(Arrays.asList("localhost"))
     def response = Mock(Response)
     def captured
 
@@ -48,6 +50,6 @@ class CaptureHandlerTest extends Specification {
     def capturedRequest = captured.get(0).getRequest()
     capturedRequest.getProtocolVersion() == HttpVersion.HTTP_1_1
     capturedRequest.getMethod() == HttpMethod.GET
-    capturedRequest.getUri() == '/'
+    capturedRequest.getUri() == 'http://localhost/'
   }
 }
