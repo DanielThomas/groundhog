@@ -19,6 +19,7 @@ package io.groundhog.har;
 
 import io.groundhog.Groundhog;
 import io.groundhog.base.HttpMessages;
+import io.groundhog.base.URIScheme;
 import io.groundhog.capture.CaptureRequest;
 import io.groundhog.capture.CaptureWriter;
 import io.groundhog.capture.DefaultCapturePostRequest;
@@ -64,10 +65,6 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
   private static final Logger LOG = LoggerFactory.getLogger(CaptureWriter.class);
 
   private static final Set<String> MINIMUM_RESPONSE_HEADERS = Sets.newHashSet(HttpHeaders.Names.SET_COOKIE, HttpHeaders.Names.LOCATION);
-  private static final int DEFAULT_HTTP_PORT = 80;
-  private static final int DEFAULT_HTTPS_PORT = 443;
-  private static final String HTTP_SCHEME = "http";
-  private static final String HTTPS_SCHEME = "https";
 
   private final File outputLocation;
   private final BlockingQueue<CaptureRequest> requestQueue;
@@ -238,46 +235,34 @@ public class HarFileCaptureWriter extends AbstractExecutionThreadService impleme
     HttpRequest request = captureRequest.getRequest();
     HostAndPort hostAndPort = HttpMessages.identifyHostAndPort(request);
     try {
-      int port = hostAndPort.getPortOrDefault(80);
-      String protocol = getUrlScheme(port);
-      String host = hostAndPort.getHostText();
-      URI uri = new URI(request.getUri());
+      final URI uri = new URI(request.getUri());
       String file = uri.getPath();
       if (null != uri.getQuery()) {
         file = file + "?" + uri.getQuery();
       }
-      if (isDefaultPort(port, protocol)) {
-        return new URL(protocol, host, file).toExternalForm();
+      final URL url;
+      if (null == uri.getScheme()) {
+        final URIScheme scheme;
+        final int port;
+        if (hostAndPort.hasPort()) {
+          scheme = URIScheme.fromPortOrDefault(hostAndPort.getPort(), URIScheme.HTTP);
+          port = hostAndPort.getPort();
+        } else {
+          scheme = URIScheme.HTTP;
+          port = scheme.defaultPort();
+        }
+        final String host = hostAndPort.getHostText();
+        if (port == scheme.defaultPort()) {
+          url = new URL(scheme.name(), host, file);
+        } else {
+          url = new URL(scheme.name(), host, port, file);
+        }
       } else {
-        return new URL(protocol, host, port, file).toExternalForm();
+        url =  new URL(uri.getScheme(), uri.getHost(), uri.getPort(), file);
       }
+      return url.toExternalForm();
     } catch (URISyntaxException | MalformedURLException e) {
       throw Throwables.propagate(e);
-    }
-  }
-
-  private static boolean isDefaultPort(int port, String scheme) {
-    switch (scheme) {
-      case HTTP_SCHEME: {
-        return DEFAULT_HTTP_PORT == port;
-      }
-      case HTTPS_SCHEME: {
-        return DEFAULT_HTTPS_PORT == port;
-      }
-      default:
-        throw new IllegalArgumentException("Unknown protocol scheme: " + scheme);
-    }
-  }
-
-  private static String getUrlScheme(int port) {
-    // It seems like we can only infer protocol schemes based on port, fine for now in any case
-    switch (port) {
-      case DEFAULT_HTTPS_PORT:
-      case 8443: {
-        return HTTPS_SCHEME;
-      }
-      default:
-        return HTTP_SCHEME;
     }
   }
 

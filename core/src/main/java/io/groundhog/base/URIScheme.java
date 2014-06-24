@@ -17,7 +17,11 @@
 
 package io.groundhog.base;
 
+import com.google.common.base.Optional;
+
 import javax.annotation.concurrent.Immutable;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * @author Danny Thomas
@@ -42,5 +46,25 @@ public enum URIScheme {
 
   public int defaultPort() {
     return defaultPort;
+  }
+
+  public static URIScheme fromPort(int port) {
+    Optional<URIScheme> uriScheme = fromPortInternal(port);
+    checkArgument(uriScheme.isPresent(), "No matching protocol scheme for port " + port);
+    return uriScheme.get();
+  }
+
+  public static URIScheme fromPortOrDefault(int port, URIScheme defaultScheme) {
+    return fromPortInternal(port).or(defaultScheme);
+  }
+
+  private static Optional<URIScheme> fromPortInternal(int port) {
+    checkArgument(port > 0, "port must be greater than zero");
+    for (URIScheme scheme : values()) {
+      if (scheme.defaultPort() == port) {
+        return Optional.of(scheme);
+      }
+    }
+    return Optional.absent();
   }
 }

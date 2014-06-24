@@ -135,4 +135,15 @@ class HarFileCaptureWriterTest extends Specification {
     expect:
     HarFileCaptureWriter.getUrl(captureRequest) == "https://localhost/"
   }
+
+  def 'URL has protocol scheme and port unchanged if specified'() {
+    given:
+    def request = Mock(HttpRequest)
+    request.getUri() >> "https://localhost:8443/"
+    def response = Mock(HttpResponse)
+    def captureRequest = new DefaultCaptureRequest(System.currentTimeMillis(), request, response)
+
+    expect:
+    HarFileCaptureWriter.getUrl(captureRequest) == "https://localhost:8443/"
+  }
 }
