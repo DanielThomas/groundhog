@@ -139,6 +139,7 @@ public final class ProxyServer extends AbstractIdleService {
         HttpRequest proxyHttpRequest = (HttpRequest) httpObject;
         HttpHeaders headers = proxyHttpRequest.headers();
         headers.remove(HttpHeaders.Names.VIA);
+        headers.set(HttpHeaders.Names.HOST, target.getHostText());
       }
     }
   }
