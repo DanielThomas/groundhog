@@ -47,7 +47,7 @@ Other performance data to come.
 
 * Clone the repository, Run `gradlew`, the default build action will assemble the application
 * Use the `distZip` target to generate the distribution
-* Replay and record can also be run in place using `:capture:run` or `:replay:run`
+* Capture and record can also be run in place using `:proxy:run` or `:replay:run`
 * Use ':jmeter:fatJar' to generate the JMeter plugin, and copy it to the plugins directory to use
 
 ## Acknowledgements
