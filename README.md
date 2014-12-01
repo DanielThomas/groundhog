@@ -8,6 +8,8 @@ While this is project has been somewhat battle tested, it's lacking niceities su
 
 An official release is planned that will fill those gaps, at that time the project will be available at the [Groundhog](https://github.com/groundhog) organisation and [groundhog.io](http://groundhog.io/). Stay tuned.
 
+[![Build Status](https://travis-ci.org/DanielThomas/groundhog.svg)](https://travis-ci.org/DanielThomas/groundhog)
+
 ## Features
 
 ### Capture
