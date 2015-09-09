@@ -1,5 +1,7 @@
 # Groundhog
 
+[![Join the chat at https://gitter.im/DanielThomas/groundhog](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/DanielThomas/groundhog?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 > Don't drive angry...
 
 Groundhog is a simple, high performance, HTTP traffic capture and replay tool for repeatable system performance testing.
